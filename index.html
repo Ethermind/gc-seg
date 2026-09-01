@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
@@ -243,9 +242,10 @@
       <button @click="modalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Cerrar modal">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
-      <template x-if="modalOpen">
-        <i :data-lucide="selectedProd.icon" class="w-10 h-10 text-brand-cobalt mb-4 block"></i>
-      </template>
+      
+      <!-- Contenedor estático para inyectar un único icono vía x-ref -->
+      <div x-ref="modalIcon" class="mb-4 text-brand-cobalt"></div>
+
       <h3 id="modalProdTitle" class="text-2xl font-black text-slate-900 mb-3" x-text="selectedProd.title"></h3>
       <p class="text-slate-600 text-sm leading-relaxed mb-6" x-text="selectedProd.desc"></p>
       
@@ -863,7 +863,14 @@
         openModal(prod) {
           this.selectedProd = prod;
           this.modalOpen = true;
-          this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+          
+          // Limpia e inyecta el icono de manera explícita para evitar duplicados DOM con Lucide
+          this.$nextTick(() => {
+            if (this.$refs.modalIcon) {
+              this.$refs.modalIcon.innerHTML = `<i data-lucide="${prod.icon}" class="w-10 h-10 block"></i>`;
+              if (window.lucide) lucide.createIcons();
+            }
+          });
         },
 
         selectProductForForm(title) {
