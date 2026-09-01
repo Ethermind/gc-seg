@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es" class="scroll-smooth scroll-pt-20 lg:scroll-pt-24">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -36,14 +35,15 @@
   </script>
   <style>
     [x-cloak] { display: none !important; }
-    
     @keyframes shimmer {
       to { background-position: 200% center; }
     }
   </style>
 </head>
 <body class="bg-brand-lightBg text-slate-800 font-sans antialiased selection:bg-brand-cobalt selection:text-white" 
-      x-data="appData()">
+      x-data="appData()"
+      :class="{ 'overflow-hidden': modalOpen || reviewModalOpen }"
+      @keydown.escape.window="modalOpen = false; reviewModalOpen = false; mobileMenuOpen = false">
 
   <!-- Botón Flotante de WhatsApp -->
   <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" 
@@ -89,14 +89,22 @@
         </a>
       </nav>
 
-      <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-slate-300 hover:text-white focus:outline-none">
+      <button @click="mobileMenuOpen = !mobileMenuOpen" 
+              :aria-expanded="mobileMenuOpen" 
+              aria-label="Menú principal"
+              class="md:hidden p-2 text-slate-300 hover:text-white focus:outline-none">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
       </button>
     </div>
 
-    <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-brand-dark border-b border-slate-800 px-4 pt-2 pb-6 space-y-3">
+    <!-- Menú Mobile -->
+    <div x-show="mobileMenuOpen" 
+         @click.outside="mobileMenuOpen = false" 
+         x-transition 
+         x-cloak
+         class="md:hidden bg-brand-dark border-b border-slate-800 px-4 pt-2 pb-6 space-y-3">
       <a @click="mobileMenuOpen = false" href="#coberturas" class="block py-2 text-slate-200">Coberturas</a>
       <a @click="mobileMenuOpen = false" href="#nosotros" class="block py-2 text-slate-200">Nosotros</a>
       <a @click="mobileMenuOpen = false" href="#testimonios" class="block py-2 text-slate-200">Opiniones</a>
@@ -108,7 +116,7 @@
   <!-- Hero Section -->
   <section class="relative bg-gradient-to-br from-brand-dark via-brand-surface to-brand-dark text-white py-20 lg:py-28 overflow-hidden">
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-cobalt/25 rounded-full blur-3xl animate-pulse duration-10000"></div>
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-cobalt/25 rounded-full blur-3xl animate-pulse"></div>
       <div class="absolute bottom-0 right-10 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl animate-[pulse_6s_ease-in-out_infinite]"></div>
       <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px]"></div>
     </div>
@@ -206,7 +214,7 @@
   <!-- Modal Detalle Producto -->
   <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/75 backdrop-blur-sm" x-cloak x-transition>
     <div @click.away="modalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100">
-      <button @click="modalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700">
+      <button @click="modalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700" aria-label="Cerrar modal">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
       <div class="text-4xl mb-4" x-text="selectedProd.icon"></div>
@@ -231,7 +239,7 @@
       </div>
 
       <div class="flex gap-3">
-        <a :href="'#contacto'" @click="modalOpen = false; selectProductForForm(selectedProd.title)" class="flex-1 bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold py-3 text-center rounded-xl transition">
+        <a href="#contacto" @click="modalOpen = false; selectProductForForm(selectedProd.title)" class="flex-1 bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold py-3 text-center rounded-xl transition">
           Cotizar esta cobertura
         </a>
       </div>
@@ -325,7 +333,7 @@
   <!-- Modal Opinión -->
   <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition>
     <div @click.away="reviewModalOpen = false" class="bg-brand-surface border border-slate-800 text-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative">
-      <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+      <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-white" aria-label="Cerrar modal">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
 
@@ -452,11 +460,11 @@
                   <option value="Consorcio">🏢 Consorcio</option>
                   <option value="Responsabilidad Civil">⚖️ Responsabilidad Civil</option>
                   <option value="ART">👷 ART</option>
-                  <option value="Caución Empresas">📄 Caución</option>
+                  <option value="Caución Empresas">📄 Caución Empresas</option>
                   <option value="Transporte">🚛 Transporte</option>
                   <option value="Equipos y Maquinarias">⚙️ Equipos y Maquinarias</option>
                   <option value="Flotas">🚘 Flotas</option>
-                  <option value="Retiro para Empleados">🌟 Planes de Retiro para Empleados</option>
+                  <option value="Retiro para Empleados">🌟 Retiro para Empleados</option>
                 </optgroup>
                 <option value="Otro">💬 Otro tipo de consulta</option>
               </select>
@@ -464,7 +472,6 @@
           </div>
 
           <div>
-            <!-- Campo Opcional -->
             <div class="flex justify-between items-center mb-2">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Contanos brevemente qué necesitás</label>
               <span class="text-[10px] text-slate-400" x-text="formData.mensaje.length + '/3000'"></span>
@@ -548,7 +555,7 @@
           <h4 class="font-bold text-slate-900">¿No encontraste lo que buscabas?</h4>
           <p class="text-xs text-slate-600">Escribinos. Estamos para ayudarte.</p>
         </div>
-        <a href="https://wa.me/5491112345678" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-md transition">
+        <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-md transition">
           💬 Hablá con nosotros
         </a>
       </div>
@@ -693,7 +700,7 @@
           const nombreOk = this.formData.nombre.trim().length > 0 && this.formData.nombre.length <= 40;
           const telefonoOk = this.formData.telefono.trim().length >= 6;
           const emailOk = this.isEmailValid;
-          const mensajeOk = this.formData.mensaje.length <= 3000; // Opcional (solo valida longitud máxima)
+          const mensajeOk = this.formData.mensaje.length <= 3000;
           const recaptchaOk = this.formData.recaptcha;
           const datosOk = this.formData.aceptarDatos;
 
@@ -773,7 +780,7 @@
             desc: 'Protegé tu vehículo frente a accidentes, robo, incendio y daños, con distintas alternativas de cobertura para elegir la que mejor se adapte a vos.',
             manuales: [
               { titulo: 'Manual del Asegurado - Automotores', url: '#' },
-              { titulo: 'Guía de Procedimiento ante Siniestos', url: '#' }
+              { titulo: 'Guía de Procedimiento ante Siniestros', url: '#' }
             ]
           },
           { 
