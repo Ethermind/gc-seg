@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giaconi-Capra® PAS | Administradores de Riesgo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            brand: {
+              dark: '#080e1a',       // Azul Noche Tinta
+              surface: '#0f172a',    // Azul Noche Intermedio
+              cobalt: '#2563eb',     // Azul exacto del Logo
+              cobaltHover: '#1d4ed8',
+              accent: '#d97706',     // Dorado Ámbar del Logo
+              accentHover: '#b45309',
+              lightBg: '#f8fafc',
+              cardBg: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    
+    @keyframes shimmer {
+      to { background-position: 200% center; }
+    }
+  </style>
+</head>
+<body class="bg-brand-lightBg text-slate-800 font-sans antialiased selection:bg-brand-cobalt selection:text-white" 
+      x-data="appData()">
+
+  <!-- Botón Flotante de WhatsApp -->
+  <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" 
+     class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group" 
+     aria-label="Contacto directo por WhatsApp">
+    <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-300"></span>
+    </span>
+    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+    </svg>
+    <span class="absolute right-full mr-3 bg-brand-dark text-white text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-xl pointer-events-none border border-slate-800">
+      ¡Consultanos por WhatsApp!
+    </span>
+  </a>
+
+  <!-- Navbar -->
+  <header class="sticky top-0 z-40 bg-brand-dark/95 backdrop-blur border-b border-slate-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <a href="#" class="flex items-center gap-3 group">
+        <svg class="h-9 w-auto flex-shrink-0 transform group-hover:scale-105 transition duration-300" viewBox="0 0 130 65" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+        <div class="flex flex-col">
+          <span class="text-xl font-extrabold tracking-tight text-white leading-tight flex items-center">
+            GIACONI-CAPRA<sup class="text-[10px] text-slate-300 font-normal ml-0.5 -mt-2">®</sup>&nbsp;<span class="text-brand-accent">PAS</span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Administradores de Riesgo</span>
+        </div>
+      </a>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="#coberturas" class="hover:text-brand-accent transition">Coberturas</a>
+        <a href="#nosotros" class="hover:text-brand-accent transition">Nosotros</a>
+        <a href="#testimonios" class="hover:text-brand-accent transition">Opiniones</a>
+        <a href="#faq" class="hover:text-brand-accent transition">Preguntas Frecuentes</a>
+        <a href="#contacto" class="bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-semibold px-5 py-2.5 rounded-full shadow-lg transition">
+          Cotizar Seguro
+        </a>
+      </nav>
+
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-slate-300 hover:text-white focus:outline-none">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-brand-dark border-b border-slate-800 px-4 pt-2 pb-6 space-y-3">
+      <a @click="mobileMenuOpen = false" href="#coberturas" class="block py-2 text-slate-200">Coberturas</a>
+      <a @click="mobileMenuOpen = false" href="#nosotros" class="block py-2 text-slate-200">Nosotros</a>
+      <a @click="mobileMenuOpen = false" href="#testimonios" class="block py-2 text-slate-200">Opiniones</a>
+      <a @click="mobileMenuOpen = false" href="#faq" class="block py-2 text-slate-200">Preguntas Frecuentes</a>
+      <a @click="mobileMenuOpen = false" href="#contacto" class="block w-full text-center bg-brand-cobalt text-white font-bold py-3 rounded-xl mt-4">Cotizar Seguro</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative bg-gradient-to-br from-brand-dark via-brand-surface to-brand-dark text-white py-20 lg:py-28 overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-cobalt/25 rounded-full blur-3xl animate-pulse duration-10000"></div>
+      <div class="absolute bottom-0 right-10 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl animate-[pulse_6s_ease-in-out_infinite]"></div>
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px]"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-accent/10 border border-brand-accent/30 text-amber-400 text-xs font-semibold mb-6">
+          <span>✨ Más de 50 años de experiencia acumulada</span>
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-6">
+          Protegemos lo que construís. <br>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-amber-300 to-blue-400 bg-[length:200%_auto] animate-[shimmer_4s_linear_infinite]">
+            Acompañamos lo que viene.
+          </span>
+        </h1>
+        
+        <p class="text-lg sm:text-xl text-slate-300 font-normal mb-8 leading-relaxed">
+          Asesoramiento cercano, transparente y personalizado para personas, familias y empresas.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href="#contacto" class="inline-flex items-center justify-center px-7 py-4 bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold rounded-xl shadow-xl transition transform active:scale-95">
+            Solicitar Cotización Gratuita
+          </a>
+          <a href="#coberturas" class="inline-flex items-center justify-center px-7 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-white font-semibold rounded-xl transition">
+            Ver Coberturas
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coberturas Section -->
+  <section id="coberturas" class="py-20 bg-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-cobalt mb-2">¿Qué querés proteger?</h2>
+        <p class="text-3xl sm:text-4xl font-extrabold text-slate-900">Encontrá la cobertura que mejor se adapta a vos</p>
+      </div>
+
+      <div class="flex justify-center mb-10">
+        <div class="bg-slate-200 p-1.5 rounded-2xl flex gap-2 shadow-inner">
+          <button @click="activeTab = 'personas'" 
+                  :class="activeTab === 'personas' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-6 py-3 rounded-xl font-bold text-sm transition">
+            👤 Personas
+          </button>
+          <button @click="activeTab = 'empresas'" 
+                  :class="activeTab === 'empresas' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-6 py-3 rounded-xl font-bold text-sm transition">
+            🏢 Empresas y Comercios
+          </button>
+        </div>
+      </div>
+
+      <!-- Grilla Personas -->
+      <div x-show="activeTab === 'personas'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template x-for="prod in productosPersonas" :key="prod.id">
+          <div @click="openModal(prod)" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition border border-slate-200/80 cursor-pointer flex flex-col justify-between group">
+            <div>
+              <div class="w-12 h-12 rounded-xl bg-blue-50 text-brand-cobalt flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-brand-cobalt group-hover:text-white transition" x-text="prod.icon"></div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2" x-text="prod.title"></h3>
+              <p class="text-slate-600 text-sm line-clamp-3 leading-relaxed" x-text="prod.desc"></p>
+            </div>
+            <div class="mt-6 flex items-center text-xs font-bold text-brand-cobalt group-hover:text-brand-cobaltHover">
+              <span>Ver detalles de cobertura</span>
+              <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Grilla Empresas -->
+      <div x-show="activeTab === 'empresas'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" x-cloak>
+        <template x-for="prod in productosEmpresas" :key="prod.id">
+          <div @click="openModal(prod)" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition border border-slate-200/80 cursor-pointer flex flex-col justify-between group relative">
+            <template x-if="prod.badge">
+              <span class="absolute top-4 right-4 bg-brand-accent text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-sm" x-text="prod.badge"></span>
+            </template>
+            <div>
+              <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-brand-dark group-hover:text-amber-400 transition" x-text="prod.icon"></div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2" x-text="prod.title"></h3>
+              <p class="text-slate-600 text-sm line-clamp-3 leading-relaxed" x-text="prod.desc"></p>
+            </div>
+            <div class="mt-6 flex items-center text-xs font-bold text-brand-cobalt group-hover:text-brand-cobaltHover">
+              <span>Ver detalles de cobertura</span>
+              <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Detalle Producto -->
+  <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/75 backdrop-blur-sm" x-cloak x-transition>
+    <div @click.away="modalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100">
+      <button @click="modalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+      <div class="text-4xl mb-4" x-text="selectedProd.icon"></div>
+      <h3 class="text-2xl font-black text-slate-900 mb-3" x-text="selectedProd.title"></h3>
+      <p class="text-slate-600 text-sm leading-relaxed mb-6" x-text="selectedProd.desc"></p>
+      
+      <div class="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center gap-2">
+          <span>📚</span> Manuales y Documentación
+        </h4>
+        <div class="space-y-2">
+          <template x-for="(manual, idx) in selectedProd.manuales" :key="idx">
+            <a :href="manual.url" target="_blank" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-brand-cobalt font-semibold hover:border-brand-cobalt transition">
+              <span class="flex items-center gap-2">
+                <span>📄</span>
+                <span x-text="manual.titulo"></span>
+              </span>
+              <span class="text-[10px] bg-blue-50 text-brand-cobalt px-2 py-1 rounded-md font-bold uppercase">PDF</span>
+            </a>
+          </template>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <a :href="'#contacto'" @click="modalOpen = false; selectProductForForm(selectedProd.title)" class="flex-1 bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold py-3 text-center rounded-xl transition">
+          Cotizar esta cobertura
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nosotros -->
+  <section id="nosotros" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-brand-cobalt">Nuestra Historia</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">Tradición familiar y visión de futuro</h2>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            <strong>Giaconi-Capra<sup>®</sup></strong> Productores Asesores de Seguros nace en 2017 de la visión de <strong>Leandro Giaconi</strong> y <strong>Paola Capra</strong>, con el propósito de brindar un asesoramiento cercano, transparente y personalizado.
+          </p>
+          <p class="text-slate-600 leading-relaxed mb-6">
+            Desde nuestros comienzos contamos con la guía de <strong>Santiago Giaconi</strong>, nuestro padrino y referente, quien aportó sus más de 50 años de trayectoria en el mercado asegurador, transmitiéndonos experiencia y compromiso con cada cliente.
+          </p>
+          <div class="p-4 bg-amber-500/10 border-l-4 border-brand-accent rounded-r-xl text-slate-800 italic text-sm font-medium">
+            "Más de 50 años de experiencia nos acompañan. Una nueva generación continúa el camino."
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-6">
+          <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span>🎯</span> Nuestra Misión
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              Acompañar a personas, familias y empresas en la protección de todo aquello que construyen y proyectan, brindando un asesoramiento cercano, transparente y personalizado.
+            </p>
+          </div>
+          <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span>🚀</span> Nuestra Visión
+            </h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              Crecer y evolucionar sin perder la cercanía que nos identifica. Consolidarnos como una organización referente en asesoramiento integral de seguros.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonios -->
+  <section id="testimonios" class="py-20 bg-brand-dark text-white relative overflow-hidden">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="text-center mb-10">
+        <span class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 block">Experiencias Reales</span>
+        <h2 class="text-3xl font-extrabold">Opiniones de quienes nos eligen</h2>
+        <p class="text-slate-400 text-sm mt-2 mb-6">Conocé lo que opinan nuestros clientes sobre la atención personalizada.</p>
+        
+        <button @click="reviewModalOpen = true" class="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accentHover text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95">
+          <span>★</span> Dejar tu opinión
+        </button>
+      </div>
+
+      <div class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative min-h-[260px] flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-1 text-amber-400 mb-4">
+            <template x-for="i in reviews[currentReview].rating" :key="i">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </template>
+          </div>
+          <p class="text-slate-200 text-lg sm:text-xl italic leading-relaxed mb-6" x-text="'“' + reviews[currentReview].text + '”'"></p>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-slate-800 pt-6">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-sm" x-text="reviews[currentReview].avatar"></div>
+            <div>
+              <h4 class="font-bold text-white text-sm" x-text="reviews[currentReview].name"></h4>
+              <p class="text-xs text-slate-400" x-text="reviews[currentReview].role"></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button @click="prevReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition" aria-label="Anterior opinión">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button @click="nextReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition" aria-label="Siguiente opinión">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal Opinión -->
+  <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition>
+    <div @click.away="reviewModalOpen = false" class="bg-brand-surface border border-slate-800 text-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative">
+      <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <h3 class="text-2xl font-black mb-2 text-white">Dejá tu opinión</h3>
+      <p class="text-xs text-slate-400 mb-6">Tu experiencia nos ayuda a seguir mejorando y brindar el mejor servicio.</p>
+
+      <template x-if="reviewSubmitted">
+        <div class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl p-6 text-center my-4">
+          <div class="text-3xl mb-2">🎉</div>
+          <h4 class="font-bold text-lg mb-1">¡Muchas gracias por tu valoración!</h4>
+          <p class="text-xs text-emerald-200">Tu opinión ha sido enviada correctamente y ya forma parte de nuestra comunidad.</p>
+        </div>
+      </template>
+
+      <form x-show="!reviewSubmitted" @submit.prevent="submitReview()" class="space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Nombre y Apellido*</label>
+            <span class="text-[10px] text-slate-400" x-text="newReview.name.length + '/40'"></span>
+          </div>
+          <input type="text" x-model="newReview.name" maxlength="40" required placeholder="Ej: María Gómez" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Tipo de Cobertura / Rol</label>
+            <span class="text-[10px] text-slate-400" x-text="newReview.role.length + '/40'"></span>
+          </div>
+          <input type="text" x-model="newReview.role" maxlength="40" placeholder="Ej: Cliente - Seguro de Auto" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Puntuación*</label>
+          <div class="flex items-center gap-2">
+            <template x-for="star in 5" :key="star">
+              <button type="button" @click="newReview.rating = star" class="text-2xl transition transform hover:scale-110 focus:outline-none" :class="star <= newReview.rating ? 'text-amber-400' : 'text-slate-600'">
+                ★
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Tu opinión*</label>
+            <span class="text-[10px] text-slate-400" x-text="newReview.text.length + '/3000'"></span>
+          </div>
+          <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="reviewModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold">Cancelar</button>
+          <button type="submit" 
+                  :disabled="!isReviewFormValid" 
+                  :class="isReviewFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-700 opacity-50 cursor-not-allowed'" 
+                  class="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition">
+            Publicar opinión
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Formulario de Contacto -->
+  <section id="contacto" class="py-20 bg-slate-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-12 border border-slate-200/80">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-black text-slate-900">Formulario de Contacto</h2>
+          <p class="text-slate-600 mt-2 text-sm">Contanos qué necesitás proteger y nos ponemos en contacto con vos para encontrar la cobertura más adecuada.</p>
+        </div>
+
+        <template x-if="formSubmitted">
+          <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-8 text-center my-6">
+            <div class="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">✓</div>
+            <h3 class="text-2xl font-black mb-2">¡Recibimos tu solicitud con éxito!</h3>
+            <p class="text-sm text-emerald-700 leading-relaxed max-w-md mx-auto">
+              Muchas gracias por ponerte en contacto. En breve uno de nuestros asesores revisará tu mensaje para brindarte una propuesta personalizada.
+            </p>
+            <button @click="resetContactForm()" class="mt-6 px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider">Enviar otra consulta</button>
+          </div>
+        </template>
+
+        <form x-show="!formSubmitted" @submit.prevent="submitContactForm()" class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Nombre y apellido*</label>
+                <span class="text-[10px] text-slate-400" x-text="formData.nombre.length + '/40'"></span>
+              </div>
+              <input type="text" x-model="formData.nombre" maxlength="40" required placeholder="Ej: Juan Pérez" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Teléfono / WhatsApp*</label>
+              <input type="tel" x-model="formData.telefono" @input="validatePhoneInput" required placeholder="Ej: +54 9 11 1234 5678" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Correo electrónico</label>
+              <input type="email" x-model="formData.email" placeholder="ejemplo@correo.com" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm">
+              <p x-show="formData.email && !isEmailValid" class="text-[10px] text-red-500 mt-1">Por favor, ingresá un correo con formato válido.</p>
+            </div>
+            <div>
+              <!-- Campo Opcional -->
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">¿Qué necesitás asegurar?</label>
+              <select x-model="formData.producto" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm">
+                <option value="">Seleccionar una opción (Opcional)</option>
+                <optgroup label="Personas">
+                  <option value="Auto">🚗 Auto</option>
+                  <option value="Moto">🏍️ Moto</option>
+                  <option value="Hogar">🏡 Hogar</option>
+                  <option value="Vida">🛡️ Vida</option>
+                  <option value="Retiro">📈 Retiro</option>
+                  <option value="Accidentes Personales">🩹 Accidentes Personales</option>
+                  <option value="Viajes">✈️ Viajes</option>
+                  <option value="Bicicletas y Ecomovilidad">🚲 Bicicletas y Ecomovilidad</option>
+                  <option value="Celulares y Portátiles">📱 Celulares y Portátiles</option>
+                  <option value="Caución para Alquileres">🔑 Caución para Alquileres</option>
+                </optgroup>
+                <optgroup label="Empresas y Comercios">
+                  <option value="Comercio">🏪 Comercio</option>
+                  <option value="Consorcio">🏢 Consorcio</option>
+                  <option value="Responsabilidad Civil">⚖️ Responsabilidad Civil</option>
+                  <option value="ART">👷 ART</option>
+                  <option value="Caución Empresas">📄 Caución</option>
+                  <option value="Transporte">🚛 Transporte</option>
+                  <option value="Equipos y Maquinarias">⚙️ Equipos y Maquinarias</option>
+                  <option value="Flotas">🚘 Flotas</option>
+                  <option value="Retiro para Empleados">🌟 Planes de Retiro para Empleados</option>
+                </optgroup>
+                <option value="Otro">💬 Otro tipo de consulta</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <!-- Campo Opcional -->
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Contanos brevemente qué necesitás</label>
+              <span class="text-[10px] text-slate-400" x-text="formData.mensaje.length + '/3000'"></span>
+            </div>
+            <textarea x-model="formData.mensaje" maxlength="3000" rows="3" placeholder="Detalles de tu consulta..." class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm"></textarea>
+          </div>
+
+          <!-- Contenedor Unificado para Checkboxes y reCAPTCHA -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+            
+            <!-- Checkbox 1: reCAPTCHA -->
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
+              <label class="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" x-model="formData.recaptcha" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                <span class="text-xs font-semibold text-slate-800">No soy un robot</span>
+              </label>
+              <div class="flex items-center gap-1.5 opacity-80">
+                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" class="w-5 h-5" alt="reCAPTCHA logo">
+                <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">reCAPTCHA</span>
+              </div>
+            </div>
+
+            <!-- Checkbox 2: Preferencia WhatsApp -->
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
+              <label for="wsp" class="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="wsp" x-model="formData.wsp" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                <span class="text-xs font-semibold text-slate-800">Prefiero que me contacten por WhatsApp</span>
+              </label>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 px-2.5 py-1 rounded-full">Opcional</span>
+            </div>
+
+            <!-- Checkbox 3: Protección de Datos -->
+            <div class="flex items-start justify-between">
+              <label for="datos" class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="datos" x-model="formData.aceptarDatos" required class="mt-0.5 w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                <span class="text-xs text-slate-600 leading-snug">
+                  Acepto el tratamiento de mis datos personales únicamente con el fin de cotizar y gestionar la consulta solicitada, conforme a la <span class="font-bold text-slate-800">Ley 25.326 de Protección de Datos Personales</span>.*
+                </span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Botón Enviar con validación dinámica -->
+          <button type="submit" 
+                  :disabled="!isContactFormValid" 
+                  :class="isContactFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer shadow-lg' : 'bg-slate-300 opacity-70 cursor-not-allowed'" 
+                  class="w-full text-white font-extrabold py-4 rounded-xl transition-all text-base uppercase tracking-wider">
+            Solicitar Cotización
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Preguntas Frecuentes -->
+  <section id="faq" class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-widest text-brand-cobalt mb-2">Atención al Cliente</h2>
+        <p class="text-3xl font-extrabold text-slate-900">Preguntas Frecuentes</p>
+      </div>
+
+      <div class="space-y-4">
+        <template x-for="(faq, index) in faqs" :key="index">
+          <div class="border border-slate-200 rounded-2xl overflow-hidden transition">
+            <button @click="faqOpen === index ? faqOpen = null : faqOpen = index" 
+                    class="w-full text-left p-5 font-bold text-slate-900 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition">
+              <span x-text="faq.q"></span>
+              <span class="text-xl font-black text-brand-accent" x-text="faqOpen === index ? '−' : '+'"></span>
+            </button>
+            <div x-show="faqOpen === index" x-collapse class="p-5 text-slate-600 text-sm leading-relaxed border-t border-slate-100 bg-white">
+              <p x-text="faq.a"></p>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="mt-12 bg-amber-50 border border-amber-200/60 rounded-2xl p-6 text-center flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-left">
+          <h4 class="font-bold text-slate-900">¿No encontraste lo que buscabas?</h4>
+          <p class="text-xs text-slate-600">Escribinos. Estamos para ayudarte.</p>
+        </div>
+        <a href="https://wa.me/5491112345678" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-md transition">
+          💬 Hablá con nosotros
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aseguradoras -->
+  <section class="py-16 bg-brand-dark text-white border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Compañías en las que confiamos</p>
+        <p class="text-xs text-slate-500 mb-8">El respaldo de grandes compañías, acompañado por nuestro asesoramiento personalizado.</p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">SANCOR</div>
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">FEDERACIÓN</div>
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">ALLIANZ</div>
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">MERCANTIL</div>
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">ZURICH</div>
+          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">MAPFRE</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer con Matrícula SSN -->
+  <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        
+        <div class="flex items-center gap-3">
+          <svg class="h-7 w-auto" viewBox="0 0 130 65" fill="none">
+            <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <p class="text-slate-200 font-bold">Giaconi-Capra<sup>®</sup> PAS</p>
+            <p>© 2026 Todos los derechos reservados.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-slate-900 hover:bg-brand-cobalt hover:text-white rounded-xl transition border border-slate-800" aria-label="Instagram">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-slate-900 hover:bg-brand-cobalt hover:text-white rounded-xl transition border border-slate-800" aria-label="Facebook">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.5 5H18V0h-3.808C10.592 0 9 1.583 9 4.615V8z"/></svg>
+          </a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="p-2.5 bg-slate-900 hover:bg-brand-cobalt hover:text-white rounded-xl transition border border-slate-800" aria-label="LinkedIn">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-900 pt-6 text-slate-500 text-[11px] leading-relaxed flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="space-y-1 text-center md:text-left">
+          <p><strong class="text-slate-300">Productores Asesores de Seguros:</strong> Leandro Giaconi & Paola Capra</p>
+          <p><strong class="text-slate-300">Matrícula SSN N°:</strong> [INGRESAR_MATRÍCULA] | Inscriptos en el Registro de la SSN.</p>
+        </div>
+        <div class="text-center md:text-right space-y-1">
+          <p class="font-semibold text-slate-400">Superintendencia de Seguros de la Nación</p>
+          <p class="text-[10px]">Órgano de Control del Actividad Aseguradora — <a href="https://www.argentina.gob.ar/ssn" target="_blank" rel="noopener noreferrer" class="underline hover:text-amber-400 transition">www.argentina.gob.ar/ssn</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function appData() {
+      return {
+        mobileMenuOpen: false,
+        activeTab: 'personas',
+        modalOpen: false,
+        reviewModalOpen: false,
+        reviewSubmitted: false,
+        selectedProd: {},
+        formSubmitted: false,
+        faqOpen: null,
+
+        // Estado Formulario de Contacto
+        formData: {
+          nombre: '',
+          telefono: '',
+          email: '',
+          producto: '',
+          mensaje: '',
+          wsp: false,
+          aceptarDatos: false,
+          recaptcha: false
+        },
+
+        // Estado Formulario de Opinión
+        newReview: {
+          name: '',
+          role: '',
+          rating: 5,
+          text: ''
+        },
+
+        currentReview: 0,
+        reviews: [
+          {
+            name: "Carlos Mendoza",
+            role: "Cliente Asegurado - Auto y Hogar",
+            avatar: "CM",
+            rating: 5,
+            text: "Excelente atención de Leandro y Paola. Cuando tuve un siniestro con el vehículo gestionaron todo de inmediato sin vueltas. Es fundamental tener un asesor que te responda cuando realmente lo necesitás."
+          },
+          {
+            name: "Sofia Giannini",
+            role: "Socia Directora - Comercio Pyme",
+            avatar: "SG",
+            rating: 5,
+            text: "Revisaron los seguros que teníamos en nuestra empresa y nos bajaron los costos mejorando la cobertura de ART y Flotas. Transparencia total desde la primera reunión."
+          },
+          {
+            name: "Martín Rodríguez",
+            role: "Inquilino - Caución para Alquiler",
+            avatar: "MR",
+            rating: 5,
+            text: "Necesitaba una garantía de alquiler urgente y Paola me guió paso a paso para gestionarla en 24 horas. Súper profesional y con la mejor predisposición."
+          }
+        ],
+
+        init() {
+          setInterval(() => {
+            this.nextReview();
+          }, 15000);
+        },
+
+        validatePhoneInput(e) {
+          this.formData.telefono = e.target.value.replace(/[^0-9+\s-]/g, '');
+        },
+
+        get isEmailValid() {
+          if (!this.formData.email) return true;
+          const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return re.test(this.formData.email);
+        },
+
+        get isContactFormValid() {
+          const nombreOk = this.formData.nombre.trim().length > 0 && this.formData.nombre.length <= 40;
+          const telefonoOk = this.formData.telefono.trim().length >= 6;
+          const emailOk = this.isEmailValid;
+          const mensajeOk = this.formData.mensaje.length <= 3000; // Opcional (solo valida longitud máxima)
+          const recaptchaOk = this.formData.recaptcha;
+          const datosOk = this.formData.aceptarDatos;
+
+          return nombreOk && telefonoOk && emailOk && mensajeOk && recaptchaOk && datosOk;
+        },
+
+        get isReviewFormValid() {
+          const nombreOk = this.newReview.name.trim().length > 0 && this.newReview.name.length <= 40;
+          const rolOk = this.newReview.role.length <= 40;
+          const textoOk = this.newReview.text.trim().length > 0 && this.newReview.text.length <= 3000;
+
+          return nombreOk && rolOk && textoOk;
+        },
+
+        nextReview() {
+          this.currentReview = (this.currentReview + 1) % this.reviews.length;
+        },
+
+        prevReview() {
+          this.currentReview = (this.currentReview - 1 + this.reviews.length) % this.reviews.length;
+        },
+
+        submitContactForm() {
+          if (this.isContactFormValid) {
+            this.formSubmitted = true;
+          }
+        },
+
+        resetContactForm() {
+          this.formSubmitted = false;
+          this.formData = {
+            nombre: '',
+            telefono: '',
+            email: '',
+            producto: '',
+            mensaje: '',
+            wsp: false,
+            aceptarDatos: false,
+            recaptcha: false
+          };
+        },
+
+        submitReview() {
+          if (!this.isReviewFormValid) return;
+          
+          const initials = this.newReview.name
+            .trim()
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2) || 'U';
+
+          this.reviews.push({
+            name: this.newReview.name,
+            role: this.newReview.role || 'Cliente Asegurado',
+            avatar: initials,
+            rating: Number(this.newReview.rating),
+            text: this.newReview.text
+          });
+
+          this.currentReview = this.reviews.length - 1;
+          this.reviewSubmitted = true;
+
+          setTimeout(() => {
+            this.reviewModalOpen = false;
+            this.reviewSubmitted = false;
+            this.newReview = { name: '', role: '', rating: 5, text: '' };
+          }, 2000);
+        },
+
+        productosPersonas: [
+          { 
+            id: 1, 
+            title: 'Auto', 
+            icon: '🚗', 
+            desc: 'Protegé tu vehículo frente a accidentes, robo, incendio y daños, con distintas alternativas de cobertura para elegir la que mejor se adapte a vos.',
+            manuales: [
+              { titulo: 'Manual del Asegurado - Automotores', url: '#' },
+              { titulo: 'Guía de Procedimiento ante Siniestos', url: '#' }
+            ]
+          },
+          { 
+            id: 2, 
+            title: 'Moto', 
+            icon: '🏍️', 
+            desc: 'Coberturas para que disfrutes tu moto con mayor tranquilidad, protegiéndote frente a responsabilidad civil, robo, incendio y otros imprevistos.',
+            manuales: [
+              { titulo: 'Folleto de Cobertura y Asistencia Motos', url: '#' }
+            ]
+          },
+          { 
+            id: 3, 
+            title: 'Hogar', 
+            icon: '🏡', 
+            desc: 'Protegé tu casa y todo lo que hay en ella frente a incendio, robo, daños y otros imprevistos que pueden afectar tu patrimonio.',
+            manuales: [
+              { titulo: 'Manual de Cobertura Integral de Comercio y Hogar', url: '#' }
+            ]
+          },
+          { 
+            id: 4, 
+            title: 'Vida', 
+            icon: '🛡️', 
+            desc: 'Una forma de cuidar económicamente a quienes más querés. Brinda respaldo ante situaciones inesperadas y ayuda a proteger la estabilidad de tu familia.',
+            manuales: [
+              { titulo: 'Guía de Beneficios de Seguro de Vida', url: '#' }
+            ]
+          },
+          { 
+            id: 5, 
+            title: 'Retiro', 
+            icon: '📈', 
+            desc: 'Empezá hoy a construir el capital que querés disfrutar mañana. Un plan de ahorro a largo plazo pensado para complementar tus ingresos futuros.',
+            manuales: [
+              { titulo: 'Condiciones Generales - Planes de Retiro', url: '#' }
+            ]
+          },
+          { 
+            id: 6, 
+            title: 'Accidentes Personales', 
+            icon: '🩹', 
+            desc: 'Protegete vos o protegé a quienes realizan trabajos para vos frente a las consecuencias de un accidente.',
+            manuales: [
+              { titulo: 'Manual AP e Instructivo de Denuncia', url: '#' }
+            ]
+          },
+          { 
+            id: 7, 
+            title: 'Viajes', 
+            icon: '✈️', 
+            desc: 'Viajá con respaldo ante imprevistos lejos de casa, con asistencia frente a emergencias médicas y otras situaciones.',
+            manuales: [
+              { titulo: 'Términos y Condiciones Asistencia al Viajero', url: '#' }
+            ]
+          },
+          { 
+            id: 8, 
+            title: 'Bicicletas y Ecomovilidad', 
+            icon: '🚲', 
+            desc: 'Protegé tu bicicleta, monopatín eléctrico y otros medios de movilidad personal frente a robo e imprevistos, incluyendo Responsabilidad Civil.',
+            manuales: [
+              { titulo: 'Resumen de Coberturas para Ecomovilidad', url: '#' }
+            ]
+          },
+          { 
+            id: 9, 
+            title: 'Celulares y Portátiles', 
+            icon: '📱', 
+            desc: 'Protegé los dispositivos que te acompañan todos los días, como celulares, notebooks y tablets, frente a robo y otros imprevistos.',
+            manuales: [
+              { titulo: 'Póliza y Términos de Equipos Portátiles', url: '#' }
+            ]
+          },
+          { 
+            id: 10, 
+            title: 'Caución para Alquileres', 
+            icon: '🔑', 
+            desc: 'El seguro de caución puede reemplazar la garantía propietaria y brindar al propietario el respaldo necesario.',
+            manuales: [
+              { titulo: 'Requisitos y Manual de Garantía de Alquiler', url: '#' }
+            ]
+          }
+        ],
+
+        productosEmpresas: [
+          { 
+            id: 11, 
+            title: 'Comercio', 
+            icon: '🏪', 
+            desc: 'Protegé tu negocio, mercadería, instalaciones y equipamiento frente a los principales imprevistos.',
+            manuales: [
+              { titulo: 'Manual Multirriesgo Comercial', url: '#' }
+            ]
+          },
+          { 
+            id: 12, 
+            title: 'Consorcio', 
+            icon: '🏢', 
+            desc: 'Protegé el edificio, sus espacios comunes y la responsabilidad del consorcio frente a los principales riesgos e imprevistos.',
+            manuales: [
+              { titulo: 'Guía de Cobertura Integral de Consorcios', url: '#' }
+            ]
+          },
+          { 
+            id: 13, 
+            title: 'Responsabilidad Civil', 
+            icon: '⚖️', 
+            desc: 'Protegé tu patrimonio frente a reclamos por daños que, como consecuencia de tu actividad, puedas ocasionar a terceros.',
+            manuales: [
+              { titulo: 'Manual de Responsabilidad Civil General', url: '#' }
+            ]
+          },
+          { 
+            id: 14, 
+            title: 'ART', 
+            icon: '👷', 
+            desc: 'Protección para tus empleados frente a accidentes de trabajo y enfermedades profesionales, cumpliendo con la normativa vigente.',
+            manuales: [
+              { titulo: 'Manual de Prevención y Procedimientos ART', url: '#' }
+            ]
+          },
+          { 
+            id: 15, 
+            title: 'Caución Empresas', 
+            icon: '📄', 
+            desc: 'Una alternativa para garantizar el cumplimiento de distintas obligaciones sin inmovilizar capital.',
+            manuales: [
+              { titulo: 'Guía de Caución de Garantías Contractuales', url: '#' }
+            ]
+          },
+          { 
+            id: 16, 
+            title: 'Transporte', 
+            icon: '🚛', 
+            desc: 'Protegé las mercaderías durante su traslado frente a pérdidas o daños que puedan ocurrir en el camino.',
+            manuales: [
+              { titulo: 'Manual de Coberturas de Carga y Transporte', url: '#' }
+            ]
+          },
+          { 
+            id: 17, 
+            title: 'Equipos y Maquinarias', 
+            icon: '⚙️', 
+            desc: 'Protegé las herramientas, maquinarias y equipos esenciales para desarrollar tu actividad frente a distintos daños.',
+            manuales: [
+              { titulo: 'Especificaciones de Seguro para Contratistas', url: '#' }
+            ]
+          },
+          { 
+            id: 18, 
+            title: 'Flotas', 
+            icon: '🚘', 
+            desc: 'Protegé todos los vehículos de tu empresa bajo una cobertura pensada para simplificar su administración.',
+            manuales: [
+              { titulo: 'Manual de Gestión y Administración de Flotas', url: '#' }
+            ]
+          },
+          { 
+            id: 19, 
+            title: 'Retiro para Empleados', 
+            icon: '🌟', 
+            badge: 'Nuevo', 
+            desc: 'Ofrecé a tus colaboradores un beneficio pensado para su futuro, ayudándolos a construir un ahorro para complementar su jubilación.',
+            manuales: [
+              { titulo: 'Folleto de Beneficios Corporativos de Retiro', url: '#' }
+            ]
+          }
+        ],
+
+        faqs: [
+          { q: '¿Por qué contratar mi seguro a través de un Productor Asesor de Seguros?', a: 'Porque no solo te ayudamos a contratar una póliza. Analizamos distintas alternativas, te explicamos qué estás cubriendo y te acompañamos durante la vigencia del seguro y, especialmente, cuando ocurre un siniestro.' },
+          { q: '¿Trabajan con una sola compañía de seguros?', a: 'No. Trabajamos con distintas compañías aseguradoras, lo que nos permite evaluar alternativas y buscar la cobertura que mejor se adapte a tus necesidades.' },
+          { q: '¿Tiene algún costo adicional contratar el seguro con ustedes?', a: 'No. Nuestro asesoramiento como Productores Asesores de Seguros no representa un costo adicional para vos sobre el precio de la póliza.' },
+          { q: '¿Puedo pedir una cotización sin compromiso?', a: 'Sí. Contanos qué necesitás asegurar y analizamos las alternativas disponibles para ofrecerte una propuesta acorde a tus necesidades.' },
+          { q: '¿Qué tengo que hacer si tengo un siniestro?', a: 'Contactanos lo antes posible. Te vamos a indicar qué documentación necesitás, cómo realizar la denuncia y te acompañaremos durante la gestión del siniestro ante la compañía.' },
+          { q: '¿Puedo cambiar de compañía si ya tengo un seguro contratado?', a: 'Sí. Podemos revisar tu cobertura actual y evaluar otras alternativas. Antes de realizar cualquier cambio, verificamos fechas, condiciones y coberturas para evitar que quedes sin protección.' },
+          { q: '¿Puedo contratar un seguro completamente online?', a: 'En muchos casos, sí. Podemos realizar la cotización, solicitar la documentación y gestionar la emisión de manera digital, manteniendo siempre el asesoramiento personalizado.' },
+          { q: '¿Qué información necesito para pedir una cotización?', a: 'Depende del seguro que necesites. Con algunos datos básicos podemos comenzar y después te indicaremos específicamente qué documentación necesitamos para avanzar.' },
+          { q: '¿También trabajan con empresas y comercios?', a: 'Sí. Asesoramos a comercios, profesionales, consorcios y empresas, desde coberturas específicas hasta programas integrales que contemplen distintos riesgos de la actividad.' },
+          { q: '¿Cómo sé si las coberturas que tengo actualmente son suficientes?', a: 'Podemos revisar tus pólizas actuales, analizar sumas aseguradas, coberturas y necesidades reales, y ayudarte a detectar posibles faltantes o coberturas que convenga actualizar.' },
+          { q: '¿Después de contratar, con quién me comunico si necesito algo?', a: 'Con nosotros. Queremos que tengas siempre a quién recurrir. Desde una modificación en tu póliza hasta un siniestro o una consulta sobre tu cobertura, nuestro trabajo es acompañarte también después de la contratación.' }
+        ],
+
+        openModal(prod) {
+          this.selectedProd = prod;
+          this.modalOpen = true;
+        },
+
+        selectProductForForm(title) {
+          this.formData.producto = title;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
