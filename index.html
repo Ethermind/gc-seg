@@ -650,7 +650,7 @@
     </div>
   </footer>
 
-  <script>
+<script>
     window.addEventListener('load', () => {
       if (window.lucide) lucide.createIcons();
     });
@@ -775,6 +775,12 @@
         submitContactForm() {
           if (this.isContactFormValid) {
             this.formSubmitted = true;
+            this.$nextTick(() => {
+              const contactoSection = document.getElementById('contacto');
+              if (contactoSection) {
+                contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            });
           }
         },
 
@@ -790,6 +796,12 @@
             aceptarDatos: false,
             recaptcha: false
           };
+          this.$nextTick(() => {
+            const contactoSection = document.getElementById('contacto');
+            if (contactoSection) {
+              contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
         },
 
         submitReview() {
@@ -864,7 +876,6 @@
           this.selectedProd = prod;
           this.modalOpen = true;
           
-          // Limpia e inyecta el icono de manera explícita para evitar duplicados DOM con Lucide
           this.$nextTick(() => {
             if (this.$refs.modalIcon) {
               this.$refs.modalIcon.innerHTML = `<i data-lucide="${prod.icon}" class="w-10 h-10 block"></i>`;
