@@ -1,287 +1,300 @@
-# Giaconi-Capra® PAS — Landing Page & Cotizador Web Fullstack
+# Giaconi-Capra® PAS — Website & Insurance Quote Manager
 
-Sitio web corporativo y cotizador de seguros para **Giaconi-Capra® Productores Asesores de Seguros**. Diseñado para ofrecer una experiencia moderna, accesible y optimizada en la conversión de clientes para coberturas individuales y corporativas, respaldado por un backend serverless en **FastAPI (Python)**, persistencia flexible (**PostgreSQL / SQLite**) y un **Panel de Administración (CRUD)** integrado.
-
----
-
-## 🚀 Características Principales
-
-* **Diseño Responsive & UI Moderna:** Interfaz pulida construida con Tailwind CSS, adaptada a dispositivos móviles, tablets y escritorio.
-* **Catálogo Interactivo de Coberturas:** Navegación por pestañas (Personas / Empresas) y modales informativos con descarga de documentación en PDF.
-* **Formulario de Contacto & Cotizador:** Validaciones en tiempo real (formato de email, sanitización de teléfono, límite de caracteres, aceptación de la Ley 25.326).
-* **Seguridad con Google reCAPTCHA v2:** Verificación criptográfica en backend contra bots y spam en el formulario de cotización y en el modal de opiniones públicas (con bypass seguro para desarrollo/localhost).
-* **Carrusel de Testimonios Dinámico:** Slider interactivo conectado al backend para lectura y publicación de opiniones de clientes reales.
-* **Panel de Administración (`admin.html`):** Dashboard interactivo para gestión CRUD de solicitudes de cotización (`contact_leads`) y moderación/creación de opiniones (`reviews`), con enlace directo a WhatsApp.
-* **Persistencia Dual (SQLite / PostgreSQL):** Conexión transparente mediante SQLAlchemy; usá `local.db` en local sin instalar servidores o conectate a PostgreSQL en producción (Vercel Postgres, Neon, Supabase).
-* **Arquitectura Serverless para Vercel:** Frontend desacoplado con Serverless Functions en Python y pool de conexiones optimizado.
-* **Integración con WhatsApp:** Botón flotante omnipresente y opción de contacto prioritario vía chat.
-* **Normativa SSN & Legal:** Estructura preparada para el cumplimiento de la Superintendencia de Seguros de la Nación Argentina.
+Corporate website and insurance quote platform for **Giaconi-Capra® Productores Asesores de Seguros**. Built as a static frontend (Tailwind CSS + Alpine.js) backed by a **serverless FastAPI (Python) API**, flexible persistence (**SQLite locally / PostgreSQL in production**) and an integrated **Admin Panel (CRUD)**.
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🚦 Project Status (Read First)
+
+This repository currently contains **two landing pages**:
+
+| File | Role | Description |
+| :--- | :--- | :--- |
+| `index.html` | **POC** (Proof of Concept) | The page currently served at `/`. Uses **in-memory mock data only**: the contact form shows a success message without calling the API, and testimonials are a hardcoded array. Nothing is persisted. |
+| `index-new.html` | **MVP** (in development) | The real product under active development. Wired to the backend API (`/api/contact`, `/api/reviews`). ⚠️ **Currently has known data persistence issues** (submissions are not reliably saved). See [Known Issues](#-known-issues). |
+| `admin.html` | Admin Panel | Fully functional SPA (JWT auth + CRUD). Works against the backend API. |
+
+The MVP (`index-new.html`) will replace the POC as soon as the persistence issues are resolved.
+
+---
+
+## 🚀 Features
+
+* **Responsive UI:** Built with Tailwind CSS, adapted to mobile, tablet and desktop.
+* **Interactive Coverage Catalog:** Tabs (Individuals / Business) and modals with product details.
+* **Contact & Quote Form:** Real-time validation (email format, phone sanitization, character limits, Ley 25.326 consent).
+* **Google reCAPTCHA v2:** Server-side cryptographic verification on the quote form and public reviews modal (safe bypass for development/localhost).
+* **Dynamic Testimonials Carousel:** Reads published reviews from the backend; visitors can submit their own (*MVP only*).
+* **Admin Panel (`admin.html`):** Dashboard for CRUD management of quote requests (`contact_leads`) and review moderation (`reviews`), with direct WhatsApp links.
+* **Dual Persistence (SQLite / PostgreSQL):** Transparent connection via SQLAlchemy.
+* **Serverless Architecture for Vercel:** Decoupled frontend with Python Serverless Functions and an optimized connection pool.
+* **WhatsApp Integration:** Floating button and priority chat contact option.
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
 * **HTML5 Semantic Structure**
-* **Tailwind CSS v3** (vía CDN / Configuración personalizada de marcas y colores)
-* **Alpine.js v3** + `@alpinejs/collapse` (Gestión de estado reactivo y animaciones)
-* **Lucide Icons** (Iconografía vectorial)
-* **Google Fonts** (Tipografía *Plus Jakarta Sans*)
-* **Google reCAPTCHA v2** (Widget de seguridad)
+* **Tailwind CSS v3** (CDN / custom brand config)
+* **Alpine.js v3** + `@alpinejs/collapse`
+* **Lucide Icons**
+* **Google Fonts** (Plus Jakarta Sans)
+* **Google reCAPTCHA v2**
 
-### Backend & Persistencia
-* **Python 3.12+ / FastAPI** (Endpoints REST asíncronos y documentación automática OpenAPI)
-* **SQLAlchemy 2.0 & Pydantic v2** (ORM, validación y sanitización de esquemas)
-* **PostgreSQL / SQLite** (Compatible con Vercel Postgres, Neon, Supabase y SQLite local)
-* **HTTPX** (Cliente HTTP asíncrono para validación con API de Google)
+### Backend & Persistence
+* **Python 3.12+ / FastAPI** (REST endpoints + automatic OpenAPI docs)
+* **SQLAlchemy 2.0 & Pydantic v2** (ORM, schema validation/sanitization)
+* **PostgreSQL / SQLite** (Vercel Postgres, Neon, Supabase, or local SQLite)
+* **HTTPX** (async client for the Google reCAPTCHA API)
+* **PyJWT + bcrypt** (admin authentication)
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
 ```text
 .
 ├── .vscode/
-│   └── launch.json             # Configuración para depuración con F5 en VS Code
-├── api/                        # Backend Serverless en FastAPI
-│   ├── index.py                # Punto de entrada ASGI de la API
-│   ├── config.py               # Configuración y carga de variables (.env.local / .env)
-│   ├── database.py             # Engine SQLAlchemy y pool de conexiones
-│   ├── models.py               # Modelos relacionales de Base de Datos
-│   ├── schemas.py              # Esquemas de validación Pydantic
-│   ├── auth.py                 # Seguridad PRO (bcrypt hashing, JWT tokens y middleware)
+│   └── launch.json             # F5 debugging config for VS Code
+├── api/                        # Serverless FastAPI backend
+│   ├── index.py                # ASGI entrypoint
+│   ├── config.py               # Settings & env loading (.env.local / .env)
+│   ├── database.py             # SQLAlchemy engine & connection pool
+│   ├── models.py               # Relational database models
+│   ├── schemas.py              # Pydantic validation schemas
+│   ├── auth.py                 # Security helpers (bcrypt hashing, JWT tokens, middleware)
 │   ├── routes/
-│   │   ├── auth.py             # Login, setup inicial (/api/auth/*)
-│   │   ├── contact.py          # POST /api/contact (Recepción de cotizaciones)
-│   │   ├── reviews.py          # GET y POST /api/reviews (Opiniones públicas)
-│   │   ├── admin.py            # Endpoints CRUD para Panel de Control (/api/admin/*)
-│   │   └── health.py           # GET /api/health (Health check)
+│   │   ├── auth.py             # Login, initial setup (/api/auth/*)
+│   │   ├── contact.py          # POST /api/contact (quote submissions)
+│   │   ├── reviews.py          # GET & POST /api/reviews (public reviews)
+│   │   ├── admin.py            # CRUD endpoints for the dashboard (/api/admin/*)
+│   │   └── health.py           # GET /api/health (health check)
 │   └── services/
-│       └── recaptcha.py        # Servicio de validación contra Google reCAPTCHA
-├── scripts/                    # Scripts de Base de Datos y Utilidades
-│   ├── init_db.sql             # DDL SQL de tablas e índices
-│   ├── seed_data.sql           # Testimonios iniciales
-│   └── setup_db.py             # Script de inicialización automática en Python
-├── img/                        # Recursos gráficos y logotipos de aseguradoras
-├── index.html                  # Landing page conectada con backend
-├── index.html.old              # Respaldo de la versión previa (mock en memoria)
-├── admin.html                  # Panel de administración SPA (Auth + JWT + CRUD)
-├── requirements.txt            # Dependencias Python para Vercel
-├── vercel.json                 # Configuración de rutas y rewrites en Vercel
-├── .env.example                # Plantilla de variables de entorno
-└── README.md                   # Documentación del proyecto
+│       └── recaptcha.py        # Google reCAPTCHA verification service
+├── scripts/                    # Database scripts & utilities
+│   ├── init_db.sql             # DDL for tables and indexes
+│   ├── seed_data.sql           # Initial testimonials
+│   └── setup_db.py             # Python auto-initialization script
+├── img/                        # Graphics & insurance company logos
+├── index.html                  # POC landing (mock/in-memory data) — currently live at /
+├── index-new.html              # MVP landing (API-connected) — in development
+├── admin.html                  # Admin panel SPA (JWT auth + CRUD)
+├── requirements.txt            # Python dependencies for Vercel
+├── vercel.json                 # Vercel routing/rewrites config
+├── .env.example                # Environment variables template
+├── local.db                    # Local SQLite database (not committed)
+└── README.md                   # This file
 ```
 
 ---
 
-## 🗄️ Esquema de Base de Datos
+## 🗄️ Database Schema
 
-### 1. Tabla `contact_leads` (Solicitudes de Cotización)
-| Campo | Tipo | Descripción |
+### 1. `contact_leads` (Quote Requests)
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Identificador único |
-| `nombre` | `VARCHAR(100)` | Nombre y apellido |
-| `telefono` | `VARCHAR(50)` | Teléfono / WhatsApp |
-| `email` | `VARCHAR(255)` | Correo electrónico |
-| `producto` | `VARCHAR(100)` | Cobertura de interés |
-| `mensaje` | `TEXT` | Detalle o mensaje |
-| `wsp_preferred` | `BOOLEAN` | Si prefiere contacto por WhatsApp |
-| `aceptar_datos` | `BOOLEAN` | Consentimiento Ley 25.326 |
-| `ip_address` | `VARCHAR(45)` | IP del cliente |
-| `user_agent` | `TEXT` | Navegador/dispositivo |
-| `status` | `VARCHAR(20)` | Estado (`nuevo`, `contactado`, `en_gestion`, `cerrado`) |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha y hora de creación |
+| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
+| `nombre` | `VARCHAR(100)` | Full name |
+| `telefono` | `VARCHAR(50)` | Phone / WhatsApp |
+| `email` | `VARCHAR(255)` | Email address |
+| `producto` | `VARCHAR(100)` | Coverage of interest |
+| `mensaje` | `TEXT` | Message or details |
+| `wsp_preferred` | `BOOLEAN` | Prefers WhatsApp contact |
+| `aceptar_datos` | `BOOLEAN` | Ley 25.326 consent |
+| `ip_address` | `VARCHAR(45)` | Client IP |
+| `user_agent` | `TEXT` | Browser/device |
+| `status` | `VARCHAR(20)` | Status (`nuevo`, `contactado`, `en_gestion`, `cerrado`) |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Creation timestamp |
 
-### 2. Tabla `reviews` (Testimonios de Clientes)
-| Campo | Tipo | Descripción |
+### 2. `reviews` (Client Testimonials)
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Identificador único |
-| `name` | `VARCHAR(100)` | Nombre del autor |
-| `role` | `VARCHAR(100)` | Rol o cobertura |
-| `avatar` | `VARCHAR(10)` | Iniciales del avatar (ej: `CM`) |
-| `rating` | `SMALLINT` | Puntuación de 1 a 5 estrellas |
-| `text` | `TEXT` | Texto de la opinión |
-| `is_approved` | `BOOLEAN` | Bandera de moderación y visibilidad web |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de publicación |
+| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
+| `name` | `VARCHAR(100)` | Author name |
+| `role` | `VARCHAR(100)` | Role or coverage |
+| `avatar` | `VARCHAR(10)` | Avatar initials (e.g., `CM`) |
+| `rating` | `SMALLINT` | 1 to 5 stars |
+| `text` | `TEXT` | Review text |
+| `is_approved` | `BOOLEAN` | Moderation / web visibility flag |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Publication date |
 
-### 3. Tabla `admin_users` (Usuarios Administradores)
-| Campo | Tipo | Descripción |
+### 3. `admin_users` (Admin Users)
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Identificador único |
-| `username` | `VARCHAR(50) UNIQUE` | Nombre de usuario único |
-| `email` | `VARCHAR(255) UNIQUE` | Correo electrónico único |
-| `hashed_password` | `VARCHAR(255)` | Hash criptográfico bcrypt (12 rounds) |
-| `full_name` | `VARCHAR(100)` | Nombre y apellido completo |
-| `role` | `VARCHAR(20)` | Rol (`superadmin`, `admin`) |
-| `is_active` | `BOOLEAN` | Estado de la cuenta |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de registro |
-| `last_login` | `TIMESTAMP WITH TIME ZONE` | Fecha del último inicio de sesión |
+| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
+| `username` | `VARCHAR(50) UNIQUE` | Unique username |
+| `email` | `VARCHAR(255) UNIQUE` | Unique email |
+| `hashed_password` | `VARCHAR(255)` | bcrypt hash (12 rounds) |
+| `full_name` | `VARCHAR(100)` | Full name |
+| `role` | `VARCHAR(20)` | Role (`superadmin`, `admin`) — *note: roles are stored but not yet enforced* |
+| `is_active` | `BOOLEAN` | Account status |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Registration date |
+| `last_login` | `TIMESTAMP WITH TIME ZONE` | Last login date |
 
 ---
 
-## ⚙️ Configuración de Variables de Entorno
+## ⚙️ Environment Variables
 
-Crear un archivo `.env` basado en `.env.example`:
+Create a `.env` file based on `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Contenido del archivo `.env`:
+Available variables:
 
 ```ini
-# Opción 1: Base local SQLite (ideal para desarrollo rápido sin servidor)
+# Option 1: Local SQLite database (fast local development, no server needed)
 DATABASE_URL=sqlite:///./local.db
 
-# Opción 2: Base PostgreSQL (Vercel Postgres, Neon, Supabase o local)
-# DATABASE_URL=postgresql://usuario:password@localhost:5432/gc_seg_db
+# Option 2: PostgreSQL (Vercel Postgres, Neon, Supabase or local)
+# DATABASE_URL=postgresql://user:password@localhost:5432/gc_seg_db
 
 # Google reCAPTCHA v2 (Checkbox)
-# Para desarrollo/localhost se incluyen las claves oficiales de prueba de Google.
-# Para producción, obtené tus claves en: https://www.google.com/recaptcha/admin
+# For local development you can use Google's official test keys.
+# For production, get your keys at: https://www.google.com/recaptcha/admin
 RECAPTCHA_SECRET_KEY=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
 RECAPTCHA_SITE_KEY=6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
 
-# Entorno: development | production
+# Environment: development | production
 ENVIRONMENT=development
 
-# Orígenes permitidos para CORS (opcional)
+# JWT settings for the admin panel (REQUIRED in production)
+JWT_SECRET_KEY=replace-with-a-long-random-secret
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=480
+
+# Allowed CORS origins (optional, defaults to all)
 ALLOWED_ORIGINS=*
 ```
 
-> [!NOTE]
-> **Modo Desarrollo:** En `ENVIRONMENT=development`, si `RECAPTCHA_SECRET_KEY` no está configurada, el sistema activa automáticamente un modo de bypass seguro para facilitar pruebas locales sin requerir credenciales externas.
+Notes:
+* **reCAPTCHA bypass (dev only):** with `ENVIRONMENT=development`, if `RECAPTCHA_SECRET_KEY` is missing or is the placeholder (`6LeIx0cDtu_...`), verification is bypassed so you can test without Google credentials. **Warning:** in `production` a missing/placeholder secret makes every form submission fail.
+* **JWT secret:** the code ships with an insecure fallback value for development. **Always** set `JWT_SECRET_KEY` to a long random string in production — anyone who knows the fallback can forge admin tokens.
 
 ---
 
-## 💻 Desarrollo Local (Conda en WSL / Linux)
+## 💻 Local Development (Conda on WSL / Linux)
 
-### 1. Crear y activar el entorno Conda
+### 1. Create and activate the Conda environment
 ```bash
-# Crear el entorno con Python 3.12 (requerido por el runtime de Vercel)
 conda create -n gc-seg python=3.12 -y
-
-# Activar el entorno
 conda activate gc-seg
 ```
 
-### 2. Instalar las dependencias
+### 2. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar `.env` e inicializar la Base de Datos
+### 3. Configure `.env` and initialize the database
 ```bash
-# Crear .env si no lo hiciste
 cp .env.example .env
-
-# Crear tablas y cargar testimonios iniciales
 python scripts/setup_db.py
 ```
 
-### 4. Ejecutar el proyecto
+### 4. Run the project
 
-#### Opción A: Simulación completa de Vercel (Recomendada)
-Emula el enrutador de Vercel y levanta tanto el frontend como el backend bajo un mismo puerto:
+#### Recommended: full Vercel simulation
 ```bash
 npx vercel dev
 ```
-* **Landing Page:** [http://localhost:3000](http://localhost:3000)
-* **Panel de Administración:** [http://localhost:3000/admin.html](http://localhost:3000/admin.html)
+This emulates the Vercel router, serving frontend and backend under a single port:
+* Landing (POC): [http://localhost:3000](http://localhost:3000)
+* MVP preview: [http://localhost:3000/index-new.html](http://localhost:3000/index-new.html)
+* Admin Panel: [http://localhost:3000/admin.html](http://localhost:3000/admin.html)
 
-#### Opción B: Servidores separados
-* **Backend FastAPI (Terminal 1):**
-  ```bash
-  conda activate gc-seg
-  uvicorn api.index:app --reload --port 8000
-  ```
-  * *Swagger UI:* [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
-* **Frontend Estático (Terminal 2):**
-  ```bash
-  conda activate gc-seg
-  python -m http.server 3000
-  ```
-  * *Landing Page:* [http://localhost:3000](http://localhost:3000)
-  * *Panel de Administración:* [http://localhost:3000/admin.html](http://localhost:3000/admin.html)
+> ⚠️ **The frontend calls relative API paths (`/api/*`).** A plain static file server (e.g. `python -m http.server`) will **not** proxy those calls to FastAPI — forms and testimonials will fail in that setup. If you want to run the backend standalone for API work, use uvicorn (`uvicorn api.index:app --reload --port 8000`) alongside `npx vercel dev` is unnecessary; use it only with Swagger UI for direct endpoint testing at [http://localhost:8000/api/docs](http://localhost:8000/api/docs).
 
 ---
 
-## 🛡️ Panel de Administración (`admin.html`)
+## 🛡️ Admin Panel (`admin.html`)
 
-El panel es una **SPA (Single-Page Application)** con autenticación JWT completa. Accediendo a `/admin.html`:
+The panel is a **SPA (Single-Page Application)** with full JWT authentication, available at `/admin.html`:
 
-### Sistema de Autenticación PRO
+### Authentication System
 
-**Primera vez (Bootstrap):** Si la tabla `admin_users` está vacía, el panel muestra automáticamente un formulario de **configuración inicial** para crear el primer administrador con rol `superadmin`.
+**First run (bootstrap):** if the `admin_users` table is empty, the panel automatically shows an initial setup form to create the first administrator with the `superadmin` role.
 
-**Sesiones posteriores:** Se presenta el formulario de **login seguro** (usuario/email + contraseña). El token JWT se guarda en `localStorage` y se valida automáticamente al recargar la página.
+**Afterwards:** a secure login form (username/email + password). The JWT is stored in `localStorage` and validated automatically on page reload.
 
-**Seguridad implementada:**
-- 🔐 Contraseñas hasheadas con **bcrypt** (12 rounds de salting)
-- 🎟️ Tokens **JWT** firmados (HS256), con expiración configurable (default: 8 horas)
-- 🚫 Todos los endpoints de `/api/admin/*` requieren Bearer Token válido (HTTP 401 si falla)
-- 🛡️ Salvaguardas: no se puede eliminar la propia cuenta ni el último administrador del sistema
+**Security implemented:**
+- 🔐 Passwords hashed with **bcrypt** (12 salt rounds)
+- 🎟️ Signed **JWT** tokens (HS256), configurable expiration (default: 8 hours)
+- 🚫 All `/api/admin/*` endpoints require a valid Bearer Token (HTTP 401 otherwise)
+- 🛡️ Safeguards: you cannot delete your own account nor the last remaining admin
 
-### Funcionalidades del Dashboard
+### Dashboard Features
 
-1. **Métricas en tiempo real:** Total de solicitudes, pendientes, opiniones, administradores y promedio de calificación.
-2. **Gestor de Solicitudes (`contact_leads`):**
-   * Búsqueda en tiempo real (por nombre, email, teléfono, cobertura o texto).
-   * Filtro por estado: `Nuevo`, `Contactado`, `En Gestión`, `Cerrado`.
-   * Cambio de estado inmediato desde la tabla.
-   * Botón directo de **WhatsApp** 💬 que preconfigura el saludo con los datos del cliente.
-   * Modal de detalle completo 👁️ (con IP, agente y fecha).
-   * Eliminación con confirmación 🗑️.
-3. **Gestor de Opiniones (`reviews`):**
-   * Creación manual de nuevos testimonios (+ Nueva Opinión).
-   * Edición de opiniones existentes (nombre, rol, estrellas, texto).
-   * Interruptor de visibilidad (publicar u ocultar del carrusel web con un click).
-   * Eliminación con confirmación 🗑️.
-4. **Gestor de Administradores (`admin_users`):**
-   * Listado de todos los usuarios con acceso al panel, su rol y último acceso.
-   * Creación de nuevos administradores con rol `admin` o `superadmin`.
-   * Cambio de contraseña (🔑) de cualquier usuario.
-   * Eliminación de usuarios con salvaguardas de seguridad.
-
-### Variables de Entorno para Producción (Auth)
-
-```ini
-JWT_SECRET_KEY=<clave-secreta-larga-y-aleatoria>
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=480
-```
-
-> ⚠️ **Importante:** En producción, configurar `JWT_SECRET_KEY` con un valor largo y aleatorio en Vercel Dashboard (`npx vercel env add JWT_SECRET_KEY`). Nunca subir este valor a GitHub.
+1. **Real-time metrics:** total requests, pending, reviews, admins and average rating.
+2. **Request manager (`contact_leads`):** live search, status filter, one-click status changes, direct **WhatsApp** button, full detail modal (IP, agent, date) and deletion with confirmation.
+3. **Review manager (`reviews`):** manual creation, editing (name, role, stars, text), visibility toggle (publish/hide) and deletion with confirmation.
+4. **Admin user manager (`admin_users`):** list users, create new admins, change passwords, delete users with safeguards.
 
 ---
 
-## 🐞 Depuración en Visual Studio Code
+## 🐞 Debugging in Visual Studio Code
 
-El repositorio incluye la configuración lista en `.vscode/launch.json` para depurar el backend con breakpoints:
+The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend with breakpoints:
 
-1. **Seleccionar el intérprete:** Presioná `Ctrl + Shift + P` -> `Python: Select Interpreter` -> Seleccioná `gc-seg` (Conda).
-2. **Colocar Breakpoints:** Abrí cualquier archivo de `api/` (ej. `api/routes/contact.py` o `api/routes/admin.py`) y hacé click junto al número de línea (punto rojo 🔴).
-3. **Iniciar depuración:** Presioná `F5` (o pestaña *Run and Debug* ▶ **Python: FastAPI (Backend gc-seg)**).
-4. El debugger se detendrá automáticamente en tus puntos de interrupción al recibir solicitudes desde el frontend o Swagger.
+1. **Select the interpreter:** `Ctrl + Shift + P` → `Python: Select Interpreter` → choose `gc-seg` (Conda).
+2. **Set breakpoints** in any file under `api/` (e.g. `api/routes/contact.py`).
+3. **Start debugging:** press `F5` (**Python: FastAPI (Backend gc-seg)**).
+4. The debugger will pause at your breakpoints when requests arrive from the frontend or Swagger.
 
 ---
 
-## 🚀 Despliegue en Vercel
+## 🚀 Deployment on Vercel
 
-1. **Importar el Repositorio en Vercel:**
-   - Conectá tu cuenta de GitHub y seleccioná el repositorio `gc-seg`.
-2. **Crear o Vincular Base de Datos PostgreSQL:**
-   - En la pestaña **Storage** del proyecto en Vercel, creá una base de datos **Vercel Postgres** (o vinculá tu base de datos de **Neon** / **Supabase**).
-   - Vercel inyectará automáticamente `POSTGRES_URL` (y `DATABASE_URL`).
-3. **Ejecutar el Script DDL:**
-   - En la consola SQL de Vercel Storage (o en tu cliente SQL / Neon Editor), ejecutá el contenido de:
-     - `scripts/init_db.sql`
-     - `scripts/seed_data.sql` (opcional, para cargar las reseñas iniciales)
-4. **Configurar Variables de Entorno en Vercel:**
-   - `RECAPTCHA_SECRET_KEY`: Tu clave secreta de Google reCAPTCHA.
-   - `RECAPTCHA_SITE_KEY`: Tu clave pública de Google reCAPTCHA.
-   - `JWT_SECRET_KEY`: Clave larga y aleatoria para firmar los tokens JWT del panel admin.
+1. **Import the repository** into Vercel from GitHub.
+2. **Create or link a PostgreSQL database:**
+   - In the project's **Storage** tab, create a **Vercel Postgres** database (or link **Neon** / **Supabase**).
+   - Vercel will automatically inject `POSTGRES_URL` (used by `api/config.py`).
+
+   > ⚠️ **SQLite does NOT work on Vercel.** Serverless filesystems are read-only (except `/tmp`) and ephemeral across invocations — writes fail or disappear. **PostgreSQL is mandatory in production.**
+3. **Run the DDL scripts** in the Vercel Storage SQL console (or your SQL client):
+   - `scripts/init_db.sql`
+   - `scripts/seed_data.sql` (optional — initial reviews)
+4. **Set environment variables** in the Vercel dashboard:
+   - `RECAPTCHA_SECRET_KEY` / `RECAPTCHA_SITE_KEY`: your real Google reCAPTCHA keys.
+   - `JWT_SECRET_KEY`: a long, random secret for signing admin JWTs.
    - `ENVIRONMENT`: `production`
-5. **Deploy:**
-   - Hacé click en **Deploy**. Vercel compilará la Serverless Function en `/api/*` y servirá los archivos estáticos (`index.html`, `admin.html`, etc.) en la raíz.
-6. **Primer Acceso al Panel:**
-   - Abrí `https://tu-dominio.vercel.app/admin.html`. Si la tabla `admin_users` está vacía, el sistema te guiará para crear el primer administrador automáticamente.
+5. **Deploy.** Vercel builds the Serverless Function in `/api/*` and serves static files from the root.
+   - Note: `index.html` (the POC) is served at `/`. To make the MVP live, promote `index-new.html` to `index.html`.
+6. **First admin access:** open `https://your-domain.vercel.app/admin.html`. If `admin_users` is empty, the system will guide you through creating the first administrator.
+
+---
+
+## 🐛 Known Issues
+
+1. **MVP data persistence (active bug):** `index-new.html` does not reliably persist data — submissions may not be saved (see `BUGS.md`, tracked locally). Likely gaps to verify: environment where the API runs (relative `/api/*` paths require `vercel dev`), `DATABASE_URL` configuration, and SQLite being unusable on Vercel. **Priority: high.**
+2. **The live landing (`/`) is the POC:** form submissions and reviews are in-memory mocks; nothing is stored. Expected behavior until the MVP is promoted.
+3. **Validation gaps:** review `rating` updates via the admin API are not bounded (1–5) and lead `status` accepts arbitrary strings.
+4. **No rate limiting** on `/api/auth/login` or the public forms.
+
+---
+
+## 📡 API Overview
+
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | — | Health check + DB connectivity |
+| `POST` | `/api/contact` | reCAPTCHA | Submit a quote request |
+| `GET` | `/api/reviews` | — | List approved reviews |
+| `POST` | `/api/reviews` | reCAPTCHA | Submit a public review |
+| `GET` | `/api/auth/setup-status` | — | Whether the panel needs initial setup |
+| `POST` | `/api/auth/setup` | — | Create the first admin (only when none exist) |
+| `POST` | `/api/auth/login` | — | Login, returns JWT |
+| `GET` | `/api/auth/me` | JWT | Current admin profile |
+| `GET` | `/api/admin/stats` | JWT | Dashboard metrics |
+| `GET/POST` | `/api/admin/leads` | JWT | List / create leads |
+| `PATCH/DELETE` | `/api/admin/leads/{id}` | JWT | Update status / delete lead |
+| `GET/POST` | `/api/admin/reviews` | JWT | List / create reviews |
+| `PUT/DELETE` | `/api/admin/reviews/{id}` | JWT | Edit / moderate / delete review |
+| `GET/POST` | `/api/admin/users` | JWT | List / create admin users |
+| `PUT` | `/api/admin/users/{id}/password` | JWT | Change an admin's password |
+| `DELETE` | `/api/admin/users/{id}` | JWT | Delete an admin (with safeguards) |
+
+Interactive docs (Swagger UI): `/api/docs` — OpenAPI spec: `/api/openapi.json`.
+
+> Note: routes are intentionally registered both with and without the `/api` prefix (Vercel rewrite compatibility), so Swagger shows duplicated entries.
