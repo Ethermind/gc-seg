@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giaconi-Capra® PAS | Panel de Administración</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#080e1a">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js Plugins -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+  <!-- Alpine.js Core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Lucide Icons -->
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            brand: {
+              dark: '#080e1a',       // Azul Noche Tinta
+              surface: '#0f172a',    // Azul Noche Intermedio
+              cobalt: '#2563eb',     // Azul exacto del Logo
+              cobaltHover: '#1d4ed8',
+              accent: '#d97706',     // Dorado Ámbar del Logo
+              accentHover: '#b45309',
+              lightBg: '#f8fafc',
+              cardBg: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-cobalt selection:text-white min-h-screen flex flex-col"
+      x-data="adminApp"
+      x-init="initApp()">
+
+  <!-- Toast Notification -->
+  <div x-show="toast.show" 
+       x-transition:enter="transition ease-out duration-300 transform"
+       x-transition:enter-start="opacity-0 translate-y-4"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-200 transform"
+       x-transition:leave-start="opacity-100 translate-y-0"
+       x-transition:leave-end="opacity-0 translate-y-4"
+       x-cloak
+       class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold border"
+       :class="toast.type === 'error' ? 'bg-red-900 text-red-100 border-red-700' : 'bg-slate-900 text-white border-slate-700'">
+    <span x-text="toast.type === 'error' ? '⚠️' : '✓'" class="text-base"></span>
+    <span x-text="toast.message"></span>
+  </div>
+
+  <!-- PANTALLA 1: LOADING INICIAL -->
+  <div x-show="authState === 'loading'" class="flex-grow flex items-center justify-center p-6" x-cloak>
+    <div class="text-center space-y-3">
+      <div class="w-12 h-12 border-4 border-brand-cobalt border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Verificando sesión segura...</p>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: SETUP PRIMER ADMINISTRADOR (BOOTSTRAP) -->
+  <div x-show="authState === 'setup'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
+    <!-- Background glow -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-cobalt/20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl"></div>
+
+    <div class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative z-10 text-white">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-cobalt/20 text-brand-cobalt text-2xl mb-4 border border-brand-cobalt/30">
+          🛡️
+        </div>
+        <h2 class="text-2xl font-black">Bienvenido a Giaconi-Capra®</h2>
+        <p class="text-xs text-slate-400 mt-1">Configuración inicial del sistema</p>
+        <div class="mt-4 inline-block bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1.5 rounded-full">
+          ✨ Creá tu cuenta de Administrador Principal
+        </div>
+      </div>
+
+      <!-- Setup Form -->
+      <form @submit.prevent="submitSetup()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Nombre y Apellido*</label>
+          <input type="text" x-model="setupForm.full_name" required placeholder="Ej: Leandro Giaconi" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Usuario de Acceso*</label>
+          <input type="text" x-model="setupForm.username" required placeholder="Ej: admin o lgiaconi" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Correo Electrónico*</label>
+          <input type="email" x-model="setupForm.email" required placeholder="admin@giaconi-capra.com.ar" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Contraseña Segura* (mín. 6 caracteres)</label>
+          <input type="password" x-model="setupForm.password" required minlength="6" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Confirmar Contraseña*</label>
+          <input type="password" x-model="setupForm.confirm_password" required minlength="6" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+          <p x-show="setupForm.password && setupForm.confirm_password && setupForm.password !== setupForm.confirm_password" class="text-[10px] text-red-400 mt-1 font-semibold">
+            Las contraseñas no coinciden.
+          </p>
+        </div>
+
+        <button type="submit" 
+                :disabled="isSubmittingAuth || (setupForm.password !== setupForm.confirm_password)" 
+                class="w-full mt-4 bg-brand-cobalt hover:bg-brand-cobaltHover disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl transition shadow-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+          <span x-show="!isSubmittingAuth">Crear Administrador e Iniciar</span>
+          <span x-show="isSubmittingAuth" x-cloak class="flex items-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Configurando...
+          </span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: LOGIN DE ADMINISTRADOR -->
+  <div x-show="authState === 'login'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-cobalt/20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl"></div>
+
+    <div class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative z-10 text-white">
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center justify-center gap-2 mb-4 group">
+          <svg class="h-9 w-auto" viewBox="0 0 130 65" fill="none">
+            <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <h2 class="text-2xl font-black">Panel de Administración</h2>
+        <p class="text-xs text-slate-400 mt-1">Giaconi-Capra® PAS — Acceso Seguro</p>
+      </div>
+
+      <form @submit.prevent="submitLogin()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Usuario o Correo*</label>
+          <input type="text" x-model="loginForm.username" required placeholder="admin o correo@ejemplo.com" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Contraseña*</label>
+          </div>
+          <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <button type="submit" 
+                :disabled="isSubmittingAuth" 
+                class="w-full mt-4 bg-brand-cobalt hover:bg-brand-cobaltHover disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl transition shadow-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+          <span x-show="!isSubmittingAuth">Iniciar Sesión</span>
+          <span x-show="isSubmittingAuth" x-cloak class="flex items-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Verificando...
+          </span>
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <a href="/" class="text-xs text-slate-400 hover:text-white transition">← Volver al sitio principal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 4: DASHBOARD ADMINISTRATIVO COMPLETO (AUTENTICADO) -->
+  <div x-show="authState === 'authenticated'" class="flex-grow flex flex-col" x-cloak>
+    
+    <!-- Navbar Superior -->
+    <header class="bg-brand-dark border-b border-slate-800 text-white sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        
+        <!-- Brand -->
+        <div class="flex items-center gap-4">
+          <a href="/" class="flex items-center gap-3 group">
+            <svg class="h-8 w-auto flex-shrink-0" viewBox="0 0 130 65" fill="none">
+              <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="flex flex-col">
+              <span class="text-lg font-extrabold tracking-tight text-white leading-tight flex items-center">
+                GIACONI-CAPRA<sup class="text-[9px] text-slate-300 font-normal ml-0.5 -mt-2">®</sup>&nbsp;<span class="text-brand-accent">PAS</span>
+              </span>
+              <span class="text-[9px] text-slate-400 font-medium tracking-wider uppercase">Administradores de Riesgo</span>
+            </div>
+          </a>
+          <span class="hidden sm:inline-block bg-brand-cobalt/20 border border-brand-cobalt/40 text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+            Panel de Control
+          </span>
+        </div>
+
+        <!-- User Chip & Actions -->
+        <div class="flex items-center gap-3">
+          <!-- Profile Badge -->
+          <div class="hidden md:flex items-center gap-2.5 bg-slate-900 border border-slate-800 py-1.5 px-3 rounded-xl">
+            <div class="w-7 h-7 rounded-lg bg-brand-cobalt text-white font-extrabold flex items-center justify-center text-xs" x-text="currentUser.username ? currentUser.username[0].toUpperCase() : 'A'"></div>
+            <div class="text-left">
+              <p class="text-xs font-bold text-white leading-none" x-text="currentUser.full_name || currentUser.username"></p>
+              <span class="text-[10px] text-amber-400 uppercase font-semibold" x-text="currentUser.role"></span>
+            </div>
+          </div>
+
+          <a href="/" target="_blank" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-700 transition shadow" title="Abrir sitio web">
+            <span>🌐</span>
+            <span class="hidden sm:inline">Ver Sitio</span>
+          </a>
+
+          <button @click="refreshAll()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition" title="Recargar datos">
+            <svg class="w-4 h-4" :class="{'animate-spin': loading}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+          </button>
+
+          <button @click="logout()" class="inline-flex items-center gap-1.5 bg-red-950 hover:bg-red-900 text-red-200 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-red-800 transition" title="Cerrar sesión">
+            <span>🚪</span>
+            <span class="hidden sm:inline">Salir</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Solicitudes</p>
+            <h3 class="text-3xl font-black text-slate-900 mt-1" x-text="stats.total_leads">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-brand-cobalt flex items-center justify-center text-xl">
+            📋
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Nuevas (Pendientes)</p>
+            <h3 class="text-3xl font-black text-amber-600 mt-1" x-text="stats.new_leads">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            🔔
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Opiniones Clientes</p>
+            <h3 class="text-3xl font-black text-slate-900 mt-1" x-text="stats.total_reviews">0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            💬
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Administradores</p>
+            <h3 class="text-3xl font-black text-purple-600 mt-1" x-text="stats.total_admins || 1">1</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+            👥
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs & Actions -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div class="bg-slate-200 p-1 rounded-2xl flex flex-wrap gap-1 shadow-inner">
+          <button @click="currentTab = 'leads'" 
+                  :class="currentTab === 'leads' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>📋</span> Cotizaciones
+            <span class="bg-brand-cobalt text-white text-[10px] px-2 py-0.5 rounded-full" x-text="leads.length"></span>
+          </button>
+          <button @click="currentTab = 'reviews'" 
+                  :class="currentTab === 'reviews' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>⭐</span> Testimonios
+            <span class="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="reviews.length"></span>
+          </button>
+          <button @click="currentTab = 'admins'" 
+                  :class="currentTab === 'admins' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>👥</span> Administradores
+            <span class="bg-purple-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="adminUsers.length"></span>
+          </button>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div>
+          <template x-if="currentTab === 'reviews'">
+            <button @click="openReviewModal(null)" class="bg-brand-cobalt hover:bg-brand-cobaltHover text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+              <span>+</span> Nueva Opinión
+            </button>
+          </template>
+          <template x-if="currentTab === 'admins'">
+            <button @click="openCreateAdminModal()" class="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+              <span>+</span> Nuevo Administrador
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- TAB 1: LEADS / SOLICITUDES -->
+      <div x-show="currentTab === 'leads'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          
+          <!-- Filter Bar -->
+          <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-slate-50/50">
+            <div class="relative flex-grow max-w-md">
+              <input type="text" 
+                     x-model="leadSearch" 
+                     @input.debounce.300ms="fetchLeads()" 
+                     placeholder="Buscar por nombre, email, teléfono o cobertura..." 
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white">
+              <span class="absolute left-3.5 top-3 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Estado:</label>
+              <select x-model="leadStatusFilter" @change="fetchLeads()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
+                <option value="todos">Todos los estados</option>
+                <option value="nuevo">🔔 Nuevo</option>
+                <option value="contactado">📞 Contactado</option>
+                <option value="en_gestion">⏳ En Gestión</option>
+                <option value="cerrado">✓ Cerrado</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">ID & Fecha</th>
+                  <th class="py-3.5 px-4">Cliente</th>
+                  <th class="py-3.5 px-4">Cobertura</th>
+                  <th class="py-3.5 px-4">Mensaje</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="lead in leads" :key="lead.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <span class="font-extrabold text-slate-900" x-text="'#' + lead.id"></span>
+                      <p class="text-[10px] text-slate-400 mt-0.5" x-text="formatDate(lead.created_at)"></p>
+                    </td>
+
+                    <td class="py-4 px-4">
+                      <div class="font-bold text-slate-900" x-text="lead.nombre"></div>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-slate-600 font-mono text-[11px]" x-text="lead.telefono"></span>
+                        <template x-if="lead.wsp_preferred">
+                          <span class="bg-emerald-100 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full" title="Prefiere WhatsApp">WhatsApp</span>
+                        </template>
+                      </div>
+                      <p class="text-slate-400 text-[10px] mt-0.5" x-text="lead.email || 'Sin email'"></p>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-brand-cobalt border border-blue-100" x-text="lead.producto || 'Consulta General'"></span>
+                    </td>
+
+                    <td class="py-4 px-4 max-w-xs">
+                      <p class="text-slate-600 truncate" x-text="lead.mensaje || 'Sin mensaje adicional'"></p>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <select :value="lead.status" 
+                              @change="updateLeadStatus(lead.id, $event.target.value)" 
+                              class="px-2.5 py-1 rounded-lg text-xs font-bold border transition outline-none cursor-pointer"
+                              :class="{
+                                'bg-amber-100/70 text-amber-800 border-amber-300': lead.status === 'nuevo',
+                                'bg-blue-100/70 text-blue-800 border-blue-300': lead.status === 'contactado',
+                                'bg-purple-100/70 text-purple-800 border-purple-300': lead.status === 'en_gestion',
+                                'bg-emerald-100/70 text-emerald-800 border-emerald-300': lead.status === 'cerrado'
+                              }">
+                        <option value="nuevo">🔔 Nuevo</option>
+                        <option value="contactado">📞 Contactado</option>
+                        <option value="en_gestion">⏳ En Gestión</option>
+                        <option value="cerrado">✓ Cerrado</option>
+                      </select>
+                    </td>
+
+                    <td class="py-4 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <a :href="getWhatsAppLink(lead)" target="_blank" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition" title="Contactar por WhatsApp">
+                          💬
+                        </a>
+                        <button @click="openLeadDetail(lead)" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Ver detalle completo">
+                          👁️
+                        </button>
+                        <button @click="confirmDeleteLead(lead)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                
+                <tr x-show="leads.length === 0 && !loading">
+                  <td colspan="6" class="text-center py-12 text-slate-400">
+                    <p class="text-3xl mb-2">📭</p>
+                    <p class="font-bold">No se encontraron solicitudes de cotización.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: REVIEWS / TESTIMONIOS -->
+      <div x-show="currentTab === 'reviews'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          
+          <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-slate-50/50">
+            <div class="relative flex-grow max-w-md">
+              <input type="text" 
+                     x-model="reviewSearch" 
+                     @input.debounce.300ms="fetchReviewsAdmin()" 
+                     placeholder="Buscar por nombre, cobertura o contenido..." 
+                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white">
+              <span class="absolute left-3.5 top-3 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Estado:</label>
+              <select x-model="reviewApprovedFilter" @change="fetchReviewsAdmin()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
+                <option value="todos">Todas las opiniones</option>
+                <option value="true">✓ Visibles en la web</option>
+                <option value="false">⏳ Ocultas</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Autor</th>
+                  <th class="py-3.5 px-4">Rol / Cobertura</th>
+                  <th class="py-3.5 px-4">Puntuación</th>
+                  <th class="py-3.5 px-4">Opinión</th>
+                  <th class="py-3.5 px-4">Visible en Web</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="rev in reviews" :key="rev.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-xs" x-text="rev.avatar"></div>
+                        <span class="font-bold text-slate-900" x-text="rev.name"></span>
+                      </div>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap text-slate-600" x-text="rev.role"></td>
+
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <div class="flex text-sm gap-px">
+                        <template x-for="s in starsRange(rev.rating)" :key="'f'+s">
+                          <span class="text-amber-400">★</span>
+                        </template>
+                        <template x-for="s in starsRange(5 - rev.rating)" :key="'e'+s">
+                          <span class="text-slate-300">★</span>
+                        </template>
+                      </div>
+                    </td>
+
+                    <td class="py-4 px-4 max-w-sm">
+                      <p class="text-slate-700 italic line-clamp-2" x-text="'“' + rev.text + '”'"></p>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <button @click="toggleReviewApproval(rev)" 
+                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition"
+                              :class="rev.is_approved ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
+                        <span x-text="rev.is_approved ? '✓ Visible' : 'Oculto'"></span>
+                      </button>
+                    </td>
+
+                    <td class="py-4 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <button @click="openReviewModal(rev)" class="p-2 bg-blue-50 hover:bg-blue-100 text-brand-cobalt rounded-lg transition" title="Editar">
+                          ✏️
+                        </button>
+                        <button @click="confirmDeleteReview(rev)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+
+                <tr x-show="reviews.length === 0 && !loading">
+                  <td colspan="6" class="text-center py-12 text-slate-400">
+                    <p class="text-3xl mb-2">⭐</p>
+                    <p class="font-bold">No se encontraron opiniones registradas.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ADMINISTRADORES (ADMIN USERS) -->
+      <div x-show="currentTab === 'admins'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Usuarios con Acceso Administrativo</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Gestión de credenciales y accesos al panel de control.</p>
+            </div>
+            <button @click="openCreateAdminModal()" class="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-2">
+              <span>+</span> Nuevo Administrador
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Usuario</th>
+                  <th class="py-3.5 px-4">Correo Electrónico</th>
+                  <th class="py-3.5 px-4">Rol</th>
+                  <th class="py-3.5 px-4">Último Acceso</th>
+                  <th class="py-3.5 px-4">Fecha de Alta</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="u in adminUsers" :key="u.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-purple-700 text-white font-extrabold flex items-center justify-center text-xs uppercase" x-text="u.username ? u.username.slice(0, 2) : 'AD'"></div>
+                        <div>
+                          <p class="font-bold text-slate-900" x-text="u.full_name || u.username"></p>
+                          <p class="text-[10px] text-slate-400 font-mono" x-text="'@' + u.username"></p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap text-slate-700 font-medium" x-text="u.email"></td>
+
+                    <td class="py-4 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="u.role === 'superadmin' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-purple-100 text-purple-800 border border-purple-200'"
+                            x-text="u.role"></span>
+                    </td>
+
+                    <td class="py-4 px-4 whitespace-nowrap text-slate-500" x-text="u.last_login ? formatDate(u.last_login) : 'Nunca'"></td>
+                    <td class="py-4 px-4 whitespace-nowrap text-slate-400" x-text="formatDate(u.created_at)"></td>
+
+                    <td class="py-4 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <button @click="openPasswordModal(u)" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Cambiar Contraseña">
+                          🔑
+                        </button>
+                        <template x-if="u.id !== currentUser.id">
+                          <button @click="confirmDeleteAdmin(u)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar Administrador">
+                            🗑️
+                          </button>
+                        </template>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL: DETALLE DE SOLICITUD -->
+  <div x-show="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="detailModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
+      <button @click="detailModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-brand-cobalt">Detalle de Cotización</span>
+        <span class="text-slate-400 font-bold" x-text="'#' + (selectedLead.id || '')"></span>
+      </div>
+      <h3 class="text-2xl font-black text-slate-900 mb-6" x-text="selectedLead.nombre"></h3>
+
+      <div class="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200/80 mb-6">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-[10px] font-bold uppercase text-slate-400">Teléfono / WhatsApp</p>
+            <p class="font-bold text-slate-800 text-sm mt-0.5" x-text="selectedLead.telefono"></p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase text-slate-400">Correo Electrónico</p>
+            <p class="font-bold text-slate-800 text-sm mt-0.5" x-text="selectedLead.email || 'No proporcionado'"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 border-t border-slate-200/60 pt-3">
+          <div>
+            <p class="text-[10px] font-bold uppercase text-slate-400">Cobertura Solicitada</p>
+            <p class="font-bold text-brand-cobalt text-sm mt-0.5" x-text="selectedLead.producto || 'Consulta General'"></p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase text-slate-400">Contacto Prioritario</p>
+            <p class="font-bold text-slate-800 text-sm mt-0.5" x-text="selectedLead.wsp_preferred ? '✓ WhatsApp' : 'Estándar'"></p>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200/60 pt-3">
+          <p class="text-[10px] font-bold uppercase text-slate-400 mb-1">Mensaje del Cliente</p>
+          <p class="text-slate-700 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed" x-text="selectedLead.mensaje || 'Sin mensaje adicional.'"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 border-t border-slate-200/60 pt-3">
+          <p>IP: <span class="text-slate-600 font-mono" x-text="selectedLead.ip_address || 'Local'"></span></p>
+          <p class="text-right" x-text="formatDate(selectedLead.created_at)"></p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <a :href="getWhatsAppLink(selectedLead)" target="_blank" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow transition">
+          💬 Abrir WhatsApp
+        </a>
+        <button @click="detailModalOpen = false" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR OPINIÓN -->
+  <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="reviewModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
+      <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <h3 class="text-2xl font-black text-slate-900 mb-1" x-text="reviewForm.id ? 'Editar Opinión' : 'Nueva Opinión'"></h3>
+      <p class="text-slate-500 mb-6">Gestioná el testimonio para mostrarlo en el carrusel principal.</p>
+
+      <form @submit.prevent="saveReview()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nombre y Apellido*</label>
+          <input type="text" x-model="reviewForm.name" required maxlength="40" placeholder="Ej: María Gómez" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Rol / Tipo de Cobertura</label>
+          <input type="text" x-model="reviewForm.role" maxlength="40" placeholder="Ej: Cliente - Seguro de Auto" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Puntuación*</label>
+          <div class="flex items-center gap-2">
+            <template x-for="star in 5" :key="star">
+              <button type="button" @click="reviewForm.rating = star" class="text-2xl transition focus:outline-none" :class="star <= reviewForm.rating ? 'text-amber-400' : 'text-slate-300'">
+                ★
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Opinión*</label>
+          <textarea x-model="reviewForm.text" required rows="3" maxlength="3000" placeholder="Escribí el texto de la opinión..." class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" x-model="reviewForm.is_approved" class="w-4 h-4 text-brand-cobalt rounded border-slate-300">
+            <span class="text-xs font-bold text-slate-800">Publicar en el sitio web (Visible)</span>
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="reviewModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold text-xs shadow-lg transition">
+            Guardar Opinión
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR NUEVO ADMINISTRADOR -->
+  <div x-show="createAdminModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="createAdminModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
+      <button @click="createAdminModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs font-bold uppercase tracking-wider text-purple-700">Accesos y Seguridad</span>
+      </div>
+      <h3 class="text-2xl font-black text-slate-900 mb-6">Nuevo Administrador</h3>
+
+      <form @submit.prevent="submitCreateAdmin()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nombre Completo*</label>
+          <input type="text" x-model="newAdminForm.full_name" required placeholder="Ej: Paola Capra" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nombre de Usuario*</label>
+          <input type="text" x-model="newAdminForm.username" required placeholder="Ej: pcapra" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Correo Electrónico*</label>
+          <input type="email" x-model="newAdminForm.email" required placeholder="paola@giaconi-capra.com.ar" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Rol</label>
+          <select x-model="newAdminForm.role" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none font-medium">
+            <option value="admin">Administrador Estándar</option>
+            <option value="superadmin">Superadministrador (Control Total)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Contraseña Inicial* (mín. 6 caracteres)</label>
+          <input type="password" x-model="newAdminForm.password" required minlength="6" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="createAdminModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow transition">
+            Crear Usuario
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CAMBIAR CONTRASEÑA -->
+  <div x-show="passwordModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="passwordModalOpen = false" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
+      <button @click="passwordModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <h3 class="text-xl font-black text-slate-900 mb-1">Cambiar Contraseña</h3>
+      <p class="text-slate-500 mb-6">Para el usuario: <strong class="text-purple-700" x-text="targetPasswordUser.username"></strong></p>
+
+      <form @submit.prevent="submitChangePassword()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nueva Contraseña*</label>
+          <input type="password" x-model="passwordForm.new_password" required minlength="6" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-purple-600 outline-none">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="passwordModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow transition">
+            Actualizar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR ELIMINACIÓN -->
+  <div x-show="deleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="deleteModalOpen = false" class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-100 text-center">
+      <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">🗑️</div>
+      <h3 class="text-lg font-black text-slate-900 mb-1">¿Estás seguro?</h3>
+      <p class="text-xs text-slate-500 mb-6" x-text="deleteModalMessage"></p>
+
+      <div class="flex justify-center gap-3">
+        <button @click="deleteModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+        <button @click="executeDelete()" class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow transition">
+          Sí, eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('adminApp', () => ({
+        // Estados principales de la SPA: 'loading' | 'setup' | 'login' | 'authenticated'
+        authState: 'loading',
+        isSubmittingAuth: false,
+        currentUser: {},
+        token: localStorage.getItem('gc_admin_token') || '',
+
+        currentTab: 'leads',
+        loading: false,
+        stats: { total_leads: 0, new_leads: 0, total_reviews: 0, total_admins: 0, avg_rating: 5.0 },
+
+        // Forms Auth
+        setupForm: { username: '', email: '', full_name: '', password: '', confirm_password: '' },
+        loginForm: { username: '', password: '' },
+
+        // Leads state
+        leads: [],
+        leadSearch: '',
+        leadStatusFilter: 'todos',
+        selectedLead: {},
+        detailModalOpen: false,
+
+        // Reviews state
+        reviews: [],
+        reviewSearch: '',
+        reviewApprovedFilter: 'todos',
+        reviewModalOpen: false,
+        reviewForm: { id: null, name: '', role: '', rating: 5, text: '', is_approved: true },
+
+        // Admins state
+        adminUsers: [],
+        createAdminModalOpen: false,
+        newAdminForm: { username: '', email: '', full_name: '', password: '', role: 'admin' },
+        passwordModalOpen: false,
+        targetPasswordUser: {},
+        passwordForm: { new_password: '' },
+
+        // Delete confirmation modal
+        deleteModalOpen: false,
+        deleteModalMessage: '',
+        pendingDeleteAction: null,
+
+        // Toast feedback
+        toast: { show: false, message: '', type: 'success' },
+
+        async initApp() {
+          try {
+            // 1. Verificar si el sistema requiere Setup Inicial
+            const setupRes = await fetch('/api/auth/setup-status');
+            const setupData = await setupRes.json();
+
+            if (setupData.needs_setup) {
+              this.authState = 'setup';
+              return;
+            }
+
+            // 2. Si ya hay admins, verificar si existe un token guardado válido
+            if (this.token) {
+              const meRes = await this.authFetch('/api/auth/me');
+              if (meRes.ok) {
+                this.currentUser = await meRes.json();
+                this.authState = 'authenticated';
+                this.refreshAll();
+                return;
+              }
+            }
+
+            // 3. Si no hay token o expiró -> Login
+            this.authState = 'login';
+          } catch (e) {
+            console.error('Error init app:', e);
+            this.authState = 'login';
+          }
+        },
+
+        // Helper para peticiones autenticadas
+        async authFetch(url, options = {}) {
+          options.headers = options.headers || {};
+          if (this.token) {
+            options.headers['Authorization'] = `Bearer ${this.token}`;
+          }
+          const res = await fetch(url, options);
+          if (res.status === 401 && this.authState === 'authenticated') {
+            this.logout('Sesión expirada. Por favor vuelva a iniciar sesión.');
+          }
+          return res;
+        },
+
+        showToast(message, type = 'success') {
+          this.toast = { show: true, message, type };
+          setTimeout(() => { this.toast.show = false; }, 3500);
+        },
+
+        // Setup inicial
+        async submitSetup() {
+          if (this.setupForm.password !== this.setupForm.confirm_password) {
+            this.showToast('Las contraseñas no coinciden.', 'error');
+            return;
+          }
+          this.isSubmittingAuth = true;
+
+          try {
+            const res = await fetch('/api/auth/setup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: this.setupForm.username,
+                email: this.setupForm.email,
+                full_name: this.setupForm.full_name,
+                password: this.setupForm.password
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al configurar administrador.');
+
+            this.token = data.access_token;
+            this.currentUser = data.user;
+            localStorage.setItem('gc_admin_token', this.token);
+            this.authState = 'authenticated';
+            this.showToast('¡Administrador creado con éxito! Bienvenido.');
+            this.refreshAll();
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          } finally {
+            this.isSubmittingAuth = false;
+          }
+        },
+
+        // Login
+        async submitLogin() {
+          this.isSubmittingAuth = true;
+
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.loginForm)
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Credenciales incorrectas.');
+
+            this.token = data.access_token;
+            this.currentUser = data.user;
+            localStorage.setItem('gc_admin_token', this.token);
+            this.authState = 'authenticated';
+            this.loginForm = { username: '', password: '' };
+            this.showToast(`¡Hola, ${this.currentUser.full_name || this.currentUser.username}!`);
+            this.refreshAll();
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          } finally {
+            this.isSubmittingAuth = false;
+          }
+        },
+
+        logout(customMsg = null) {
+          this.token = '';
+          this.currentUser = {};
+          localStorage.removeItem('gc_admin_token');
+          this.authState = 'login';
+          this.showToast(customMsg || 'Sesión cerrada correctamente.');
+        },
+
+        async refreshAll() {
+          this.loading = true;
+          await Promise.all([
+            this.fetchStats(),
+            this.fetchLeads(),
+            this.fetchReviewsAdmin(),
+            this.fetchAdminUsers()
+          ]);
+          this.loading = false;
+        },
+
+        async fetchStats() {
+          try {
+            const res = await this.authFetch('/api/admin/stats');
+            if (res.ok) this.stats = await res.json();
+          } catch (e) {
+            console.error('Error stats:', e);
+          }
+        },
+
+        async fetchLeads() {
+          try {
+            let url = `/api/admin/leads?status=${this.leadStatusFilter}`;
+            if (this.leadSearch) url += `&search=${encodeURIComponent(this.leadSearch)}`;
+            const res = await this.authFetch(url);
+            if (res.ok) this.leads = await res.json();
+          } catch (e) {
+            this.showToast('Error al cargar solicitudes.', 'error');
+          }
+        },
+
+        async fetchReviewsAdmin() {
+          try {
+            let url = `/api/admin/reviews?approved=${this.reviewApprovedFilter}`;
+            if (this.reviewSearch) url += `&search=${encodeURIComponent(this.reviewSearch)}`;
+            const res = await this.authFetch(url);
+            if (res.ok) this.reviews = await res.json();
+          } catch (e) {
+            this.showToast('Error al cargar testimonios.', 'error');
+          }
+        },
+
+        async fetchAdminUsers() {
+          try {
+            const res = await this.authFetch('/api/admin/users');
+            if (res.ok) this.adminUsers = await res.json();
+          } catch (e) {
+            console.error('Error admin users:', e);
+          }
+        },
+
+        async updateLeadStatus(leadId, newStatus) {
+          try {
+            const res = await this.authFetch(`/api/admin/leads/${leadId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+              const updated = await res.json();
+              const idx = this.leads.findIndex(l => l.id === leadId);
+              if (idx !== -1) this.leads[idx] = updated;
+              this.fetchStats();
+              this.showToast(`Estado actualizado a ${newStatus}.`);
+            } else {
+              throw new Error();
+            }
+          } catch (e) {
+            this.showToast('No se pudo actualizar el estado.', 'error');
+          }
+        },
+
+        openLeadDetail(lead) {
+          this.selectedLead = lead;
+          this.detailModalOpen = true;
+        },
+
+        confirmDeleteLead(lead) {
+          this.deleteModalMessage = `Se eliminará la solicitud #${lead.id} de ${lead.nombre}. Esta acción no se puede deshacer.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/admin/leads/${lead.id}`, { method: 'DELETE' });
+              if (res.ok) {
+                this.leads = this.leads.filter(l => l.id !== lead.id);
+                this.fetchStats();
+                this.showToast('Solicitud eliminada.');
+              }
+            } catch (e) {
+              this.showToast('Error al eliminar.', 'error');
+            }
+          };
+          this.deleteModalOpen = true;
+        },
+
+        openReviewModal(review = null) {
+          if (review) {
+            this.reviewForm = { ...review };
+          } else {
+            this.reviewForm = { id: null, name: '', role: 'Cliente Asegurado', rating: 5, text: '', is_approved: true };
+          }
+          this.reviewModalOpen = true;
+        },
+
+        async saveReview() {
+          try {
+            const isEdit = !!this.reviewForm.id;
+            const url = isEdit ? `/api/admin/reviews/${this.reviewForm.id}` : `/api/admin/reviews`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await this.authFetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.reviewForm)
+            });
+
+            if (res.ok) {
+              this.reviewModalOpen = false;
+              this.fetchReviewsAdmin();
+              this.fetchStats();
+              this.showToast(isEdit ? 'Opinión actualizada.' : 'Opinión creada con éxito.');
+            } else {
+              throw new Error();
+            }
+          } catch (e) {
+            this.showToast('Error al guardar la opinión.', 'error');
+          }
+        },
+
+        async toggleReviewApproval(review) {
+          try {
+            const newStatus = !review.is_approved;
+            const res = await this.authFetch(`/api/admin/reviews/${review.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_approved: newStatus })
+            });
+            if (res.ok) {
+              review.is_approved = newStatus;
+              this.showToast(newStatus ? 'Opinión publicada en la web.' : 'Opinión ocultada.');
+            }
+          } catch (e) {
+            this.showToast('Error al cambiar visibilidad.', 'error');
+          }
+        },
+
+        confirmDeleteReview(review) {
+          this.deleteModalMessage = `Se eliminará la opinión de ${review.name}.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE' });
+              if (res.ok) {
+                this.reviews = this.reviews.filter(r => r.id !== review.id);
+                this.fetchStats();
+                this.showToast('Opinión eliminada.');
+              }
+            } catch (e) {
+              this.showToast('Error al eliminar.', 'error');
+            }
+          };
+          this.deleteModalOpen = true;
+        },
+
+        // Administradores
+        openCreateAdminModal() {
+          this.newAdminForm = { username: '', email: '', full_name: '', password: '', role: 'admin' };
+          this.createAdminModalOpen = true;
+        },
+
+        async submitCreateAdmin() {
+          try {
+            const res = await this.authFetch('/api/admin/users', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.newAdminForm)
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al crear administrador.');
+
+            this.createAdminModalOpen = false;
+            this.fetchAdminUsers();
+            this.fetchStats();
+            this.showToast(`Administrador @${data.username} creado con éxito.`);
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        },
+
+        openPasswordModal(user) {
+          this.targetPasswordUser = user;
+          this.passwordForm = { new_password: '' };
+          this.passwordModalOpen = true;
+        },
+
+        async submitChangePassword() {
+          try {
+            const res = await this.authFetch(`/api/admin/users/${this.targetPasswordUser.id}/password`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.passwordForm)
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al cambiar contraseña.');
+
+            this.passwordModalOpen = false;
+            this.showToast('Contraseña actualizada correctamente.');
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          }
+        },
+
+        confirmDeleteAdmin(user) {
+          this.deleteModalMessage = `Se eliminará al administrador @${user.username} (${user.full_name || ''}). Esta acción no se puede deshacer.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.detail || 'Error al eliminar.');
+
+              this.adminUsers = this.adminUsers.filter(u => u.id !== user.id);
+              this.fetchStats();
+              this.showToast('Administrador eliminado.');
+            } catch (err) {
+              this.showToast(err.message, 'error');
+            }
+          };
+          this.deleteModalOpen = true;
+        },
+
+        executeDelete() {
+          if (this.pendingDeleteAction) {
+            this.pendingDeleteAction();
+          }
+          this.deleteModalOpen = false;
+        },
+
+        starsRange(n) {
+          return Array.from({ length: Math.max(0, n) }, (_, i) => i + 1);
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '';
+          try {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          } catch (e) {
+            return dateStr;
+          }
+        },
+
+        getWhatsAppLink(lead) {
+          if (!lead || !lead.telefono) return '#';
+          const cleanPhone = lead.telefono.replace(/[^0-9]/g, '');
+          const msg = encodeURIComponent(`Hola ${lead.nombre}, nos comunicamos desde Giaconi-Capra® PAS en relación a tu consulta por seguro de ${lead.producto || 'cobertura'}.`);
+          return `https://wa.me/${cleanPhone}?text=${msg}`;
+        }
+      }));
+    });
+  </script>
+</body>
+</html>
