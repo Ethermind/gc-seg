@@ -12,6 +12,7 @@
   <!-- TODO: reemplazar por el dominio real una vez definido -->
   <link rel="canonical" href="https://www.giaconi-capra.com.ar/">
   <meta name="theme-color" content="#080e1a">
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Alpine.js Plugins (debe ir antes del core) -->
@@ -20,6 +21,9 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- Lucide Icons -->
   <script defer src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google reCAPTCHA v2 -->
+  <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaApiLoaded&render=explicit" async defer></script>
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -321,40 +325,42 @@
         <h2 class="text-3xl font-extrabold">Opiniones de quienes nos eligen</h2>
         <p class="text-slate-400 text-sm mt-2 mb-6">Conocé lo que opinan nuestros clientes sobre la atención personalizada.</p>
         
-        <button @click="reviewModalOpen = true" class="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accentHover text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95">
+        <button @click="openReviewModalAction()" class="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accentHover text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95">
           <span>★</span> Dejar tu opinión
         </button>
       </div>
 
-      <div @mouseenter="pauseReviews()" @mouseleave="resumeReviews()" class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative h-[320px] sm:h-[360px] flex flex-col justify-between">
-        <div>
-          <div class="flex items-center gap-1 text-amber-400 mb-4">
-            <template x-for="i in reviews[currentReview].rating" :key="i">
-              <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </template>
+      <template x-if="reviews.length > 0">
+        <div @mouseenter="pauseReviews()" @mouseleave="resumeReviews()" class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative h-[320px] sm:h-[360px] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              <template x-for="i in reviews[currentReview].rating" :key="i">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              </template>
+            </div>
+            <p class="text-slate-200 text-lg sm:text-xl italic leading-relaxed mb-6 line-clamp-4" x-text="'“' + reviews[currentReview].text + '”'"></p>
           </div>
-          <p class="text-slate-200 text-lg sm:text-xl italic leading-relaxed mb-6 line-clamp-4" x-text="'“' + reviews[currentReview].text + '”'"></p>
-        </div>
 
-        <div class="flex items-center justify-between border-t border-slate-800 pt-6">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-sm" x-text="reviews[currentReview].avatar"></div>
-            <div>
-              <h4 class="font-bold text-white text-sm" x-text="reviews[currentReview].name"></h4>
-              <p class="text-xs text-slate-400" x-text="reviews[currentReview].role"></p>
+          <div class="flex items-center justify-between border-t border-slate-800 pt-6">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-sm" x-text="reviews[currentReview].avatar"></div>
+              <div>
+                <h4 class="font-bold text-white text-sm" x-text="reviews[currentReview].name"></h4>
+                <p class="text-xs text-slate-400" x-text="reviews[currentReview].role"></p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button @click="prevReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Anterior opinión">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              </button>
+              <button @click="nextReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Siguiente opinión">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
             </div>
           </div>
-
-          <div class="flex items-center gap-2">
-            <button @click="prevReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Anterior opinión">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
-            <button @click="nextReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Siguiente opinión">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>
-          </div>
         </div>
-      </div>
+      </template>
     </div>
   </section>
 
@@ -368,11 +374,19 @@
       <h3 id="modalReviewTitle" class="text-2xl font-black mb-2 text-white">Dejá tu opinión</h3>
       <p class="text-xs text-slate-400 mb-6">Tu experiencia nos ayuda a seguir mejorando y brindar el mejor servicio.</p>
 
+      <!-- Feedback de Error -->
+      <template x-if="reviewSubmitError">
+        <div class="bg-red-500/20 border border-red-500/40 text-red-300 rounded-xl p-3 text-xs mb-4">
+          <span x-text="reviewSubmitError"></span>
+        </div>
+      </template>
+
+      <!-- Feedback de Éxito -->
       <template x-if="reviewSubmitted">
         <div class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl p-6 text-center my-4">
           <div class="text-3xl mb-2">🎉</div>
           <h4 class="font-bold text-lg mb-1">¡Muchas gracias por tu valoración!</h4>
-          <p class="text-xs text-emerald-200">Tu opinión ha sido enviada correctamente y ya forma parte de nuestra comunidad.</p>
+          <p class="text-xs text-emerald-200">Tu opinión ha sido enviada y guardada correctamente.</p>
         </div>
       </template>
 
@@ -412,13 +426,31 @@
           <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
         </div>
 
+        <!-- Google reCAPTCHA v2 para Opiniones -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Verificación de Seguridad*</label>
+          <div id="recaptcha-review-widget" class="min-h-[78px] flex items-center">
+            <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
+          </div>
+          <p x-show="reviewRecaptchaError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
+            Por favor, completá la verificación "No soy un robot" antes de publicar.
+          </p>
+        </div>
+
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" @click="reviewModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold">Cancelar</button>
           <button type="submit" 
-                  :disabled="!isReviewFormValid" 
-                  :class="isReviewFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-700 opacity-50 cursor-not-allowed'" 
-                  class="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition">
-            Publicar opinión
+                  :disabled="!isReviewFormValid || isSubmittingReview" 
+                  :class="(isReviewFormValid && !isSubmittingReview) ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-700 opacity-50 cursor-not-allowed'" 
+                  class="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition flex items-center gap-2">
+            <span x-show="!isSubmittingReview">Publicar opinión</span>
+            <span x-show="isSubmittingReview" x-cloak class="flex items-center gap-1.5">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Guardando...
+            </span>
           </button>
         </div>
       </form>
@@ -441,7 +473,14 @@
             <p class="text-sm text-emerald-700 leading-relaxed max-w-md mx-auto">
               Muchas gracias por ponerte en contacto. En breve uno de nuestros asesores revisará tu mensaje para brindarte una propuesta personalizada.
             </p>
-            <button @click="resetContactForm()" class="mt-6 px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider">Enviar otra consulta</button>
+            <button @click="resetContactForm()" class="mt-6 px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-emerald-800 transition">Enviar otra consulta</button>
+          </div>
+        </template>
+
+        <!-- Feedback de Error General -->
+        <template x-if="contactSubmitError">
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 text-xs font-medium mb-6">
+            ⚠️ <span x-text="contactSubmitError"></span>
           </div>
         </template>
 
@@ -509,16 +548,18 @@
           <!-- Contenedor Unificado para Checkboxes y Verificación de Seguridad -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
             
-            <!-- Checkbox 1: Verificación Bot -->
-            <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
-              <label class="flex items-center gap-3 cursor-pointer select-none">
-                <input type="checkbox" x-model="formData.recaptcha" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
-                <span class="text-xs font-semibold text-slate-800">No soy un robot</span>
-              </label>
-              <div class="flex items-center gap-1.5 opacity-80">
-                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" class="w-5 h-5" alt="reCAPTCHA logo">
-                <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">reCAPTCHA</span>
+            <!-- Google reCAPTCHA v2 Widget Container -->
+            <div class="pb-3.5 border-b border-slate-200/80">
+              <div class="mb-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Verificación de Seguridad*</label>
               </div>
+              <div id="recaptcha-widget" class="min-h-[78px] flex items-center">
+                <!-- Fallback visual si reCAPTCHA aún está cargando o en desarrollo -->
+                <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
+              </div>
+              <p x-show="recaptchaError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
+                Por favor, completá la verificación "No soy un robot" antes de continuar.
+              </p>
             </div>
 
             <!-- Checkbox 2: Preferencia WhatsApp -->
@@ -543,10 +584,17 @@
           </div>
 
           <button type="submit" 
-                  :disabled="!isContactFormValid" 
-                  :class="isContactFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer shadow-lg' : 'bg-slate-300 opacity-70 cursor-not-allowed'" 
-                  class="w-full text-white font-extrabold py-4 rounded-xl transition-all text-base uppercase tracking-wider">
-            Solicitar Cotización
+                  :disabled="!isContactFormValid || isSubmittingContact" 
+                  :class="(isContactFormValid && !isSubmittingContact) ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer shadow-lg' : 'bg-slate-300 opacity-70 cursor-not-allowed'" 
+                  class="w-full text-white font-extrabold py-4 rounded-xl transition-all text-base uppercase tracking-wider flex items-center justify-center gap-2">
+            <span x-show="!isSubmittingContact">Solicitar Cotización</span>
+            <span x-show="isSubmittingContact" x-cloak class="flex items-center gap-2">
+              <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Enviando solicitud...
+            </span>
           </button>
         </form>
       </div>
@@ -650,10 +698,21 @@
     </div>
   </footer>
 
-<script>
+  <script>
+    // Clave de prueba oficial de Google reCAPTCHA v2 para localhost/desarrollo
+    // Para producción, se puede inyectar o definir window.RECAPTCHA_SITE_KEY con tu clave de sitio real
+    window.RECAPTCHA_SITE_KEY = window.RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+
     window.addEventListener('load', () => {
       if (window.lucide) lucide.createIcons();
     });
+
+    // Callback llamado por Google reCAPTCHA al cargar su script
+    window.onRecaptchaApiLoaded = function() {
+      if (window.appComponentInstance && typeof window.appComponentInstance.initRecaptchaWidget === 'function') {
+        window.appComponentInstance.initRecaptchaWidget();
+      }
+    };
 
     document.addEventListener('alpine:init', () => {
       Alpine.data('appData', () => ({
@@ -667,6 +726,18 @@
         faqOpen: null,
         reviewInterval: null,
 
+        // Estados de carga y error asíncronos
+        isSubmittingContact: false,
+        contactSubmitError: null,
+        isSubmittingReview: false,
+        reviewSubmitError: null,
+        recaptchaWidgetId: null,
+        recaptchaToken: '',
+        recaptchaError: false,
+        reviewRecaptchaWidgetId: null,
+        reviewRecaptchaToken: '',
+        reviewRecaptchaError: false,
+
         // Estado Formulario de Contacto
         formData: {
           nombre: '',
@@ -675,8 +746,7 @@
           producto: '',
           mensaje: '',
           wsp: false,
-          aceptarDatos: false,
-          recaptcha: false
+          aceptarDatos: false
         },
 
         // Estado Formulario de Opinión
@@ -690,6 +760,7 @@
         currentReview: 0,
         reviews: [
           {
+            id: 1,
             name: "Carlos Mendoza",
             role: "Cliente Asegurado - Auto y Hogar",
             avatar: "CM",
@@ -697,6 +768,7 @@
             text: "Excelente atención de Leandro y Paola. Cuando tuve un siniestro con el vehículo gestionaron todo de inmediato sin vueltas. Es fundamental tener un asesor que te responda cuando realmente lo necesitás."
           },
           {
+            id: 2,
             name: "Sofia Giannini",
             role: "Socia Directora - Comercio Pyme",
             avatar: "SG",
@@ -704,6 +776,7 @@
             text: "Revisaron los seguros que teníamos en nuestra empresa y nos bajaron los costos mejorando la cobertura de ART y Flotas. Transparencia total desde la primera reunión."
           },
           {
+            id: 3,
             name: "Martín Rodríguez",
             role: "Inquilino - Caución para Alquiler",
             avatar: "MR",
@@ -713,10 +786,130 @@
         ],
 
         init() {
+          window.appComponentInstance = this;
           this.startReviewsTimer();
+          this.fetchReviews();
+          this.$nextTick(() => {
+            this.initRecaptchaWidget();
+          });
+        },
+
+        initRecaptchaWidget() {
+          const container = document.getElementById('recaptcha-widget');
+          if (!container) return;
+
+          // Si grecaptcha ya está disponible y tiene render
+          if (window.grecaptcha && typeof grecaptcha.render === 'function') {
+            if (this.recaptchaWidgetId === null) {
+              try {
+                container.innerHTML = '';
+                this.recaptchaWidgetId = grecaptcha.render(container, {
+                  sitekey: window.RECAPTCHA_SITE_KEY,
+                  callback: (token) => {
+                    this.recaptchaToken = token;
+                    this.recaptchaError = false;
+                  },
+                  'expired-callback': () => {
+                    this.recaptchaToken = '';
+                  }
+                });
+              } catch (e) {
+                console.warn('reCAPTCHA render aviso:', e);
+              }
+            }
+          } else {
+            // Modo testing local si el script no carga
+            setTimeout(() => {
+              if (!window.grecaptcha && container) {
+                container.innerHTML = `
+                  <label class="flex items-center gap-3 cursor-pointer select-none py-1">
+                    <input type="checkbox" id="local_recaptcha_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                    <span class="text-xs font-semibold text-slate-800">No soy un robot (Modo Desarrollo)</span>
+                  </label>
+                `;
+                const localCheck = document.getElementById('local_recaptcha_check');
+                if (localCheck) {
+                  localCheck.addEventListener('change', (e) => {
+                    this.recaptchaToken = e.target.checked ? 'mock-recaptcha-token' : '';
+                    this.recaptchaError = false;
+                  });
+                }
+              }
+            }, 1500);
+          }
+        },
+
+        openReviewModalAction() {
+          this.reviewModalOpen = true;
+          this.reviewSubmitError = null;
+          this.reviewRecaptchaError = false;
+          this.$nextTick(() => {
+            this.initReviewRecaptchaWidget();
+          });
+        },
+
+        initReviewRecaptchaWidget() {
+          const container = document.getElementById('recaptcha-review-widget');
+          if (!container) return;
+
+          if (window.grecaptcha && typeof grecaptcha.render === 'function') {
+            if (this.reviewRecaptchaWidgetId === null) {
+              try {
+                container.innerHTML = '';
+                this.reviewRecaptchaWidgetId = grecaptcha.render(container, {
+                  sitekey: window.RECAPTCHA_SITE_KEY,
+                  callback: (token) => {
+                    this.reviewRecaptchaToken = token;
+                    this.reviewRecaptchaError = false;
+                  },
+                  'expired-callback': () => {
+                    this.reviewRecaptchaToken = '';
+                  }
+                });
+              } catch (e) {
+                console.warn('reCAPTCHA review render aviso:', e);
+              }
+            } else {
+              try { grecaptcha.reset(this.reviewRecaptchaWidgetId); } catch (e) {}
+            }
+          } else {
+            setTimeout(() => {
+              if (!window.grecaptcha && container) {
+                container.innerHTML = `
+                  <label class="flex items-center gap-3 cursor-pointer select-none py-1">
+                    <input type="checkbox" id="local_review_recaptcha_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                    <span class="text-xs font-semibold text-slate-300">No soy un robot (Modo Desarrollo)</span>
+                  </label>
+                `;
+                const localCheck = document.getElementById('local_review_recaptcha_check');
+                if (localCheck) {
+                  localCheck.addEventListener('change', (e) => {
+                    this.reviewRecaptchaToken = e.target.checked ? 'mock-recaptcha-token' : '';
+                    this.reviewRecaptchaError = false;
+                  });
+                }
+              }
+            }, 1000);
+          }
+        },
+
+        async fetchReviews() {
+          try {
+            const res = await fetch('/api/reviews');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                this.reviews = data;
+                this.currentReview = 0;
+              }
+            }
+          } catch (err) {
+            console.warn('API /api/reviews no disponible, utilizando testimonios predeterminados.');
+          }
         },
 
         startReviewsTimer() {
+          if (this.reviewInterval) clearInterval(this.reviewInterval);
           this.reviewInterval = setInterval(() => {
             this.nextReview();
           }, 5000);
@@ -750,10 +943,9 @@
           const telefonoOk = this.formData.telefono.trim().length >= 6;
           const emailOk = this.isEmailValid;
           const mensajeOk = this.formData.mensaje.length <= 3000;
-          const recaptchaOk = this.formData.recaptcha;
           const datosOk = this.formData.aceptarDatos;
 
-          return nombreOk && telefonoOk && emailOk && mensajeOk && recaptchaOk && datosOk;
+          return nombreOk && telefonoOk && emailOk && mensajeOk && datosOk;
         },
 
         get isReviewFormValid() {
@@ -765,15 +957,55 @@
         },
 
         nextReview() {
+          if (this.reviews.length === 0) return;
           this.currentReview = (this.currentReview + 1) % this.reviews.length;
         },
 
         prevReview() {
+          if (this.reviews.length === 0) return;
           this.currentReview = (this.currentReview - 1 + this.reviews.length) % this.reviews.length;
         },
 
-        submitContactForm() {
-          if (this.isContactFormValid) {
+        async submitContactForm() {
+          if (!this.isContactFormValid || this.isSubmittingContact) return;
+
+          let token = this.recaptchaToken;
+          if (window.grecaptcha && this.recaptchaWidgetId !== null) {
+            try {
+              const res = grecaptcha.getResponse(this.recaptchaWidgetId);
+              if (res) token = res;
+            } catch (e) {}
+          }
+
+          if (!token) {
+            this.recaptchaError = true;
+            return;
+          }
+          this.recaptchaError = false;
+          this.isSubmittingContact = true;
+          this.contactSubmitError = null;
+
+          try {
+            const response = await fetch('/api/contact', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nombre: this.formData.nombre,
+                telefono: this.formData.telefono,
+                email: this.formData.email || null,
+                producto: this.formData.producto || null,
+                mensaje: this.formData.mensaje || '',
+                wsp: this.formData.wsp,
+                aceptarDatos: this.formData.aceptarDatos,
+                recaptcha_token: token
+              })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.detail || 'Ocurrió un error al procesar tu solicitud.');
+            }
+
             this.formSubmitted = true;
             this.$nextTick(() => {
               const contactoSection = document.getElementById('contacto');
@@ -781,11 +1013,21 @@
                 contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             });
+          } catch (err) {
+            console.error('Error al enviar formulario:', err);
+            this.contactSubmitError = err.message || 'Error de conexión con el servidor. Por favor intentá nuevamente.';
+          } finally {
+            this.isSubmittingContact = false;
+            if (window.grecaptcha && this.recaptchaWidgetId !== null) {
+              try { grecaptcha.reset(this.recaptchaWidgetId); } catch (e) {}
+              this.recaptchaToken = '';
+            }
           }
         },
 
         resetContactForm() {
           this.formSubmitted = false;
+          this.contactSubmitError = null;
           this.formData = {
             nombre: '',
             telefono: '',
@@ -793,44 +1035,75 @@
             producto: '',
             mensaje: '',
             wsp: false,
-            aceptarDatos: false,
-            recaptcha: false
+            aceptarDatos: false
           };
+          this.recaptchaToken = '';
+          this.recaptchaError = false;
           this.$nextTick(() => {
             const contactoSection = document.getElementById('contacto');
             if (contactoSection) {
               contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            this.initRecaptchaWidget();
           });
         },
 
-        submitReview() {
-          if (!this.isReviewFormValid) return;
-          
-          const initials = this.newReview.name
-            .trim()
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2) || 'U';
+        async submitReview() {
+          if (!this.isReviewFormValid || this.isSubmittingReview) return;
 
-          this.reviews.push({
-            name: this.newReview.name,
-            role: this.newReview.role || 'Cliente Asegurado',
-            avatar: initials,
-            rating: Number(this.newReview.rating),
-            text: this.newReview.text
-          });
+          let token = this.reviewRecaptchaToken;
+          if (window.grecaptcha && this.reviewRecaptchaWidgetId !== null) {
+            try {
+              const res = grecaptcha.getResponse(this.reviewRecaptchaWidgetId);
+              if (res) token = res;
+            } catch (e) {}
+          }
 
-          this.currentReview = this.reviews.length - 1;
-          this.reviewSubmitted = true;
+          if (!token) {
+            this.reviewRecaptchaError = true;
+            return;
+          }
+          this.reviewRecaptchaError = false;
+          this.isSubmittingReview = true;
+          this.reviewSubmitError = null;
 
-          setTimeout(() => {
-            this.reviewModalOpen = false;
-            this.reviewSubmitted = false;
-            this.newReview = { name: '', role: '', rating: 5, text: '' };
-          }, 2000);
+          try {
+            const response = await fetch('/api/reviews', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: this.newReview.name,
+                role: this.newReview.role || 'Cliente Asegurado',
+                rating: Number(this.newReview.rating),
+                text: this.newReview.text,
+                recaptcha_token: token
+              })
+            });
+
+            const savedReview = await response.json();
+            if (!response.ok) {
+              throw new Error(savedReview.detail || 'No se pudo guardar tu opinión.');
+            }
+
+            this.reviews.push(savedReview);
+            this.currentReview = this.reviews.length - 1;
+            this.reviewSubmitted = true;
+
+            setTimeout(() => {
+              this.reviewModalOpen = false;
+              this.reviewSubmitted = false;
+              this.newReview = { name: '', role: '', rating: 5, text: '' };
+            }, 2000);
+          } catch (err) {
+            console.error('Error al enviar reseña:', err);
+            this.reviewSubmitError = err.message || 'Error al guardar la reseña. Por favor intentá nuevamente.';
+          } finally {
+            this.isSubmittingReview = false;
+            if (window.grecaptcha && this.reviewRecaptchaWidgetId !== null) {
+              try { grecaptcha.reset(this.reviewRecaptchaWidgetId); } catch (e) {}
+              this.reviewRecaptchaToken = '';
+            }
+          }
         },
 
         productosPersonas: [
