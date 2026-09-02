@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, DateTime
+from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, DateTime, CheckConstraint
 from api.database import Base
 
 class ContactLead(Base):
@@ -25,6 +25,9 @@ class ContactLead(Base):
 
 class Review(Base):
     __tablename__ = "reviews"
+    __table_args__ = (
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_reviews_rating_range"),
+    )
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(100), nullable=False)

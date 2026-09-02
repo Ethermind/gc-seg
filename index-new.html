@@ -657,7 +657,7 @@
   </section>
 
   <!-- Footer con Matrícula SSN -->
-  <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs">
+  <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       <div class="flex flex-col md:flex-row items-center justify-between gap-6">
         
@@ -696,8 +696,12 @@
         </div>
       </div>
     </div>
-  </footer>
 
+    <!-- Acceso discreto al panel de administración -->
+    <a href="admin.html"
+       class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none opacity-20 hover:opacity-70 transition-opacity duration-300 select-none focus:outline-none focus:opacity-70"
+       aria-label="Acceso al panel de administración">π</a>
+  </footer>
   <script>
     // Clave de prueba oficial de Google reCAPTCHA v2 para localhost/desarrollo
     // Para producción, se puede inyectar o definir window.RECAPTCHA_SITE_KEY con tu clave de sitio real
@@ -787,11 +791,38 @@
 
         init() {
           window.appComponentInstance = this;
+          this.fetchPublicConfig();
           this.startReviewsTimer();
           this.fetchReviews();
           this.$nextTick(() => {
             this.initRecaptchaWidget();
           });
+        },
+
+        // Sincroniza la configuración pública con el backend (evita desajustes
+        // entre la site key del widget y la secret key del servidor, que hacían
+        // fallar los envíos y daban la sensación de que "no se guarda nada").
+        async fetchPublicConfig() {
+          try {
+            const res = await fetch('/api/config');
+            if (!res.ok) return;
+            const cfg = await res.json();
+            const newKey = cfg.recaptcha_site_key;
+            // Ignorar valores vacíos o placeholders (el backend ya filtra, doble seguridad aquí)
+            const keyIsValid = newKey && !newKey.startsWith('6LeIx0cDtu_');
+            if (keyIsValid && newKey !== window.RECAPTCHA_SITE_KEY) {
+              window.RECAPTCHA_SITE_KEY = newKey;
+              this.recaptchaToken = '';
+              this.reviewRecaptchaToken = '';
+              this.recaptchaWidgetId = null;
+              this.reviewRecaptchaWidgetId = null;
+              this.initRecaptchaWidget();
+              if (this.reviewModalOpen) this.initReviewRecaptchaWidget();
+            }
+          } catch (e) {
+            // API no disponible: se conserva la clave por defecto (modo pruebas).
+            console.warn('No se pudo obtener /api/config; usando reCAPTCHA de prueba.');
+          }
         },
 
         initRecaptchaWidget() {

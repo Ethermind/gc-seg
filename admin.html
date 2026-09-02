@@ -312,11 +312,6 @@
               <span>+</span> Nueva Opinión
             </button>
           </template>
-          <template x-if="currentTab === 'admins'">
-            <button @click="openCreateAdminModal()" class="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-              <span>+</span> Nuevo Administrador
-            </button>
-          </template>
         </div>
       </div>
 
@@ -583,7 +578,7 @@
                         <button @click="openPasswordModal(u)" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Cambiar Contraseña">
                           🔑
                         </button>
-                        <template x-if="u.id !== currentUser.id">
+                        <template x-if="canDeleteAdmin(u)">
                           <button @click="confirmDeleteAdmin(u)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar Administrador">
                             🗑️
                           </button>
@@ -1175,6 +1170,20 @@
           } catch (err) {
             this.showToast(err.message, 'error');
           }
+        },
+
+        // Devuelve si el usuario actual puede eliminar al admin 'u':
+        // - Nadie puede eliminarse a sí mismo.
+        // - Un superadmin solo puede ser eliminado por otro superadmin,
+        //   y nunca si es el último superadmin que queda en el sistema.
+        canDeleteAdmin(u) {
+          if (!u || u.id === this.currentUser.id) return false;
+          if (u.role === 'superadmin') {
+            if (this.currentUser.role !== 'superadmin') return false;
+            const totalSupers = this.adminUsers.filter(a => a.role === 'superadmin').length;
+            if (totalSupers <= 1) return false;
+          }
+          return true;
         },
 
         confirmDeleteAdmin(user) {

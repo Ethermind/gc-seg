@@ -11,10 +11,10 @@ This repository currently contains **two landing pages**:
 | File | Role | Description |
 | :--- | :--- | :--- |
 | `index.html` | **POC** (Proof of Concept) | The page currently served at `/`. Uses **in-memory mock data only**: the contact form shows a success message without calling the API, and testimonials are a hardcoded array. Nothing is persisted. |
-| `index-new.html` | **MVP** (in development) | The real product under active development. Wired to the backend API (`/api/contact`, `/api/reviews`). ⚠️ **Currently has known data persistence issues** (submissions are not reliably saved). See [Known Issues](#-known-issues). |
+| `index-new.html` | **MVP** (in development) | The real product under active development. Wired to the backend API (`/api/contact`, `/api/reviews`). ✅ Data persistence fixed (see [Known Issues](#-known-issues)). |
 | `admin.html` | Admin Panel | Fully functional SPA (JWT auth + CRUD). Works against the backend API. |
 
-The MVP (`index-new.html`) will replace the POC as soon as the persistence issues are resolved.
+The MVP (`index-new.html`) will replace the POC in production once development is complete.
 
 ---
 
@@ -171,6 +171,7 @@ ALLOWED_ORIGINS=*
 Notes:
 * **reCAPTCHA bypass (dev only):** with `ENVIRONMENT=development`, if `RECAPTCHA_SECRET_KEY` is missing or is the placeholder (`6LeIx0cDtu_...`), verification is bypassed so you can test without Google credentials. **Warning:** in `production` a missing/placeholder secret makes every form submission fail.
 * **JWT secret:** the code ships with an insecure fallback value for development. **Always** set `JWT_SECRET_KEY` to a long random string in production — anyone who knows the fallback can forge admin tokens.
+* **SQLite path anchoring:** relative SQLite URLs (e.g. `sqlite:///./local.db`) are always resolved against the **project root**, regardless of the process working directory. This matters because `vercel dev` runs the Python function from `.vercel/cache/index_py/` — without anchoring, writes used to land in a throwaway database inside that cache.
 
 ---
 
@@ -190,8 +191,10 @@ pip install -r requirements.txt
 ### 3. Configure `.env` and initialize the database
 ```bash
 cp .env.example .env
-python scripts/setup_db.py
+python scripts/setup_db.py   # optional: tables are also auto-created on API startup
 ```
+
+> The API automatically creates the database tables on startup if they don't exist (idempotent). `setup_db.py` is still useful to seed the initial testimonials.
 
 ### 4. Run the project
 
@@ -267,10 +270,15 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
 
 ## 🐛 Known Issues
 
-1. **MVP data persistence (active bug):** `index-new.html` does not reliably persist data — submissions may not be saved (see `BUGS.md`, tracked locally). Likely gaps to verify: environment where the API runs (relative `/api/*` paths require `vercel dev`), `DATABASE_URL` configuration, and SQLite being unusable on Vercel. **Priority: high.**
-2. **The live landing (`/`) is the POC:** form submissions and reviews are in-memory mocks; nothing is stored. Expected behavior until the MVP is promoted.
-3. **Validation gaps:** review `rating` updates via the admin API are not bounded (1–5) and lead `status` accepts arbitrary strings.
-4. **No rate limiting** on `/api/auth/login` or the public forms.
+1. **The live landing (`/`) is the POC:** form submissions and reviews are in-memory mocks; nothing is stored. Expected behavior until the MVP (`index-new.html`) is promoted to `index.html`.
+2. **No rate limiting** on `/api/auth/login` or the public forms.
+3. **Admin roles are partially enforced:** deleting a `superadmin` requires being a `superadmin` and the system always keeps at least one. Role checks are not applied to other actions (creating admins, changing passwords) yet.
+
+### Recently Fixed
+
+* ✅ **MVP data persistence** (`index-new.html`): relative SQLite URLs are now anchored to the project root — `vercel dev` runs functions from `.vercel/cache/index_py/`, and writes previously landed in a throwaway database inside that cache. Tables are also auto-created on startup, and the API logs a loud error if SQLite is used on Vercel (where only PostgreSQL persists).
+* ✅ **reCAPTCHA key mismatch:** the MVP fetches the site key from `GET /api/config`, so frontend and backend never use mismatched key pairs (mismatches made every submission fail with HTTP 400).
+* ✅ **Validation gaps closed:** review `rating` is bounded to 1–5 (Pydantic + DB `CHECK` constraint, mirrored in `init_db.sql`), lead `status` only accepts `nuevo|contactado|en_gestion|cerrado`, and admin `role` only accepts `admin|superadmin`.
 
 ---
 
@@ -279,6 +287,7 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/health` | — | Health check + DB connectivity |
+| `GET` | `/api/config` | — | Public config (reCAPTCHA site key, environment) |
 | `POST` | `/api/contact` | reCAPTCHA | Submit a quote request |
 | `GET` | `/api/reviews` | — | List approved reviews |
 | `POST` | `/api/reviews` | reCAPTCHA | Submit a public review |

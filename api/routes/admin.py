@@ -352,6 +352,10 @@ def delete_admin_user(
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
+    target_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+
     # Salvaguarda 1: No auto-eliminarse
     if current_user.id == user_id:
         raise HTTPException(
@@ -367,9 +371,20 @@ def delete_admin_user(
             detail="No podés eliminar al único administrador restante del sistema."
         )
 
-    target_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
-    if not target_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+    # Regla de roles 1: solo un superadmin puede eliminar a otro superadmin
+    if target_user.role == "superadmin":
+        if current_user.role != "superadmin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo un superadministrador puede eliminar a otro superadministrador."
+            )
+        # Regla de roles 2: el sistema siempre debe conservar al menos un superadmin
+        total_superadmins = db.query(AdminUser).filter(AdminUser.role == "superadmin").count()
+        if total_superadmins <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No podés eliminar al único superadministrador del sistema."
+            )
 
     try:
         db.delete(target_user)

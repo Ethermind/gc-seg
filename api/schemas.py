@@ -3,6 +3,12 @@ from typing import Optional
 from pydantic import BaseModel, Field, EmailStr, field_validator
 import re
 
+# Estados válidos del pipeline de solicitudes de cotización (lead pipeline)
+ALLOWED_LEAD_STATUSES = {"nuevo", "contactado", "en_gestion", "cerrado"}
+
+# Roles válidos para usuarios administradores
+ALLOWED_ADMIN_ROLES = {"admin", "superadmin"}
+
 class ContactCreate(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=100, description="Nombre y apellido del solicitante")
     telefono: str = Field(..., min_length=6, max_length=50, description="Teléfono o WhatsApp de contacto")
@@ -65,9 +71,19 @@ class LeadResponse(BaseModel):
         from_attributes = True
 
 class LeadUpdate(BaseModel):
-    status: Optional[str] = None
-    mensaje: Optional[str] = None
-    producto: Optional[str] = None
+    status: Optional[str] = Field(None, max_length=20)
+    mensaje: Optional[str] = Field(None, max_length=3000)
+    producto: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("status")
+    def validate_status(cls, v):
+        if v is not None:
+            v = v.strip().lower()
+            if v not in ALLOWED_LEAD_STATUSES:
+                raise ValueError(
+                    f"Estado inválido. Valores permitidos: {', '.join(sorted(ALLOWED_LEAD_STATUSES))}."
+                )
+        return v
 
 class ReviewCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="Nombre del autor")
@@ -84,11 +100,17 @@ class ReviewCreate(BaseModel):
         return v
 
 class ReviewUpdate(BaseModel):
-    name: Optional[str] = None
-    role: Optional[str] = None
-    rating: Optional[int] = None
-    text: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    role: Optional[str] = Field(None, max_length=100)
+    rating: Optional[int] = Field(None, ge=1, le=5, description="Calificación de 1 a 5 estrellas")
+    text: Optional[str] = Field(None, min_length=1, max_length=3000)
     is_approved: Optional[bool] = None
+
+    @field_validator("name", "role", "text", mode="before")
+    def strip_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 class ReviewResponse(BaseModel):
     id: int
@@ -118,6 +140,16 @@ class AdminUserCreate(BaseModel):
         v = v.strip().lower()
         if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
             raise ValueError("El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos.")
+        return v
+
+    @field_validator("role")
+    def validate_role(cls, v):
+        if v is not None:
+            v = v.strip().lower()
+            if v not in ALLOWED_ADMIN_ROLES:
+                raise ValueError(
+                    f"Rol inválido. Valores permitidos: {', '.join(sorted(ALLOWED_ADMIN_ROLES))}."
+                )
         return v
 
     @field_validator("email")

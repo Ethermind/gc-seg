@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from api.config import settings
+from api.database import init_db
 from api.routes import contact, reviews, health, admin, auth
 
 app = FastAPI(
@@ -11,6 +12,10 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
+
+# Crear/verificar tablas al arrancar (idempotente). Crucial en serverless,
+# donde los cold starts no ejecutan scripts/setup_db.py.
+init_db()
 
 # CORS Middleware
 app.add_middleware(
@@ -44,4 +49,18 @@ def root_status():
         "service": "Giaconi-Capra® PAS API",
         "status": "online",
         "docs": "/api/docs"
+    }
+
+# Config pública para el frontend: mantiene frontend y backend consistentes
+# (misma clave de sitio reCAPTCHA en ambos lados -> los envíos no fallan por desajuste)
+@app.get("/api/config")
+@app.get("/config")
+def public_config():
+    site_key = settings.RECAPTCHA_SITE_KEY
+    # No exponer placeholders: el frontend cae a su clave de prueba oficial de Google
+    if not site_key or site_key.startswith("6LeIx0cDtu_"):
+        site_key = None
+    return {
+        "recaptcha_site_key": site_key,
+        "environment": settings.ENVIRONMENT,
     }
