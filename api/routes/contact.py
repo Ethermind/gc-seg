@@ -5,12 +5,14 @@ from api.database import get_db
 from api.models import ContactLead
 from api.schemas import ContactCreate, ContactResponse
 from api.services.turnstile import verify_turnstile
+from api.ratelimit import limiter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/contact", tags=["Contact"])
 
 @router.post("", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def submit_contact(
     payload: ContactCreate,
     request: Request,

@@ -6,6 +6,7 @@ from api.database import get_db
 from api.models import Review
 from api.schemas import ReviewCreate, ReviewResponse
 from api.services.turnstile import verify_turnstile
+from api.ratelimit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ def get_approved_reviews(db: Session = Depends(get_db)):
         )
 
 @router.post("", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_review(
     payload: ReviewCreate, 
     request: Request,
@@ -66,7 +68,7 @@ async def create_review(
             avatar=avatar,
             rating=payload.rating,
             text=payload.text,
-            is_approved=True # Auto-aprobado por defecto
+            is_approved=False  # Pendiente de moderación por defecto
         )
         db.add(new_review)
         db.commit()

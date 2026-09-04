@@ -431,16 +431,11 @@
           <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
         </div>
 
-        <!-- Cloudflare Turnstile para Opiniones -->
-        <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Verificación de Seguridad*</label>
-          <div id="turnstile-review-widget" class="min-h-[70px] flex items-center">
-            <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
-          </div>
-          <p x-show="reviewTurnstileError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
-            Por favor, completá la verificación anti-bots antes de publicar.
-          </p>
-        </div>
+        <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+        <div id="turnstile-review-widget" class="hidden" aria-hidden="true"></div>
+        <p x-show="reviewTurnstileError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
+          Por favor, completá la verificación anti-bots antes de publicar.
+        </p>
 
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" @click="reviewModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold">Cancelar</button>
@@ -550,24 +545,16 @@
             <textarea x-model="formData.mensaje" maxlength="3000" rows="3" placeholder="Detalles de tu consulta..." class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm"></textarea>
           </div>
 
-          <!-- Contenedor Unificado para Checkboxes y Verificación de Seguridad -->
+          <!-- Contenedor Unificado para Checkboxes -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-            
-            <!-- Cloudflare Turnstile Widget Container -->
-            <div class="pb-3.5 border-b border-slate-200/80">
-              <div class="mb-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Verificación de Seguridad*</label>
-              </div>
-              <div id="turnstile-widget" class="min-h-[70px] flex items-center">
-                <!-- Fallback visual si Turnstile aún está cargando o en desarrollo -->
-                <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
-              </div>
-              <p x-show="turnstileError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
-                Por favor, completá la verificación anti-bots antes de continuar.
-              </p>
-            </div>
 
-            <!-- Checkbox 2: Preferencia WhatsApp -->
+            <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+            <div id="turnstile-widget" class="hidden" aria-hidden="true"></div>
+            <p x-show="turnstileError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
+              Por favor, completá la verificación anti-bots antes de continuar.
+            </p>
+
+            <!-- Checkbox: Preferencia WhatsApp -->
             <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
               <label for="wsp" class="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" id="wsp" x-model="formData.wsp" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">

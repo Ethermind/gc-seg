@@ -1,7 +1,10 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from api.config import settings
 from api.database import init_db
+from api.ratelimit import limiter
 from api.routes import contact, reviews, health, admin, auth, manuals
 
 app = FastAPI(
@@ -25,6 +28,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate Limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Router con prefijo /api
 api_router = APIRouter(prefix="/api")
