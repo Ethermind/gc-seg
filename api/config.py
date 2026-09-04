@@ -43,9 +43,9 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
-    # Google reCAPTCHA
-    RECAPTCHA_SECRET_KEY: Optional[str] = os.getenv("RECAPTCHA_SECRET_KEY", None)
-    RECAPTCHA_SITE_KEY: Optional[str] = os.getenv("RECAPTCHA_SITE_KEY", None)
+    # Cloudflare Turnstile (reemplazo de Google reCAPTCHA)
+    TURNSTILE_SECRET_KEY: Optional[str] = os.getenv("TURNSTILE_SECRET_KEY", None)
+    TURNSTILE_SITE_KEY: Optional[str] = os.getenv("TURNSTILE_SITE_KEY", None)
     
     # JWT & Autenticación de Administradores
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "giaconi-capra-pas-jwt-secret-key-prod-2026")

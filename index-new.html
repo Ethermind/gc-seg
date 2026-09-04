@@ -21,8 +21,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- Lucide Icons -->
   <script defer src="https://unpkg.com/lucide@latest"></script>
-  <!-- Google reCAPTCHA v2 -->
-  <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaApiLoaded&render=explicit" async defer></script>
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoaded&render=explicit" async defer></script>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -426,14 +426,14 @@
           <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
         </div>
 
-        <!-- Google reCAPTCHA v2 para Opiniones -->
+        <!-- Cloudflare Turnstile para Opiniones -->
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Verificación de Seguridad*</label>
-          <div id="recaptcha-review-widget" class="min-h-[78px] flex items-center">
+          <div id="turnstile-review-widget" class="min-h-[70px] flex items-center">
             <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
           </div>
-          <p x-show="reviewRecaptchaError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
-            Por favor, completá la verificación "No soy un robot" antes de publicar.
+          <p x-show="reviewTurnstileError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
+            Por favor, completá la verificación anti-bots antes de publicar.
           </p>
         </div>
 
@@ -548,17 +548,17 @@
           <!-- Contenedor Unificado para Checkboxes y Verificación de Seguridad -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
             
-            <!-- Google reCAPTCHA v2 Widget Container -->
+            <!-- Cloudflare Turnstile Widget Container -->
             <div class="pb-3.5 border-b border-slate-200/80">
               <div class="mb-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">Verificación de Seguridad*</label>
               </div>
-              <div id="recaptcha-widget" class="min-h-[78px] flex items-center">
-                <!-- Fallback visual si reCAPTCHA aún está cargando o en desarrollo -->
+              <div id="turnstile-widget" class="min-h-[70px] flex items-center">
+                <!-- Fallback visual si Turnstile aún está cargando o en desarrollo -->
                 <span class="text-xs text-slate-400 italic">Cargando verificación de seguridad...</span>
               </div>
-              <p x-show="recaptchaError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
-                Por favor, completá la verificación "No soy un robot" antes de continuar.
+              <p x-show="turnstileError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
+                Por favor, completá la verificación anti-bots antes de continuar.
               </p>
             </div>
 
@@ -703,18 +703,18 @@
        aria-label="Acceso al panel de administración">π</a>
   </footer>
   <script>
-    // Clave de prueba oficial de Google reCAPTCHA v2 para localhost/desarrollo
-    // Para producción, se puede inyectar o definir window.RECAPTCHA_SITE_KEY con tu clave de sitio real
-    window.RECAPTCHA_SITE_KEY = window.RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+    // Clave de prueba oficial de Cloudflare Turnstile para localhost/desarrollo (siempre aprueba)
+    // Para producción, se puede definir window.TURNSTILE_SITE_KEY (o llega desde /api/config)
+    window.TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
     window.addEventListener('load', () => {
       if (window.lucide) lucide.createIcons();
     });
 
-    // Callback llamado por Google reCAPTCHA al cargar su script
-    window.onRecaptchaApiLoaded = function() {
-      if (window.appComponentInstance && typeof window.appComponentInstance.initRecaptchaWidget === 'function') {
-        window.appComponentInstance.initRecaptchaWidget();
+    // Callback llamado por Cloudflare Turnstile al cargar su script
+    window.onTurnstileLoaded = function() {
+      if (window.appComponentInstance && typeof window.appComponentInstance.initTurnstileWidget === 'function') {
+        window.appComponentInstance.initTurnstileWidget();
       }
     };
 
@@ -735,12 +735,12 @@
         contactSubmitError: null,
         isSubmittingReview: false,
         reviewSubmitError: null,
-        recaptchaWidgetId: null,
-        recaptchaToken: '',
-        recaptchaError: false,
-        reviewRecaptchaWidgetId: null,
-        reviewRecaptchaToken: '',
-        reviewRecaptchaError: false,
+        turnstileWidgetId: null,
+        turnstileToken: '',
+        turnstileError: false,
+        reviewTurnstileWidgetId: null,
+        reviewTurnstileToken: '',
+        reviewTurnstileError: false,
 
         // Estado Formulario de Contacto
         formData: {
@@ -795,7 +795,7 @@
           this.startReviewsTimer();
           this.fetchReviews();
           this.$nextTick(() => {
-            this.initRecaptchaWidget();
+            this.initTurnstileWidget();
           });
         },
 
@@ -807,62 +807,60 @@
             const res = await fetch('/api/config');
             if (!res.ok) return;
             const cfg = await res.json();
-            const newKey = cfg.recaptcha_site_key;
-            // Ignorar valores vacíos o placeholders (el backend ya filtra, doble seguridad aquí)
-            const keyIsValid = newKey && !newKey.startsWith('6LeIx0cDtu_');
-            if (keyIsValid && newKey !== window.RECAPTCHA_SITE_KEY) {
-              window.RECAPTCHA_SITE_KEY = newKey;
-              this.recaptchaToken = '';
-              this.reviewRecaptchaToken = '';
-              this.recaptchaWidgetId = null;
-              this.reviewRecaptchaWidgetId = null;
-              this.initRecaptchaWidget();
-              if (this.reviewModalOpen) this.initReviewRecaptchaWidget();
+            const newKey = cfg.turnstile_site_key;
+            if (newKey && newKey !== window.TURNSTILE_SITE_KEY) {
+              window.TURNSTILE_SITE_KEY = newKey;
+              this.turnstileToken = '';
+              this.reviewTurnstileToken = '';
+              this.turnstileWidgetId = null;
+              this.reviewTurnstileWidgetId = null;
+              this.initTurnstileWidget();
+              if (this.reviewModalOpen) this.initTurnstileReviewWidget();
             }
           } catch (e) {
             // API no disponible: se conserva la clave por defecto (modo pruebas).
-            console.warn('No se pudo obtener /api/config; usando reCAPTCHA de prueba.');
+            console.warn('No se pudo obtener /api/config; usando Turnstile de prueba.');
           }
         },
 
-        initRecaptchaWidget() {
-          const container = document.getElementById('recaptcha-widget');
+        initTurnstileWidget() {
+          const container = document.getElementById('turnstile-widget');
           if (!container) return;
 
-          // Si grecaptcha ya está disponible y tiene render
-          if (window.grecaptcha && typeof grecaptcha.render === 'function') {
-            if (this.recaptchaWidgetId === null) {
+          // Si turnstile ya está disponible y tiene render
+          if (window.turnstile && typeof window.turnstile.render === 'function') {
+            if (this.turnstileWidgetId === null) {
               try {
                 container.innerHTML = '';
-                this.recaptchaWidgetId = grecaptcha.render(container, {
-                  sitekey: window.RECAPTCHA_SITE_KEY,
+                this.turnstileWidgetId = window.turnstile.render(container, {
+                  sitekey: window.TURNSTILE_SITE_KEY,
                   callback: (token) => {
-                    this.recaptchaToken = token;
-                    this.recaptchaError = false;
+                    this.turnstileToken = token;
+                    this.turnstileError = false;
                   },
                   'expired-callback': () => {
-                    this.recaptchaToken = '';
+                    this.turnstileToken = '';
                   }
                 });
               } catch (e) {
-                console.warn('reCAPTCHA render aviso:', e);
+                console.warn('Turnstile render aviso:', e);
               }
             }
           } else {
             // Modo testing local si el script no carga
             setTimeout(() => {
-              if (!window.grecaptcha && container) {
+              if (!window.turnstile && container) {
                 container.innerHTML = `
                   <label class="flex items-center gap-3 cursor-pointer select-none py-1">
-                    <input type="checkbox" id="local_recaptcha_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                    <input type="checkbox" id="local_turnstile_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
                     <span class="text-xs font-semibold text-slate-800">No soy un robot (Modo Desarrollo)</span>
                   </label>
                 `;
-                const localCheck = document.getElementById('local_recaptcha_check');
+                const localCheck = document.getElementById('local_turnstile_check');
                 if (localCheck) {
                   localCheck.addEventListener('change', (e) => {
-                    this.recaptchaToken = e.target.checked ? 'mock-recaptcha-token' : '';
-                    this.recaptchaError = false;
+                    this.turnstileToken = e.target.checked ? 'mock-turnstile-token' : '';
+                    this.turnstileError = false;
                   });
                 }
               }
@@ -873,50 +871,50 @@
         openReviewModalAction() {
           this.reviewModalOpen = true;
           this.reviewSubmitError = null;
-          this.reviewRecaptchaError = false;
+          this.reviewTurnstileError = false;
           this.$nextTick(() => {
-            this.initReviewRecaptchaWidget();
+            this.initTurnstileReviewWidget();
           });
         },
 
-        initReviewRecaptchaWidget() {
-          const container = document.getElementById('recaptcha-review-widget');
+        initTurnstileReviewWidget() {
+          const container = document.getElementById('turnstile-review-widget');
           if (!container) return;
 
-          if (window.grecaptcha && typeof grecaptcha.render === 'function') {
-            if (this.reviewRecaptchaWidgetId === null) {
+          if (window.turnstile && typeof window.turnstile.render === 'function') {
+            if (this.reviewTurnstileWidgetId === null) {
               try {
                 container.innerHTML = '';
-                this.reviewRecaptchaWidgetId = grecaptcha.render(container, {
-                  sitekey: window.RECAPTCHA_SITE_KEY,
+                this.reviewTurnstileWidgetId = window.turnstile.render(container, {
+                  sitekey: window.TURNSTILE_SITE_KEY,
                   callback: (token) => {
-                    this.reviewRecaptchaToken = token;
-                    this.reviewRecaptchaError = false;
+                    this.reviewTurnstileToken = token;
+                    this.reviewTurnstileError = false;
                   },
                   'expired-callback': () => {
-                    this.reviewRecaptchaToken = '';
+                    this.reviewTurnstileToken = '';
                   }
                 });
               } catch (e) {
-                console.warn('reCAPTCHA review render aviso:', e);
+                console.warn('Turnstile review render aviso:', e);
               }
             } else {
-              try { grecaptcha.reset(this.reviewRecaptchaWidgetId); } catch (e) {}
+              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
             }
           } else {
             setTimeout(() => {
-              if (!window.grecaptcha && container) {
+              if (!window.turnstile && container) {
                 container.innerHTML = `
                   <label class="flex items-center gap-3 cursor-pointer select-none py-1">
-                    <input type="checkbox" id="local_review_recaptcha_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+                    <input type="checkbox" id="local_review_turnstile_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
                     <span class="text-xs font-semibold text-slate-300">No soy un robot (Modo Desarrollo)</span>
                   </label>
                 `;
-                const localCheck = document.getElementById('local_review_recaptcha_check');
+                const localCheck = document.getElementById('local_review_turnstile_check');
                 if (localCheck) {
                   localCheck.addEventListener('change', (e) => {
-                    this.reviewRecaptchaToken = e.target.checked ? 'mock-recaptcha-token' : '';
-                    this.reviewRecaptchaError = false;
+                    this.reviewTurnstileToken = e.target.checked ? 'mock-turnstile-token' : '';
+                    this.reviewTurnstileError = false;
                   });
                 }
               }
@@ -1000,19 +998,19 @@
         async submitContactForm() {
           if (!this.isContactFormValid || this.isSubmittingContact) return;
 
-          let token = this.recaptchaToken;
-          if (window.grecaptcha && this.recaptchaWidgetId !== null) {
+          let token = this.turnstileToken;
+          if (window.turnstile && this.turnstileWidgetId !== null) {
             try {
-              const res = grecaptcha.getResponse(this.recaptchaWidgetId);
+              const res = window.turnstile.getResponse(this.turnstileWidgetId);
               if (res) token = res;
             } catch (e) {}
           }
 
           if (!token) {
-            this.recaptchaError = true;
+            this.turnstileError = true;
             return;
           }
-          this.recaptchaError = false;
+          this.turnstileError = false;
           this.isSubmittingContact = true;
           this.contactSubmitError = null;
 
@@ -1028,7 +1026,7 @@
                 mensaje: this.formData.mensaje || '',
                 wsp: this.formData.wsp,
                 aceptarDatos: this.formData.aceptarDatos,
-                recaptcha_token: token
+                turnstile_token: token
               })
             });
 
@@ -1049,9 +1047,9 @@
             this.contactSubmitError = err.message || 'Error de conexión con el servidor. Por favor intentá nuevamente.';
           } finally {
             this.isSubmittingContact = false;
-            if (window.grecaptcha && this.recaptchaWidgetId !== null) {
-              try { grecaptcha.reset(this.recaptchaWidgetId); } catch (e) {}
-              this.recaptchaToken = '';
+            if (window.turnstile && this.turnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
+              this.turnstileToken = '';
             }
           }
         },
@@ -1068,33 +1066,33 @@
             wsp: false,
             aceptarDatos: false
           };
-          this.recaptchaToken = '';
-          this.recaptchaError = false;
+          this.turnstileToken = '';
+          this.turnstileError = false;
           this.$nextTick(() => {
             const contactoSection = document.getElementById('contacto');
             if (contactoSection) {
               contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            this.initRecaptchaWidget();
+            this.initTurnstileWidget();
           });
         },
 
         async submitReview() {
           if (!this.isReviewFormValid || this.isSubmittingReview) return;
 
-          let token = this.reviewRecaptchaToken;
-          if (window.grecaptcha && this.reviewRecaptchaWidgetId !== null) {
+          let token = this.reviewTurnstileToken;
+          if (window.turnstile && this.reviewTurnstileWidgetId !== null) {
             try {
-              const res = grecaptcha.getResponse(this.reviewRecaptchaWidgetId);
+              const res = window.turnstile.getResponse(this.reviewTurnstileWidgetId);
               if (res) token = res;
             } catch (e) {}
           }
 
           if (!token) {
-            this.reviewRecaptchaError = true;
+            this.reviewTurnstileError = true;
             return;
           }
-          this.reviewRecaptchaError = false;
+          this.reviewTurnstileError = false;
           this.isSubmittingReview = true;
           this.reviewSubmitError = null;
 
@@ -1107,7 +1105,7 @@
                 role: this.newReview.role || 'Cliente Asegurado',
                 rating: Number(this.newReview.rating),
                 text: this.newReview.text,
-                recaptcha_token: token
+                turnstile_token: token
               })
             });
 
@@ -1130,9 +1128,9 @@
             this.reviewSubmitError = err.message || 'Error al guardar la reseña. Por favor intentá nuevamente.';
           } finally {
             this.isSubmittingReview = false;
-            if (window.grecaptcha && this.reviewRecaptchaWidgetId !== null) {
-              try { grecaptcha.reset(this.reviewRecaptchaWidgetId); } catch (e) {}
-              this.reviewRecaptchaToken = '';
+            if (window.turnstile && this.reviewTurnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
+              this.reviewTurnstileToken = '';
             }
           }
         },

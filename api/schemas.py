@@ -17,7 +17,7 @@ class ContactCreate(BaseModel):
     mensaje: Optional[str] = Field("", max_length=3000, description="Mensaje o detalle de la consulta")
     wsp: bool = Field(False, description="Preferencia de contacto por WhatsApp")
     aceptarDatos: bool = Field(True, description="Aceptación de la Ley 25.326 de Protección de Datos")
-    recaptcha_token: Optional[str] = Field(None, description="Token de verificación Google reCAPTCHA")
+    turnstile_token: Optional[str] = Field(None, description="Token de verificación Cloudflare Turnstile")
 
     @field_validator("nombre", "telefono", "producto", "mensaje", mode="before")
     def strip_strings(cls, v):
@@ -91,7 +91,7 @@ class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5, description="Calificación de 1 a 5 estrellas")
     text: str = Field(..., min_length=1, max_length=3000, description="Texto de la opinión")
     is_approved: Optional[bool] = True
-    recaptcha_token: Optional[str] = Field(None, description="Token de verificación Google reCAPTCHA")
+    turnstile_token: Optional[str] = Field(None, description="Token de verificación Cloudflare Turnstile")
 
     @field_validator("name", "role", "text", mode="before")
     def strip_strings(cls, v):

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.models import ContactLead
 from api.schemas import ContactCreate, ContactResponse
-from api.services.recaptcha import verify_recaptcha
+from api.services.turnstile import verify_turnstile
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +24,12 @@ async def submit_contact(
     )
     user_agent = request.headers.get("user-agent", "")
 
-    # 2. Validar reCAPTCHA
-    is_valid_captcha = await verify_recaptcha(payload.recaptcha_token, client_ip)
+    # 2. Validar Cloudflare Turnstile
+    is_valid_captcha = await verify_turnstile(payload.turnstile_token, client_ip)
     if not is_valid_captcha:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La verificación de seguridad (reCAPTCHA) falló. Por favor reintente."
+            detail="La verificación de seguridad (anti-bots) falló. Por favor reintente."
         )
 
     # 3. Guardar Lead en Base de Datos

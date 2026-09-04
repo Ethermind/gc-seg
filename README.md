@@ -23,7 +23,7 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 * **Responsive UI:** Built with Tailwind CSS, adapted to mobile, tablet and desktop.
 * **Interactive Coverage Catalog:** Tabs (Individuals / Business) and modals with product details.
 * **Contact & Quote Form:** Real-time validation (email format, phone sanitization, character limits, Ley 25.326 consent).
-* **Google reCAPTCHA v2:** Server-side cryptographic verification on the quote form and public reviews modal (safe bypass for development/localhost).
+* **Cloudflare Turnstile:** Server-side anti-bot verification on the quote form and public reviews modal (safe bypass for development/localhost).
 * **Dynamic Testimonials Carousel:** Reads published reviews from the backend; visitors can submit their own (*MVP only*).
 * **Admin Panel (`admin.html`):** Dashboard for CRUD management of quote requests (`contact_leads`) and review moderation (`reviews`), with direct WhatsApp links.
 * **Dual Persistence (SQLite / PostgreSQL):** Transparent connection via SQLAlchemy.
@@ -40,13 +40,13 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 * **Alpine.js v3** + `@alpinejs/collapse`
 * **Lucide Icons**
 * **Google Fonts** (Plus Jakarta Sans)
-* **Google reCAPTCHA v2**
+* **Cloudflare Turnstile**
 
 ### Backend & Persistence
 * **Python 3.12+ / FastAPI** (REST endpoints + automatic OpenAPI docs)
 * **SQLAlchemy 2.0 & Pydantic v2** (ORM, schema validation/sanitization)
 * **PostgreSQL / SQLite** (Vercel Postgres, Neon, Supabase, or local SQLite)
-* **HTTPX** (async client for the Google reCAPTCHA API)
+* **HTTPX** (async client for the Cloudflare Turnstile API)
 * **PyJWT + bcrypt** (admin authentication)
 
 ---
@@ -71,7 +71,7 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 │   │   ├── admin.py            # CRUD endpoints for the dashboard (/api/admin/*)
 │   │   └── health.py           # GET /api/health (health check)
 │   └── services/
-│       └── recaptcha.py        # Google reCAPTCHA verification service
+│       └── turnstile.py        # Cloudflare Turnstile verification service
 ├── scripts/                    # Database scripts & utilities
 │   ├── init_db.sql             # DDL for tables and indexes
 │   ├── seed_data.sql           # Initial testimonials
@@ -151,11 +151,14 @@ DATABASE_URL=sqlite:///./local.db
 # Option 2: PostgreSQL (Vercel Postgres, Neon, Supabase or local)
 # DATABASE_URL=postgresql://user:password@localhost:5432/gc_seg_db
 
-# Google reCAPTCHA v2 (Checkbox)
-# For local development you can use Google's official test keys.
-# For production, get your keys at: https://www.google.com/recaptcha/admin
-RECAPTCHA_SECRET_KEY=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
-RECAPTCHA_SITE_KEY=6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+# Cloudflare Turnstile (anti-bot)
+# Leave empty in development for an automatic bypass (ENVIRONMENT=development),
+# or use Cloudflare's official test keys (always pass):
+#   TURNSTILE_SITE_KEY=1x00000000000000000000AA
+#   TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+# For production, get your keys at: https://dash.cloudflare.com/ -> Turnstile
+TURNSTILE_SECRET_KEY=
+TURNSTILE_SITE_KEY=
 
 # Environment: development | production
 ENVIRONMENT=development
@@ -169,7 +172,7 @@ ALLOWED_ORIGINS=*
 ```
 
 Notes:
-* **reCAPTCHA bypass (dev only):** with `ENVIRONMENT=development`, if `RECAPTCHA_SECRET_KEY` is missing or is the placeholder (`6LeIx0cDtu_...`), verification is bypassed so you can test without Google credentials. **Warning:** in `production` a missing/placeholder secret makes every form submission fail.
+* **Turnstile bypass (dev only):** with `ENVIRONMENT=development` and no `TURNSTILE_SECRET_KEY` configured, verification is skipped so you can test without Cloudflare credentials. **Warning:** in `production` a missing secret makes every form submission fail.
 * **JWT secret:** the code ships with an insecure fallback value for development. **Always** set `JWT_SECRET_KEY` to a long random string in production — anyone who knows the fallback can forge admin tokens.
 * **SQLite path anchoring:** relative SQLite URLs (e.g. `sqlite:///./local.db`) are always resolved against the **project root**, regardless of the process working directory. This matters because `vercel dev` runs the Python function from `.vercel/cache/index_py/` — without anchoring, writes used to land in a throwaway database inside that cache.
 
@@ -259,7 +262,7 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
    - `scripts/init_db.sql`
    - `scripts/seed_data.sql` (optional — initial reviews)
 4. **Set environment variables** in the Vercel dashboard:
-   - `RECAPTCHA_SECRET_KEY` / `RECAPTCHA_SITE_KEY`: your real Google reCAPTCHA keys.
+   - `TURNSTILE_SECRET_KEY` / `TURNSTILE_SITE_KEY`: your real Cloudflare Turnstile keys.
    - `JWT_SECRET_KEY`: a long, random secret for signing admin JWTs.
    - `ENVIRONMENT`: `production`
 5. **Deploy.** Vercel builds the Serverless Function in `/api/*` and serves static files from the root.
@@ -277,7 +280,7 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
 ### Recently Fixed
 
 * ✅ **MVP data persistence** (`index-new.html`): relative SQLite URLs are now anchored to the project root — `vercel dev` runs functions from `.vercel/cache/index_py/`, and writes previously landed in a throwaway database inside that cache. Tables are also auto-created on startup, and the API logs a loud error if SQLite is used on Vercel (where only PostgreSQL persists).
-* ✅ **reCAPTCHA key mismatch:** the MVP fetches the site key from `GET /api/config`, so frontend and backend never use mismatched key pairs (mismatches made every submission fail with HTTP 400).
+* ✅ **Anti-bot widget key mismatch:** the MVP fetches the site key from `GET /api/config`, so frontend and backend never use mismatched key pairs (mismatches made every submission fail with HTTP 400).
 * ✅ **Validation gaps closed:** review `rating` is bounded to 1–5 (Pydantic + DB `CHECK` constraint, mirrored in `init_db.sql`), lead `status` only accepts `nuevo|contactado|en_gestion|cerrado`, and admin `role` only accepts `admin|superadmin`.
 
 ---
@@ -287,10 +290,10 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/health` | — | Health check + DB connectivity |
-| `GET` | `/api/config` | — | Public config (reCAPTCHA site key, environment) |
-| `POST` | `/api/contact` | reCAPTCHA | Submit a quote request |
+| `GET` | `/api/config` | — | Public config (Turnstile site key, environment) |
+| `POST` | `/api/contact` | Turnstile | Submit a quote request |
 | `GET` | `/api/reviews` | — | List approved reviews |
-| `POST` | `/api/reviews` | reCAPTCHA | Submit a public review |
+| `POST` | `/api/reviews` | Turnstile | Submit a public review |
 | `GET` | `/api/auth/setup-status` | — | Whether the panel needs initial setup |
 | `POST` | `/api/auth/setup` | — | Create the first admin (only when none exist) |
 | `POST` | `/api/auth/login` | — | Login, returns JWT |

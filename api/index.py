@@ -52,15 +52,12 @@ def root_status():
     }
 
 # Config pública para el frontend: mantiene frontend y backend consistentes
-# (misma clave de sitio reCAPTCHA en ambos lados -> los envíos no fallan por desajuste)
+# (misma site key de Turnstile en ambos lados -> los envíos no fallan por desajuste)
 @app.get("/api/config")
 @app.get("/config")
 def public_config():
-    site_key = settings.RECAPTCHA_SITE_KEY
-    # No exponer placeholders: el frontend cae a su clave de prueba oficial de Google
-    if not site_key or site_key.startswith("6LeIx0cDtu_"):
-        site_key = None
+    # Devuelve null si no hay clave: el frontend cae a la site key de prueba de Cloudflare
     return {
-        "recaptcha_site_key": site_key,
+        "turnstile_site_key": settings.TURNSTILE_SITE_KEY or None,
         "environment": settings.ENVIRONMENT,
     }
