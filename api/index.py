@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from api.config import settings
 from api.database import init_db
-from api.routes import contact, reviews, health, admin, auth
+from api.routes import contact, reviews, health, admin, auth, manuals
 
 app = FastAPI(
     title="Giaconi-Capra® PAS — Backend API",
@@ -33,6 +33,7 @@ api_router.include_router(contact.router)
 api_router.include_router(reviews.router)
 api_router.include_router(health.router)
 api_router.include_router(admin.router)
+api_router.include_router(manuals.router)
 
 app.include_router(api_router)
 
@@ -42,6 +43,7 @@ app.include_router(contact.router)
 app.include_router(reviews.router)
 app.include_router(health.router)
 app.include_router(admin.router)
+app.include_router(manuals.router)
 
 @app.get("/")
 def root_status():

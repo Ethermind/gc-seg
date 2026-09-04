@@ -258,7 +258,7 @@
           <span>📚</span> Manuales y Documentación
         </h4>
         <div class="space-y-2">
-          <template x-for="(manual, idx) in selectedProd.manuales" :key="idx">
+          <template x-for="(manual, idx) in manualesDelProducto(selectedProd)" :key="idx">
             <a :href="manual.url" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-brand-cobalt font-semibold hover:border-brand-cobalt transition">
               <span class="flex items-center gap-2">
                 <span>📄</span>
@@ -266,6 +266,11 @@
               </span>
               <span class="text-[10px] bg-blue-50 text-brand-cobalt px-2 py-1 rounded-md font-bold uppercase">PDF</span>
             </a>
+          </template>
+          <template x-if="manualsApiOk && manualesDelProducto(selectedProd).length === 0">
+            <p class="text-xs text-slate-400 italic text-center py-2">
+              Todavía no hay manuales cargados para esta cobertura. Consultanos y te enviamos la documentación.
+            </p>
           </template>
         </div>
       </div>
@@ -737,10 +742,14 @@
         reviewSubmitError: null,
         turnstileWidgetId: null,
         turnstileToken: '',
+        turnstileTokenTime: 0,
         turnstileError: false,
         reviewTurnstileWidgetId: null,
         reviewTurnstileToken: '',
+        reviewTurnstileTokenTime: 0,
         reviewTurnstileError: false,
+        _contactTsResolve: null,
+        _reviewTsResolve: null,
 
         // Estado Formulario de Contacto
         formData: {
@@ -760,6 +769,11 @@
           rating: 5,
           text: ''
         },
+
+        // Catálogo de manuales (se carga desde el backend; si la API no
+        // responde se usa la documentación de muestra embebida como fallback)
+        manualsCatalog: [],
+        manualsApiOk: false,
 
         currentReview: 0,
         reviews: [
@@ -794,8 +808,12 @@
           this.fetchPublicConfig();
           this.startReviewsTimer();
           this.fetchReviews();
+          this.fetchManuals();
           this.$nextTick(() => {
+            // Verificación anti-bots invisible: se valida solo al cargar la página
             this.initTurnstileWidget();
+            this.initTurnstileReviewWidget();
+            this.startTurnstileAutoRefresh();
           });
         },
 
@@ -811,11 +829,13 @@
             if (newKey && newKey !== window.TURNSTILE_SITE_KEY) {
               window.TURNSTILE_SITE_KEY = newKey;
               this.turnstileToken = '';
+              this.turnstileTokenTime = 0;
               this.reviewTurnstileToken = '';
+              this.reviewTurnstileTokenTime = 0;
               this.turnstileWidgetId = null;
               this.reviewTurnstileWidgetId = null;
               this.initTurnstileWidget();
-              if (this.reviewModalOpen) this.initTurnstileReviewWidget();
+              this.initTurnstileReviewWidget();
             }
           } catch (e) {
             // API no disponible: se conserva la clave por defecto (modo pruebas).
@@ -823,49 +843,78 @@
           }
         },
 
-        initTurnstileWidget() {
-          const container = document.getElementById('turnstile-widget');
-          if (!container) return;
+        // Renderiza un widget Turnstile INVISIBLE: Cloudflare valida al visitante
+        // en segundo plano apenas carga la página, sin mostrar ningún checkbox.
+        renderTurnstile(containerId, which) {
+          const container = document.getElementById(containerId);
+          if (!container || !window.turnstile || typeof window.turnstile.render !== 'function') return;
 
-          // Si turnstile ya está disponible y tiene render
-          if (window.turnstile && typeof window.turnstile.render === 'function') {
-            if (this.turnstileWidgetId === null) {
-              try {
-                container.innerHTML = '';
-                this.turnstileWidgetId = window.turnstile.render(container, {
-                  sitekey: window.TURNSTILE_SITE_KEY,
-                  callback: (token) => {
-                    this.turnstileToken = token;
-                    this.turnstileError = false;
-                  },
-                  'expired-callback': () => {
-                    this.turnstileToken = '';
-                  }
-                });
-              } catch (e) {
-                console.warn('Turnstile render aviso:', e);
+          const idProp = which === 'review' ? 'reviewTurnstileWidgetId' : 'turnstileWidgetId';
+          const tokenProp = which === 'review' ? 'reviewTurnstileToken' : 'turnstileToken';
+          const timeProp = which === 'review' ? 'reviewTurnstileTokenTime' : 'turnstileTokenTime';
+          const resolveKey = which === 'review' ? '_reviewTsResolve' : '_contactTsResolve';
+
+          if (this[idProp] !== null) return; // ya renderizado
+          try {
+            container.innerHTML = '';
+            this[idProp] = window.turnstile.render(container, {
+              sitekey: window.TURNSTILE_SITE_KEY,
+              size: 'invisible',
+              callback: (token) => {
+                this[tokenProp] = token;
+                this[timeProp] = Date.now();
+                if (this[resolveKey]) { this[resolveKey](token); this[resolveKey] = null; }
+              },
+              'expired-callback': () => { this[tokenProp] = ''; },
+              'error-callback': () => {
+                this[tokenProp] = '';
+                if (this[resolveKey]) { this[resolveKey](null); this[resolveKey] = null; }
               }
-            }
-          } else {
-            // Modo testing local si el script no carga
-            setTimeout(() => {
-              if (!window.turnstile && container) {
-                container.innerHTML = `
-                  <label class="flex items-center gap-3 cursor-pointer select-none py-1">
-                    <input type="checkbox" id="local_turnstile_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
-                    <span class="text-xs font-semibold text-slate-800">No soy un robot (Modo Desarrollo)</span>
-                  </label>
-                `;
-                const localCheck = document.getElementById('local_turnstile_check');
-                if (localCheck) {
-                  localCheck.addEventListener('change', (e) => {
-                    this.turnstileToken = e.target.checked ? 'mock-turnstile-token' : '';
-                    this.turnstileError = false;
-                  });
-                }
-              }
-            }, 1500);
+            });
+          } catch (e) {
+            console.warn('Turnstile render aviso:', e);
           }
+        },
+
+        initTurnstileWidget() { this.renderTurnstile('turnstile-widget', 'contact'); },
+        initTurnstileReviewWidget() { this.renderTurnstile('turnstile-review-widget', 'review'); },
+
+        // Mantiene los tokens de Turnstile siempre frescos (duración ~5 min):
+        startTurnstileAutoRefresh() {
+          setInterval(() => {
+            if (!window.turnstile) return;
+            if (this.turnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
+            }
+            if (this.reviewTurnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
+            }
+          }, 4 * 60 * 1000);
+        },
+
+        // Pide un token fresco "al vuelo" (por si el visitante dejó la página abierta
+        // mucho tiempo antes de enviar). En desarrollo sin script de Cloudflare,
+        // devuelve un token simbólico que el backend bypasea.
+        executeTurnstile(which) {
+          return new Promise((resolve) => {
+            if (!window.turnstile) return resolve('mock-turnstile-token');
+            const idProp = which === 'review' ? 'reviewTurnstileWidgetId' : 'turnstileWidgetId';
+            const resolveKey = which === 'review' ? '_reviewTsResolve' : '_contactTsResolve';
+            if (this[idProp] === null) return resolve('mock-turnstile-token');
+
+            this[resolveKey] = resolve;
+            try {
+              window.turnstile.reset(this[idProp]);
+              window.turnstile.execute(this[idProp]);
+            } catch (e) {
+              this[resolveKey] = null;
+              return resolve('mock-turnstile-token');
+            }
+            // Salvavidas: si Cloudflare no responde en 8s, se reporta el fallo
+            setTimeout(() => {
+              if (this[resolveKey]) { this[resolveKey] = null; resolve(null); }
+            }, 8000);
+          });
         },
 
         openReviewModalAction() {
@@ -877,49 +926,31 @@
           });
         },
 
-        initTurnstileReviewWidget() {
-          const container = document.getElementById('turnstile-review-widget');
-          if (!container) return;
-
-          if (window.turnstile && typeof window.turnstile.render === 'function') {
-            if (this.reviewTurnstileWidgetId === null) {
-              try {
-                container.innerHTML = '';
-                this.reviewTurnstileWidgetId = window.turnstile.render(container, {
-                  sitekey: window.TURNSTILE_SITE_KEY,
-                  callback: (token) => {
-                    this.reviewTurnstileToken = token;
-                    this.reviewTurnstileError = false;
-                  },
-                  'expired-callback': () => {
-                    this.reviewTurnstileToken = '';
-                  }
-                });
-              } catch (e) {
-                console.warn('Turnstile review render aviso:', e);
+        async fetchManuals() {
+          try {
+            const res = await fetch('/api/manuals');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data)) {
+                this.manualsCatalog = data;
+                this.manualsApiOk = true;
               }
-            } else {
-              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
             }
-          } else {
-            setTimeout(() => {
-              if (!window.turnstile && container) {
-                container.innerHTML = `
-                  <label class="flex items-center gap-3 cursor-pointer select-none py-1">
-                    <input type="checkbox" id="local_review_turnstile_check" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
-                    <span class="text-xs font-semibold text-slate-300">No soy un robot (Modo Desarrollo)</span>
-                  </label>
-                `;
-                const localCheck = document.getElementById('local_review_turnstile_check');
-                if (localCheck) {
-                  localCheck.addEventListener('change', (e) => {
-                    this.reviewTurnstileToken = e.target.checked ? 'mock-turnstile-token' : '';
-                    this.reviewTurnstileError = false;
-                  });
-                }
-              }
-            }, 1000);
+          } catch (e) {
+            console.warn('API /api/manuals no disponible; usando documentación de muestra.');
           }
+        },
+
+        // Devuelve los manuales del producto. Si el backend respondió, muestra
+        // los cargados desde el panel admin; si no, cae a los mocks embebidos.
+        manualesDelProducto(prod) {
+          if (!prod || !prod.title) return [];
+          if (this.manualsApiOk) {
+            return this.manualsCatalog
+              .filter(m => m.producto === prod.title)
+              .map(m => ({ titulo: m.titulo, url: `/api/manuals/${m.id}/download` }));
+          }
+          return prod.manuales || [];
         },
 
         async fetchReviews() {
@@ -998,21 +1029,24 @@
         async submitContactForm() {
           if (!this.isContactFormValid || this.isSubmittingContact) return;
 
-          let token = this.turnstileToken;
-          if (window.turnstile && this.turnstileWidgetId !== null) {
-            try {
-              const res = window.turnstile.getResponse(this.turnstileWidgetId);
-              if (res) token = res;
-            } catch (e) {}
-          }
-
-          if (!token) {
-            this.turnstileError = true;
-            return;
-          }
-          this.turnstileError = false;
           this.isSubmittingContact = true;
           this.contactSubmitError = null;
+          this.turnstileError = false;
+
+          // Verificación anti-bots invisible: reutiliza el token si tiene < 4 min,
+          // si no, pide uno nuevo al vuelo (el usuario no ve ni toca nada)
+          let token = this.turnstileToken;
+          const tokenFresh = token && (Date.now() - this.turnstileTokenTime) < 4 * 60 * 1000;
+          if (!tokenFresh) {
+            token = await this.executeTurnstile('contact');
+          }
+          if (!token) {
+            this.turnstileError = true;
+            this.isSubmittingContact = false;
+            return;
+          }
+          this.turnstileToken = token;
+          this.turnstileTokenTime = Date.now();
 
           try {
             const response = await fetch('/api/contact', {
@@ -1047,10 +1081,12 @@
             this.contactSubmitError = err.message || 'Error de conexión con el servidor. Por favor intentá nuevamente.';
           } finally {
             this.isSubmittingContact = false;
+            // El token es de un solo uso: reset (re-ejecuta el widget invisible)
             if (window.turnstile && this.turnstileWidgetId !== null) {
               try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
-              this.turnstileToken = '';
             }
+            this.turnstileToken = '';
+            this.turnstileTokenTime = 0;
           }
         },
 
@@ -1080,21 +1116,23 @@
         async submitReview() {
           if (!this.isReviewFormValid || this.isSubmittingReview) return;
 
-          let token = this.reviewTurnstileToken;
-          if (window.turnstile && this.reviewTurnstileWidgetId !== null) {
-            try {
-              const res = window.turnstile.getResponse(this.reviewTurnstileWidgetId);
-              if (res) token = res;
-            } catch (e) {}
-          }
-
-          if (!token) {
-            this.reviewTurnstileError = true;
-            return;
-          }
-          this.reviewTurnstileError = false;
           this.isSubmittingReview = true;
           this.reviewSubmitError = null;
+          this.reviewTurnstileError = false;
+
+          // Verificación anti-bots invisible (misma mecánica que el formulario de contacto)
+          let token = this.reviewTurnstileToken;
+          const tokenFresh = token && (Date.now() - this.reviewTurnstileTokenTime) < 4 * 60 * 1000;
+          if (!tokenFresh) {
+            token = await this.executeTurnstile('review');
+          }
+          if (!token) {
+            this.reviewTurnstileError = true;
+            this.isSubmittingReview = false;
+            return;
+          }
+          this.reviewTurnstileToken = token;
+          this.reviewTurnstileTokenTime = Date.now();
 
           try {
             const response = await fetch('/api/reviews', {
@@ -1130,8 +1168,9 @@
             this.isSubmittingReview = false;
             if (window.turnstile && this.reviewTurnstileWidgetId !== null) {
               try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
-              this.reviewTurnstileToken = '';
             }
+            this.reviewTurnstileToken = '';
+            this.reviewTurnstileTokenTime = 0;
           }
         },
 

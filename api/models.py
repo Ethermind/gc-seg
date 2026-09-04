@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, DateTime, CheckConstraint
+from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, DateTime, CheckConstraint, LargeBinary
+from sqlalchemy.orm import deferred
 from api.database import Base
 
 class ContactLead(Base):
@@ -59,3 +60,22 @@ class AdminUser(Base):
         nullable=False
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
+
+class Manual(Base):
+    """Manuales de producto en PDF, almacenados como blob en la base de datos."""
+    __tablename__ = "manuals"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    producto = Column(String(100), nullable=False, index=True)
+    titulo = Column(String(150), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    content_type = Column(String(50), default="application/pdf", nullable=False)
+    size_bytes = Column(Integer, default=0, nullable=False)
+    # deferred: el blob solo se lee de la DB cuando se descarga el archivo,
+    # evitando cargar megabytes en los listados.
+    data = deferred(Column(LargeBinary, nullable=False))
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )

@@ -1,10 +1,10 @@
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from api.database import get_db
-from api.models import ContactLead, Review, AdminUser
+from api.models import ContactLead, Review, AdminUser, Manual
 from api.schemas import (
     LeadResponse, 
     LeadUpdate, 
@@ -14,7 +14,8 @@ from api.schemas import (
     ReviewUpdate,
     AdminUserResponse,
     AdminUserCreate,
-    ChangePasswordRequest
+    ChangePasswordRequest,
+    ManualResponse
 )
 from api.routes.reviews import generate_avatar_initials
 from api.auth import get_current_admin, hash_password
@@ -22,6 +23,9 @@ from api.auth import get_current_admin, hash_password
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+# Límite de tamaño de PDF: las funciones serverless de Vercel aceptan ~4.5 MB por request
+MAX_MANUAL_SIZE_BYTES = 4 * 1024 * 1024
 
 # ==============================================================================
 # STATS
@@ -271,6 +275,91 @@ def delete_review_admin(
         db.rollback()
         logger.error(f"Error al eliminar reseña {review_id}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar opinión.")
+
+# ==============================================================================
+# CRUD MANUALES (PDF por producto, guardados como blob en la DB)
+# ==============================================================================
+@router.get("/manuals", response_model=List[ManualResponse])
+def get_all_manuals_admin(
+    producto: Optional[str] = Query(None),
+    current_user: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    try:
+        query = db.query(Manual)
+        if producto:
+            query = query.filter(Manual.producto == producto.strip())
+        return query.order_by(Manual.producto.asc(), Manual.titulo.asc()).all()
+    except Exception as e:
+        logger.error(f"Error al listar manuales en admin: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al consultar manuales.")
+
+@router.post("/manuals", response_model=ManualResponse, status_code=status.HTTP_201_CREATED)
+async def upload_manual(
+    producto: str = Form(...),
+    titulo: str = Form(...),
+    file: UploadFile = File(...),
+    current_user: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    producto = (producto or "").strip()
+    titulo = (titulo or "").strip()
+
+    if not producto or len(producto) > 100:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Producto inválido.")
+    if not titulo or len(titulo) > 150:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="El título es obligatorio (máx. 150 caracteres).")
+
+    is_pdf = (file.content_type == "application/pdf") or (file.filename or "").lower().endswith(".pdf")
+    if not is_pdf:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Solo se permiten archivos PDF.")
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="El archivo está vacío.")
+    if len(data) > MAX_MANUAL_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="El PDF supera el máximo permitido de 4 MB."
+        )
+
+    try:
+        new_manual = Manual(
+            producto=producto,
+            titulo=titulo,
+            file_name=file.filename or f"{titulo}.pdf",
+            content_type="application/pdf",
+            size_bytes=len(data),
+            data=data
+        )
+        db.add(new_manual)
+        db.commit()
+        db.refresh(new_manual)
+        logger.info(f"Manual #{new_manual.id} cargado: {titulo} ({producto}, {len(data)} bytes) por {current_user.username}")
+        return new_manual
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error al guardar manual: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al guardar el manual.")
+
+@router.delete("/manuals/{manual_id}")
+def delete_manual_admin(
+    manual_id: int,
+    current_user: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    manual = db.query(Manual).filter(Manual.id == manual_id).first()
+    if not manual:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual no encontrado.")
+
+    try:
+        db.delete(manual)
+        db.commit()
+        return {"success": True, "message": f"Manual \"{manual.titulo}\" eliminado exitosamente."}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error al eliminar manual {manual_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar el manual.")
 
 # ==============================================================================
 # CRUD USUARIOS ADMINISTRADORES

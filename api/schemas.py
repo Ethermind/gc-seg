@@ -184,3 +184,19 @@ class TokenResponse(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: Optional[str] = None
     new_password: str = Field(..., min_length=6, max_length=100)
+
+# ==============================================================================
+# MANUALS SCHEMAS
+# ==============================================================================
+class ManualResponse(BaseModel):
+    """Metadata de un manual (sin el contenido binario del PDF)."""
+    id: int
+    producto: str
+    titulo: str
+    file_name: str
+    content_type: str = "application/pdf"
+    size_bytes: int = 0
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

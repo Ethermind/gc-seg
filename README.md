@@ -25,6 +25,7 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 * **Contact & Quote Form:** Real-time validation (email format, phone sanitization, character limits, Ley 25.326 consent).
 * **Cloudflare Turnstile:** Server-side anti-bot verification on the quote form and public reviews modal (safe bypass for development/localhost).
 * **Dynamic Testimonials Carousel:** Reads published reviews from the backend; visitors can submit their own (*MVP only*).
+* **Product Manuals (PDF) Manager:** admins upload PDF manuals per product from the dashboard; the landing's product modals list the real manuals stored in the database (with a friendly fallback when none are loaded).
 * **Admin Panel (`admin.html`):** Dashboard for CRUD management of quote requests (`contact_leads`) and review moderation (`reviews`), with direct WhatsApp links.
 * **Dual Persistence (SQLite / PostgreSQL):** Transparent connection via SQLAlchemy.
 * **Serverless Architecture for Vercel:** Decoupled frontend with Python Serverless Functions and an optimized connection pool.
@@ -68,6 +69,7 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 │   │   ├── auth.py             # Login, initial setup (/api/auth/*)
 │   │   ├── contact.py          # POST /api/contact (quote submissions)
 │   │   ├── reviews.py          # GET & POST /api/reviews (public reviews)
+│   │   ├── manuals.py          # GET /api/manuals + PDF download (public)
 │   │   ├── admin.py            # CRUD endpoints for the dashboard (/api/admin/*)
 │   │   └── health.py           # GET /api/health (health check)
 │   └── services/
@@ -131,6 +133,20 @@ The MVP (`index-new.html`) will replace the POC in production once development i
 | `is_active` | `BOOLEAN` | Account status |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | Registration date |
 | `last_login` | `TIMESTAMP WITH TIME ZONE` | Last login date |
+
+### 4. `manuals` (Product Manuals — PDFs stored as DB blobs)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
+| `producto` | `VARCHAR(100)` | Product/coverage the manual belongs to |
+| `titulo` | `VARCHAR(150)` | Display title |
+| `file_name` | `VARCHAR(255)` | Original file name |
+| `content_type` | `VARCHAR(50)` | MIME type (`application/pdf`) |
+| `size_bytes` | `INTEGER` | File size in bytes |
+| `data` | `BYTEA`/`BLOB` | PDF binary content (loaded lazily, only on download) |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Upload timestamp |
+
+> Max upload size: **4 MB** (Vercel serverless request limit is ~4.5 MB).
 
 ---
 
@@ -294,6 +310,9 @@ The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend
 | `POST` | `/api/contact` | Turnstile | Submit a quote request |
 | `GET` | `/api/reviews` | — | List approved reviews |
 | `POST` | `/api/reviews` | Turnstile | Submit a public review |
+| `GET` | `/api/manuals` | — | List product manuals metadata (optional `?producto=`) |
+| `GET` | `/api/manuals/{id}/download` | — | Download the manual PDF |
+| `GET/POST/DELETE` | `/api/admin/manuals` | JWT | Manage manuals (PDF upload, max 4 MB) |
 | `GET` | `/api/auth/setup-status` | — | Whether the panel needs initial setup |
 | `POST` | `/api/auth/setup` | — | Create the first admin (only when none exist) |
 | `POST` | `/api/auth/login` | — | Login, returns JWT |

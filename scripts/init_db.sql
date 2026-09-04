@@ -52,3 +52,17 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users (username);
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users (email);
+
+-- 4. Tabla de Manuales de Producto (PDF almacenados como blob en la DB)
+CREATE TABLE IF NOT EXISTS manuals (
+    id SERIAL PRIMARY KEY,
+    producto VARCHAR(100) NOT NULL,
+    titulo VARCHAR(150) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    content_type VARCHAR(50) NOT NULL DEFAULT 'application/pdf',
+    size_bytes INTEGER NOT NULL DEFAULT 0,
+    data BYTEA NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_manuals_producto ON manuals (producto);
