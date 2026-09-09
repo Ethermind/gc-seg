@@ -624,15 +624,69 @@
             <form @submit.prevent="uploadManual()" class="space-y-4">
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Producto*</label>
-                <select x-model="manualForm.producto" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none bg-white text-slate-800">
-                  <option value="" disabled>Seleccionar producto...</option>
-                  <optgroup label="Personas">
-                    <template x-for="p in allCoverageTitlesPersonas" :key="p"><option :value="p" x-text="p"></option></template>
-                  </optgroup>
-                  <optgroup label="Empresas y Comercios">
-                    <template x-for="p in allCoverageTitlesEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
-                  </optgroup>
-                </select>
+                <select x-model="manualForm.producto" required class="hidden"></select>
+                <!-- Custom dropdown con iconos -->
+                <div x-data="{ manualProdDdOpen: false }" @click.away="manualProdDdOpen = false" @keydown.escape.window="manualProdDdOpen = false" class="relative">
+                  <!-- Trigger -->
+                  <button type="button" @click="manualProdDdOpen = !manualProdDdOpen"
+                          class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none bg-white text-left flex items-center justify-between transition"
+                          :class="manualForm.producto ? 'text-slate-800' : 'text-slate-400'">
+                    <span class="flex items-center gap-2 min-w-0">
+                      <span x-show="manualForm.producto" x-ref="manualSelIcon"
+                            x-effect="
+                              if ($refs.manualSelIcon && manualForm.producto) {
+                                const all = [...allCoverageItemsPersonas, ...allCoverageItemsEmpresas];
+                                const found = all.find(p => p.title === manualForm.producto);
+                                if (found) {
+                                  $refs.manualSelIcon.innerHTML = '';
+                                  const i = document.createElement('i');
+                                  i.setAttribute('data-lucide', found.icon);
+                                  i.className = 'w-3.5 h-3.5';
+                                  $refs.manualSelIcon.appendChild(i);
+                                  $nextTick(() => { if (window.lucide) lucide.createIcons() });
+                                }
+                              }
+                            "
+                            class="flex-shrink-0 w-3.5 h-3.5 text-brand-cobalt flex items-center"></span>
+                      <span x-text="manualForm.producto || 'Seleccionar producto...'" class="truncate"></span>
+                    </span>
+                    <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform duration-200" :class="manualProdDdOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </button>
+
+                  <!-- Panel -->
+                  <div x-show="manualProdDdOpen"
+                       x-transition:enter="transition ease-out duration-150"
+                       x-transition:enter-start="opacity-0 -translate-y-1"
+                       x-transition:enter-end="opacity-100 translate-y-0"
+                       x-transition:leave="transition ease-in duration-100"
+                       x-transition:leave-start="opacity-100 translate-y-0"
+                       x-transition:leave-end="opacity-0 -translate-y-1"
+                       x-effect="if (manualProdDdOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
+                       class="absolute z-50 w-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto py-1" x-cloak>
+
+                    <!-- Grupo Personas -->
+                    <div class="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Personas</div>
+                    <template x-for="prod in allCoverageItemsPersonas" :key="'mdd-p-' + prod.title">
+                      <div @click="manualForm.producto = prod.title; manualProdDdOpen = false"
+                           class="px-3 py-2 flex items-center gap-2.5 text-sm cursor-pointer transition"
+                           :class="manualForm.producto === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                        <i :data-lucide="prod.icon" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        <span x-text="prod.title"></span>
+                      </div>
+                    </template>
+
+                    <!-- Grupo Empresas -->
+                    <div class="px-3 pt-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
+                    <template x-for="prod in allCoverageItemsEmpresas" :key="'mdd-e-' + prod.title">
+                      <div @click="manualForm.producto = prod.title; manualProdDdOpen = false"
+                           class="px-3 py-2 flex items-center gap-2.5 text-sm cursor-pointer transition"
+                           :class="manualForm.producto === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                        <i :data-lucide="prod.icon" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        <span x-text="prod.title"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -666,15 +720,75 @@
                 <h3 class="text-base font-bold text-slate-900">Manuales cargados</h3>
                 <p class="text-xs text-slate-500 mt-0.5">Documentación pública disponible en la web.</p>
               </div>
-              <select x-model="manualProductFilter" @change="fetchManuals()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
-                <option value="">Todos los productos</option>
-                <optgroup label="Personas">
-                  <template x-for="p in allCoverageTitlesPersonas" :key="p"><option :value="p" x-text="p"></option></template>
-                </optgroup>
-                <optgroup label="Empresas y Comercios">
-                  <template x-for="p in allCoverageTitlesEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
-                </optgroup>
-              </select>
+              <!-- Custom filter dropdown con iconos -->
+              <div x-data="{ filterDdOpen: false }" @click.away="filterDdOpen = false" @keydown.escape.window="filterDdOpen = false" class="relative">
+                <!-- Trigger -->
+                <button type="button" @click="filterDdOpen = !filterDdOpen"
+                        class="px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium text-left flex items-center justify-between gap-3 min-w-[180px] transition"
+                        :class="manualProductFilter ? 'text-slate-700' : 'text-slate-500'">
+                  <span class="flex items-center gap-2 min-w-0">
+                    <span x-show="manualProductFilter" x-ref="filterSelIcon"
+                          x-effect="
+                            if ($refs.filterSelIcon && manualProductFilter) {
+                              const all = [...allCoverageItemsPersonas, ...allCoverageItemsEmpresas];
+                              const found = all.find(p => p.title === manualProductFilter);
+                              if (found) {
+                                $refs.filterSelIcon.innerHTML = '';
+                                const i = document.createElement('i');
+                                i.setAttribute('data-lucide', found.icon);
+                                i.className = 'w-3 h-3';
+                                $refs.filterSelIcon.appendChild(i);
+                                $nextTick(() => { if (window.lucide) lucide.createIcons() });
+                              }
+                            }
+                          "
+                          class="flex-shrink-0 w-3 h-3 text-brand-cobalt flex items-center"></span>
+                    <span x-text="manualProductFilter || 'Todos los productos'" class="truncate"></span>
+                  </span>
+                  <svg class="w-3 h-3 text-slate-400 flex-shrink-0 transition-transform duration-200" :class="filterDdOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+
+                <!-- Panel -->
+                <div x-show="filterDdOpen"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     x-effect="if (filterDdOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
+                     class="absolute right-0 z-50 w-56 mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto py-1" x-cloak>
+
+                  <!-- Todos -->
+                  <div @click="manualProductFilter = ''; fetchManuals(); filterDdOpen = false"
+                       class="px-3 py-2 text-xs cursor-pointer transition"
+                       :class="!manualProductFilter ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-500 hover:bg-slate-50'">
+                    Todos los productos
+                  </div>
+
+                  <!-- Grupo Personas -->
+                  <div class="px-3 pt-2 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Personas</div>
+                  <template x-for="prod in allCoverageItemsPersonas" :key="'fdd-p-' + prod.title">
+                    <div @click="manualProductFilter = prod.title; fetchManuals(); filterDdOpen = false"
+                         class="px-3 py-1.5 flex items-center gap-2 text-xs cursor-pointer transition"
+                         :class="manualProductFilter === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                      <i :data-lucide="prod.icon" class="w-3 h-3 flex-shrink-0"></i>
+                      <span x-text="prod.title"></span>
+                    </div>
+                  </template>
+
+                  <!-- Grupo Empresas -->
+                  <div class="px-3 pt-2 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
+                  <template x-for="prod in allCoverageItemsEmpresas" :key="'fdd-e-' + prod.title">
+                    <div @click="manualProductFilter = prod.title; fetchManuals(); filterDdOpen = false"
+                         class="px-3 py-1.5 flex items-center gap-2 text-xs cursor-pointer transition"
+                         :class="manualProductFilter === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                      <i :data-lucide="prod.icon" class="w-3 h-3 flex-shrink-0"></i>
+                      <span x-text="prod.title"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -1229,6 +1343,17 @@
         faqModalOpen: false,
         faqForm: { id: null, pregunta: '', respuesta: '', categoria: '', orden: 1, activo: true },
 
+        // Mapa de iconos fallback para productos (cuando no hay coverages en la DB)
+        _fallbackIconMap: {
+          'Auto': 'car', 'Moto': 'motorbike', 'Hogar': 'home', 'Vida': 'heart-pulse',
+          'Retiro': 'trending-up', 'Accidentes Personales': 'activity', 'Viajes': 'plane',
+          'Bicicletas y Ecomovilidad': 'bike', 'Celulares y Portátiles': 'smartphone',
+          'Caución para Alquileres': 'key-round', 'Comercio': 'store', 'Consorcio': 'building',
+          'Responsabilidad Civil': 'scale', 'ART': 'hard-hat', 'Caución Empresas': 'file-text',
+          'Transporte': 'truck', 'Equipos y Maquinarias': 'wrench', 'Flotas': 'car-front',
+          'Retiro para Empleados': 'award'
+        },
+
         // Dynamic getters for manuals product selector based on registered coverages
         get allCoverageTitlesPersonas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'personas').map(c => c.titulo);
@@ -1238,6 +1363,19 @@
         get allCoverageTitlesEmpresas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'empresas').map(c => c.titulo);
           return fromDb.length > 0 ? fromDb : this.manualProductosEmpresasFallback;
+        },
+
+        // Getters enriquecidos con iconos para los dropdowns custom
+        get allCoverageItemsPersonas() {
+          const fromDb = this.coverages.filter(c => c.categoria === 'personas');
+          if (fromDb.length > 0) return fromDb.map(c => ({ title: c.titulo, icon: c.icono || 'shield' }));
+          return this.manualProductosPersonasFallback.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
+        },
+
+        get allCoverageItemsEmpresas() {
+          const fromDb = this.coverages.filter(c => c.categoria === 'empresas');
+          if (fromDb.length > 0) return fromDb.map(c => ({ title: c.titulo, icon: c.icono || 'shield' }));
+          return this.manualProductosEmpresasFallback.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
         },
 
         // Delete confirmation modal
