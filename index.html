@@ -12,6 +12,7 @@
   <!-- TODO: reemplazar por el dominio real una vez definido -->
   <link rel="canonical" href="https://www.giaconi-capra.com.ar/">
   <meta name="theme-color" content="#080e1a">
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Alpine.js Plugins (debe ir antes del core) -->
@@ -20,6 +21,9 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- Lucide Icons -->
   <script defer src="https://unpkg.com/lucide@latest"></script>
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoaded&render=explicit" async defer></script>
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -254,7 +258,7 @@
           <span>📚</span> Manuales y Documentación
         </h4>
         <div class="space-y-2">
-          <template x-for="(manual, idx) in selectedProd.manuales" :key="idx">
+          <template x-for="(manual, idx) in manualesDelProducto(selectedProd)" :key="idx">
             <a :href="manual.url" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-brand-cobalt font-semibold hover:border-brand-cobalt transition">
               <span class="flex items-center gap-2">
                 <span>📄</span>
@@ -262,6 +266,11 @@
               </span>
               <span class="text-[10px] bg-blue-50 text-brand-cobalt px-2 py-1 rounded-md font-bold uppercase">PDF</span>
             </a>
+          </template>
+          <template x-if="manualsApiOk && manualesDelProducto(selectedProd).length === 0">
+            <p class="text-xs text-slate-400 italic text-center py-2">
+              Todavía no hay manuales cargados para esta cobertura. Consultanos y te enviamos la documentación.
+            </p>
           </template>
         </div>
       </div>
@@ -321,40 +330,42 @@
         <h2 class="text-3xl font-extrabold">Opiniones de quienes nos eligen</h2>
         <p class="text-slate-400 text-sm mt-2 mb-6">Conocé lo que opinan nuestros clientes sobre la atención personalizada.</p>
         
-        <button @click="reviewModalOpen = true" class="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accentHover text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95">
+        <button @click="openReviewModalAction()" class="inline-flex items-center gap-2 bg-brand-accent hover:bg-brand-accentHover text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95">
           <span>★</span> Dejar tu opinión
         </button>
       </div>
 
-      <div @mouseenter="pauseReviews()" @mouseleave="resumeReviews()" class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative h-[320px] sm:h-[360px] flex flex-col justify-between">
-        <div>
-          <div class="flex items-center gap-1 text-amber-400 mb-4">
-            <template x-for="i in reviews[currentReview].rating" :key="i">
-              <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </template>
+      <template x-if="reviews.length > 0">
+        <div @mouseenter="pauseReviews()" @mouseleave="resumeReviews()" class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl relative h-[320px] sm:h-[360px] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              <template x-for="i in reviews[currentReview].rating" :key="i">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              </template>
+            </div>
+            <p class="text-slate-200 text-lg sm:text-xl italic leading-relaxed mb-6 line-clamp-4" x-text="'“' + reviews[currentReview].text + '”'"></p>
           </div>
-          <p class="text-slate-200 text-lg sm:text-xl italic leading-relaxed mb-6 line-clamp-4" x-text="'“' + reviews[currentReview].text + '”'"></p>
-        </div>
 
-        <div class="flex items-center justify-between border-t border-slate-800 pt-6">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-sm" x-text="reviews[currentReview].avatar"></div>
-            <div>
-              <h4 class="font-bold text-white text-sm" x-text="reviews[currentReview].name"></h4>
-              <p class="text-xs text-slate-400" x-text="reviews[currentReview].role"></p>
+          <div class="flex items-center justify-between border-t border-slate-800 pt-6">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-brand-cobalt text-white font-black flex items-center justify-center text-sm" x-text="reviews[currentReview].avatar"></div>
+              <div>
+                <h4 class="font-bold text-white text-sm" x-text="reviews[currentReview].name"></h4>
+                <p class="text-xs text-slate-400" x-text="reviews[currentReview].role"></p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button @click="prevReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Anterior opinión">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              </button>
+              <button @click="nextReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Siguiente opinión">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
             </div>
           </div>
-
-          <div class="flex items-center gap-2">
-            <button @click="prevReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Anterior opinión">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
-            <button @click="nextReview()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Siguiente opinión">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>
-          </div>
         </div>
-      </div>
+      </template>
     </div>
   </section>
 
@@ -368,11 +379,19 @@
       <h3 id="modalReviewTitle" class="text-2xl font-black mb-2 text-white">Dejá tu opinión</h3>
       <p class="text-xs text-slate-400 mb-6">Tu experiencia nos ayuda a seguir mejorando y brindar el mejor servicio.</p>
 
+      <!-- Feedback de Error -->
+      <template x-if="reviewSubmitError">
+        <div class="bg-red-500/20 border border-red-500/40 text-red-300 rounded-xl p-3 text-xs mb-4">
+          <span x-text="reviewSubmitError"></span>
+        </div>
+      </template>
+
+      <!-- Feedback de Éxito -->
       <template x-if="reviewSubmitted">
         <div class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl p-6 text-center my-4">
           <div class="text-3xl mb-2">🎉</div>
           <h4 class="font-bold text-lg mb-1">¡Muchas gracias por tu valoración!</h4>
-          <p class="text-xs text-emerald-200">Tu opinión ha sido enviada correctamente y ya forma parte de nuestra comunidad.</p>
+          <p class="text-xs text-emerald-200">Tu opinión ha sido enviada y guardada correctamente.</p>
         </div>
       </template>
 
@@ -412,13 +431,26 @@
           <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
         </div>
 
+        <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+        <div id="turnstile-review-widget" class="hidden" aria-hidden="true"></div>
+        <p x-show="reviewTurnstileError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
+          Por favor, completá la verificación anti-bots antes de publicar.
+        </p>
+
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" @click="reviewModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold">Cancelar</button>
           <button type="submit" 
-                  :disabled="!isReviewFormValid" 
-                  :class="isReviewFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-700 opacity-50 cursor-not-allowed'" 
-                  class="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition">
-            Publicar opinión
+                  :disabled="!isReviewFormValid || isSubmittingReview" 
+                  :class="(isReviewFormValid && !isSubmittingReview) ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-700 opacity-50 cursor-not-allowed'" 
+                  class="px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition flex items-center gap-2">
+            <span x-show="!isSubmittingReview">Publicar opinión</span>
+            <span x-show="isSubmittingReview" x-cloak class="flex items-center gap-1.5">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Guardando...
+            </span>
           </button>
         </div>
       </form>
@@ -441,7 +473,14 @@
             <p class="text-sm text-emerald-700 leading-relaxed max-w-md mx-auto">
               Muchas gracias por ponerte en contacto. En breve uno de nuestros asesores revisará tu mensaje para brindarte una propuesta personalizada.
             </p>
-            <button @click="resetContactForm()" class="mt-6 px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider">Enviar otra consulta</button>
+            <button @click="resetContactForm()" class="mt-6 px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-emerald-800 transition">Enviar otra consulta</button>
+          </div>
+        </template>
+
+        <!-- Feedback de Error General -->
+        <template x-if="contactSubmitError">
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 text-xs font-medium mb-6">
+            ⚠️ <span x-text="contactSubmitError"></span>
           </div>
         </template>
 
@@ -468,33 +507,84 @@
             </div>
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">¿Qué necesitás asegurar?</label>
-              <select x-model="formData.producto" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm">
-                <option value="">Seleccionar una opción (Opcional)</option>
-                <optgroup label="Personas">
-                  <option value="Auto">🚗 Auto</option>
-                  <option value="Moto">🏍️ Moto</option>
-                  <option value="Hogar">🏡 Hogar</option>
-                  <option value="Vida">🛡️ Vida</option>
-                  <option value="Retiro">📈 Retiro</option>
-                  <option value="Accidentes Personales">🩹 Accidentes Personales</option>
-                  <option value="Viajes">✈️ Viajes</option>
-                  <option value="Bicicletas y Ecomovilidad">🚲 Bicicletas y Ecomovilidad</option>
-                  <option value="Celulares y Portátiles">📱 Celulares y Portátiles</option>
-                  <option value="Caución para Alquileres">🔑 Caución para Alquileres</option>
-                </optgroup>
-                <optgroup label="Empresas y Comercios">
-                  <option value="Comercio">🏪 Comercio</option>
-                  <option value="Consorcio">🏢 Consorcio</option>
-                  <option value="Responsabilidad Civil">⚖️ Responsabilidad Civil</option>
-                  <option value="ART">👷 ART</option>
-                  <option value="Caución Empresas">📄 Caución Empresas</option>
-                  <option value="Transporte">🚛 Transporte</option>
-                  <option value="Equipos y Maquinarias">⚙️ Equipos y Maquinarias</option>
-                  <option value="Flotas">🚘 Flotas</option>
-                  <option value="Retiro para Empleados">🌟 Retiro para Empleados</option>
-                </optgroup>
-                <option value="Otro">💬 Otro tipo de consulta</option>
-              </select>
+              <!-- Custom dropdown con iconos -->
+              <div x-data="{ prodDropdownOpen: false }" @click.away="prodDropdownOpen = false" @keydown.escape.window="prodDropdownOpen = false" class="relative">
+                <!-- Trigger -->
+                <button type="button" @click="prodDropdownOpen = !prodDropdownOpen"
+                        class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-sm flex items-center justify-between bg-white text-left transition"
+                        :class="formData.producto ? 'text-slate-900' : 'text-slate-400'">
+                  <span class="flex items-center gap-2.5 min-w-0">
+                    <span x-show="formData.producto && formData.producto !== 'Otro'" x-ref="selProdIcon"
+                          x-effect="
+                            if ($refs.selProdIcon && formData.producto && formData.producto !== 'Otro') {
+                              const p = [...productosPersonas, ...productosEmpresas].find(p => p.title === formData.producto);
+                              if (p) {
+                                $refs.selProdIcon.innerHTML = '';
+                                const i = document.createElement('i');
+                                i.setAttribute('data-lucide', p.icon);
+                                i.className = 'w-4 h-4';
+                                $refs.selProdIcon.appendChild(i);
+                                $nextTick(() => { if (window.lucide) lucide.createIcons() });
+                              }
+                            }
+                          "
+                          class="flex-shrink-0 w-4 h-4 text-brand-cobalt flex items-center"></span>
+                    <span x-show="formData.producto === 'Otro'" class="flex-shrink-0 text-sm leading-none">💬</span>
+                    <span x-text="formData.producto || 'Seleccionar una opción (Opcional)'" class="truncate"></span>
+                  </span>
+                  <svg class="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200" :class="prodDropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+
+                <!-- Dropdown panel -->
+                <div x-show="prodDropdownOpen"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     x-effect="if (prodDropdownOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
+                     class="absolute z-50 w-full mt-1.5 bg-white rounded-xl border border-slate-200 shadow-xl max-h-72 overflow-y-auto py-1" x-cloak>
+
+                  <!-- Opción vacía -->
+                  <div @click="formData.producto = ''; prodDropdownOpen = false"
+                       class="px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-50 cursor-pointer transition">
+                    Seleccionar una opción (Opcional)
+                  </div>
+
+                  <!-- Grupo Personas -->
+                  <div class="px-4 pt-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Personas</div>
+                  <template x-for="prod in productosPersonas" :key="'dd-p-' + prod.id">
+                    <div @click="formData.producto = prod.title; prodDropdownOpen = false"
+                         class="px-4 py-2.5 flex items-center gap-3 text-sm cursor-pointer transition"
+                         :class="formData.producto === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                      <i :data-lucide="prod.icon" class="w-4 h-4 flex-shrink-0"></i>
+                      <span x-text="prod.title"></span>
+                    </div>
+                  </template>
+
+                  <!-- Grupo Empresas -->
+                  <div class="px-4 pt-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
+                  <template x-for="prod in productosEmpresas" :key="'dd-e-' + prod.id">
+                    <div @click="formData.producto = prod.title; prodDropdownOpen = false"
+                         class="px-4 py-2.5 flex items-center gap-3 text-sm cursor-pointer transition"
+                         :class="formData.producto === prod.title ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                      <i :data-lucide="prod.icon" class="w-4 h-4 flex-shrink-0"></i>
+                      <span x-text="prod.title"></span>
+                    </div>
+                  </template>
+
+                  <!-- Otro -->
+                  <div class="border-t border-slate-100">
+                    <div @click="formData.producto = 'Otro'; prodDropdownOpen = false"
+                         class="px-4 py-2.5 flex items-center gap-3 text-sm cursor-pointer transition"
+                         :class="formData.producto === 'Otro' ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-700 hover:bg-blue-50/60 hover:text-brand-cobalt'">
+                      <span class="w-4 h-4 flex-shrink-0 flex items-center justify-center text-xs leading-none">💬</span>
+                      <span>Otro tipo de consulta</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -506,22 +596,16 @@
             <textarea x-model="formData.mensaje" maxlength="3000" rows="3" placeholder="Detalles de tu consulta..." class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm"></textarea>
           </div>
 
-          <!-- Contenedor Unificado para Checkboxes y Verificación de Seguridad -->
+          <!-- Contenedor Unificado para Checkboxes -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-            
-            <!-- Checkbox 1: Verificación Bot -->
-            <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
-              <label class="flex items-center gap-3 cursor-pointer select-none">
-                <input type="checkbox" x-model="formData.recaptcha" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
-                <span class="text-xs font-semibold text-slate-800">No soy un robot</span>
-              </label>
-              <div class="flex items-center gap-1.5 opacity-80">
-                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" class="w-5 h-5" alt="reCAPTCHA logo">
-                <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">reCAPTCHA</span>
-              </div>
-            </div>
 
-            <!-- Checkbox 2: Preferencia WhatsApp -->
+            <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+            <div id="turnstile-widget" class="hidden" aria-hidden="true"></div>
+            <p x-show="turnstileError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
+              Por favor, completá la verificación anti-bots antes de continuar.
+            </p>
+
+            <!-- Checkbox: Preferencia WhatsApp -->
             <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
               <label for="wsp" class="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" id="wsp" x-model="formData.wsp" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
@@ -543,10 +627,17 @@
           </div>
 
           <button type="submit" 
-                  :disabled="!isContactFormValid" 
-                  :class="isContactFormValid ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer shadow-lg' : 'bg-slate-300 opacity-70 cursor-not-allowed'" 
-                  class="w-full text-white font-extrabold py-4 rounded-xl transition-all text-base uppercase tracking-wider">
-            Solicitar Cotización
+                  :disabled="!isContactFormValid || isSubmittingContact" 
+                  :class="(isContactFormValid && !isSubmittingContact) ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer shadow-lg' : 'bg-slate-300 opacity-70 cursor-not-allowed'" 
+                  class="w-full text-white font-extrabold py-4 rounded-xl transition-all text-base uppercase tracking-wider flex items-center justify-center gap-2">
+            <span x-show="!isSubmittingContact">Solicitar Cotización</span>
+            <span x-show="isSubmittingContact" x-cloak class="flex items-center gap-2">
+              <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Enviando solicitud...
+            </span>
           </button>
         </form>
       </div>
@@ -609,7 +700,7 @@
   </section>
 
   <!-- Footer con Matrícula SSN -->
-  <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs">
+  <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       <div class="flex flex-col md:flex-row items-center justify-between gap-6">
         
@@ -648,12 +739,27 @@
         </div>
       </div>
     </div>
-  </footer>
 
-<script>
+    <!-- Acceso discreto al panel de administración -->
+    <a href="admin.html"
+       class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none opacity-20 hover:opacity-70 transition-opacity duration-300 select-none focus:outline-none focus:opacity-70"
+       aria-label="Acceso al panel de administración">π</a>
+  </footer>
+  <script>
+    // Clave de prueba oficial de Cloudflare Turnstile para localhost/desarrollo (siempre aprueba)
+    // Para producción, se puede definir window.TURNSTILE_SITE_KEY (o llega desde /api/config)
+    window.TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+
     window.addEventListener('load', () => {
       if (window.lucide) lucide.createIcons();
     });
+
+    // Callback llamado por Cloudflare Turnstile al cargar su script
+    window.onTurnstileLoaded = function() {
+      if (window.appComponentInstance && typeof window.appComponentInstance.initTurnstileWidget === 'function') {
+        window.appComponentInstance.initTurnstileWidget();
+      }
+    };
 
     document.addEventListener('alpine:init', () => {
       Alpine.data('appData', () => ({
@@ -667,6 +773,22 @@
         faqOpen: null,
         reviewInterval: null,
 
+        // Estados de carga y error asíncronos
+        isSubmittingContact: false,
+        contactSubmitError: null,
+        isSubmittingReview: false,
+        reviewSubmitError: null,
+        turnstileWidgetId: null,
+        turnstileToken: '',
+        turnstileTokenTime: 0,
+        turnstileError: false,
+        reviewTurnstileWidgetId: null,
+        reviewTurnstileToken: '',
+        reviewTurnstileTokenTime: 0,
+        reviewTurnstileError: false,
+        _contactTsResolve: null,
+        _reviewTsResolve: null,
+
         // Estado Formulario de Contacto
         formData: {
           nombre: '',
@@ -675,8 +797,7 @@
           producto: '',
           mensaje: '',
           wsp: false,
-          aceptarDatos: false,
-          recaptcha: false
+          aceptarDatos: false
         },
 
         // Estado Formulario de Opinión
@@ -687,9 +808,15 @@
           text: ''
         },
 
+        // Catálogo de manuales (se carga desde el backend; si la API no
+        // responde se usa la documentación de muestra embebida como fallback)
+        manualsCatalog: [],
+        manualsApiOk: false,
+
         currentReview: 0,
         reviews: [
           {
+            id: 1,
             name: "Carlos Mendoza",
             role: "Cliente Asegurado - Auto y Hogar",
             avatar: "CM",
@@ -697,6 +824,7 @@
             text: "Excelente atención de Leandro y Paola. Cuando tuve un siniestro con el vehículo gestionaron todo de inmediato sin vueltas. Es fundamental tener un asesor que te responda cuando realmente lo necesitás."
           },
           {
+            id: 2,
             name: "Sofia Giannini",
             role: "Socia Directora - Comercio Pyme",
             avatar: "SG",
@@ -704,6 +832,7 @@
             text: "Revisaron los seguros que teníamos en nuestra empresa y nos bajaron los costos mejorando la cobertura de ART y Flotas. Transparencia total desde la primera reunión."
           },
           {
+            id: 3,
             name: "Martín Rodríguez",
             role: "Inquilino - Caución para Alquiler",
             avatar: "MR",
@@ -713,10 +842,221 @@
         ],
 
         init() {
+          window.appComponentInstance = this;
+          this.fetchPublicConfig();
           this.startReviewsTimer();
+          this.fetchReviews();
+          this.fetchManuals();
+          this.fetchCoverages();
+          this.fetchFaqs();
+          this.$nextTick(() => {
+            // Verificación anti-bots invisible: se valida solo al cargar la página
+            this.initTurnstileWidget();
+            this.initTurnstileReviewWidget();
+            this.startTurnstileAutoRefresh();
+          });
+        },
+
+        // Sincroniza la configuración pública con el backend (evita desajustes
+        // entre la site key del widget y la secret key del servidor, que hacían
+        // fallar los envíos y daban la sensación de que "no se guarda nada").
+        async fetchPublicConfig() {
+          try {
+            const res = await fetch('/api/config');
+            if (!res.ok) return;
+            const cfg = await res.json();
+            const newKey = cfg.turnstile_site_key;
+            if (newKey && newKey !== window.TURNSTILE_SITE_KEY) {
+              window.TURNSTILE_SITE_KEY = newKey;
+              this.turnstileToken = '';
+              this.turnstileTokenTime = 0;
+              this.reviewTurnstileToken = '';
+              this.reviewTurnstileTokenTime = 0;
+              this.turnstileWidgetId = null;
+              this.reviewTurnstileWidgetId = null;
+              this.initTurnstileWidget();
+              this.initTurnstileReviewWidget();
+            }
+          } catch (e) {
+            // API no disponible: se conserva la clave por defecto (modo pruebas).
+            console.warn('No se pudo obtener /api/config; usando Turnstile de prueba.');
+          }
+        },
+
+        // Renderiza un widget Turnstile INVISIBLE: Cloudflare valida al visitante
+        // en segundo plano apenas carga la página, sin mostrar ningún checkbox.
+        renderTurnstile(containerId, which) {
+          const container = document.getElementById(containerId);
+          if (!container || !window.turnstile || typeof window.turnstile.render !== 'function') return;
+
+          const idProp = which === 'review' ? 'reviewTurnstileWidgetId' : 'turnstileWidgetId';
+          const tokenProp = which === 'review' ? 'reviewTurnstileToken' : 'turnstileToken';
+          const timeProp = which === 'review' ? 'reviewTurnstileTokenTime' : 'turnstileTokenTime';
+          const resolveKey = which === 'review' ? '_reviewTsResolve' : '_contactTsResolve';
+
+          if (this[idProp] !== null) return; // ya renderizado
+          try {
+            container.innerHTML = '';
+            this[idProp] = window.turnstile.render(container, {
+              sitekey: window.TURNSTILE_SITE_KEY,
+              size: 'invisible',
+              callback: (token) => {
+                this[tokenProp] = token;
+                this[timeProp] = Date.now();
+                if (this[resolveKey]) { this[resolveKey](token); this[resolveKey] = null; }
+              },
+              'expired-callback': () => { this[tokenProp] = ''; },
+              'error-callback': () => {
+                this[tokenProp] = '';
+                if (this[resolveKey]) { this[resolveKey](null); this[resolveKey] = null; }
+              }
+            });
+          } catch (e) {
+            console.warn('Turnstile render aviso:', e);
+          }
+        },
+
+        initTurnstileWidget() { this.renderTurnstile('turnstile-widget', 'contact'); },
+        initTurnstileReviewWidget() { this.renderTurnstile('turnstile-review-widget', 'review'); },
+
+        // Mantiene los tokens de Turnstile siempre frescos (duración ~5 min):
+        startTurnstileAutoRefresh() {
+          setInterval(() => {
+            if (!window.turnstile) return;
+            if (this.turnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
+            }
+            if (this.reviewTurnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
+            }
+          }, 4 * 60 * 1000);
+        },
+
+        // Pide un token fresco "al vuelo" (por si el visitante dejó la página abierta
+        // mucho tiempo antes de enviar). En desarrollo sin script de Cloudflare,
+        // devuelve un token simbólico que el backend bypasea.
+        executeTurnstile(which) {
+          return new Promise((resolve) => {
+            if (!window.turnstile) return resolve('mock-turnstile-token');
+            const idProp = which === 'review' ? 'reviewTurnstileWidgetId' : 'turnstileWidgetId';
+            const resolveKey = which === 'review' ? '_reviewTsResolve' : '_contactTsResolve';
+            if (this[idProp] === null) return resolve('mock-turnstile-token');
+
+            this[resolveKey] = resolve;
+            try {
+              window.turnstile.reset(this[idProp]);
+              window.turnstile.execute(this[idProp]);
+            } catch (e) {
+              this[resolveKey] = null;
+              return resolve('mock-turnstile-token');
+            }
+            // Salvavidas: si Cloudflare no responde en 8s, se reporta el fallo
+            setTimeout(() => {
+              if (this[resolveKey]) { this[resolveKey] = null; resolve(null); }
+            }, 8000);
+          });
+        },
+
+        openReviewModalAction() {
+          this.reviewModalOpen = true;
+          this.reviewSubmitError = null;
+          this.reviewTurnstileError = false;
+          this.$nextTick(() => {
+            this.initTurnstileReviewWidget();
+          });
+        },
+
+        async fetchManuals() {
+          try {
+            const res = await fetch('/api/manuals');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data)) {
+                this.manualsCatalog = data;
+                this.manualsApiOk = true;
+              }
+            }
+          } catch (e) {
+            console.warn('API /api/manuals no disponible; usando documentación de muestra.');
+          }
+        },
+
+        // Devuelve los manuales del producto. Si el backend respondió, muestra
+        // los cargados desde el panel admin; si no, cae a los mocks embebidos.
+        manualesDelProducto(prod) {
+          if (!prod || !prod.title) return [];
+          if (this.manualsApiOk) {
+            return this.manualsCatalog
+              .filter(m => m.producto === prod.title)
+              .map(m => ({ titulo: m.titulo, url: `/api/manuals/${m.id}/download` }));
+          }
+          return prod.manuales || [];
+        },
+
+        async fetchCoverages() {
+          try {
+            const res = await fetch('/api/coverages?solo_activos=true');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                const mapCov = (c) => ({
+                  id: c.id,
+                  title: c.titulo,
+                  icon: c.icono,
+                  desc: c.descripcion,
+                  badge: c.badge || null,
+                  orden: c.orden
+                });
+                const personas = data.filter(c => c.categoria === 'personas').map(mapCov);
+                const empresas = data.filter(c => c.categoria === 'empresas').map(mapCov);
+                if (personas.length > 0) this.productosPersonas = personas;
+                if (empresas.length > 0) this.productosEmpresas = empresas;
+
+                this.$nextTick(() => {
+                  if (window.lucide) lucide.createIcons();
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('API /api/coverages no disponible; usando coberturas por defecto.');
+          }
+        },
+
+        async fetchFaqs() {
+          try {
+            const res = await fetch('/api/faqs?solo_activos=true');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                this.faqs = data.map(f => ({
+                  q: f.pregunta,
+                  a: f.respuesta,
+                  categoria: f.categoria
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn('API /api/faqs no disponible; usando FAQs por defecto.');
+          }
+        },
+
+        async fetchReviews() {
+          try {
+            const res = await fetch('/api/reviews');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                this.reviews = data;
+                this.currentReview = 0;
+              }
+            }
+          } catch (err) {
+            console.warn('API /api/reviews no disponible, utilizando testimonios predeterminados.');
+          }
         },
 
         startReviewsTimer() {
+          if (this.reviewInterval) clearInterval(this.reviewInterval);
           this.reviewInterval = setInterval(() => {
             this.nextReview();
           }, 5000);
@@ -750,10 +1090,9 @@
           const telefonoOk = this.formData.telefono.trim().length >= 6;
           const emailOk = this.isEmailValid;
           const mensajeOk = this.formData.mensaje.length <= 3000;
-          const recaptchaOk = this.formData.recaptcha;
           const datosOk = this.formData.aceptarDatos;
 
-          return nombreOk && telefonoOk && emailOk && mensajeOk && recaptchaOk && datosOk;
+          return nombreOk && telefonoOk && emailOk && mensajeOk && datosOk;
         },
 
         get isReviewFormValid() {
@@ -765,15 +1104,58 @@
         },
 
         nextReview() {
+          if (this.reviews.length === 0) return;
           this.currentReview = (this.currentReview + 1) % this.reviews.length;
         },
 
         prevReview() {
+          if (this.reviews.length === 0) return;
           this.currentReview = (this.currentReview - 1 + this.reviews.length) % this.reviews.length;
         },
 
-        submitContactForm() {
-          if (this.isContactFormValid) {
+        async submitContactForm() {
+          if (!this.isContactFormValid || this.isSubmittingContact) return;
+
+          this.isSubmittingContact = true;
+          this.contactSubmitError = null;
+          this.turnstileError = false;
+
+          // Verificación anti-bots invisible: reutiliza el token si tiene < 4 min,
+          // si no, pide uno nuevo al vuelo (el usuario no ve ni toca nada)
+          let token = this.turnstileToken;
+          const tokenFresh = token && (Date.now() - this.turnstileTokenTime) < 4 * 60 * 1000;
+          if (!tokenFresh) {
+            token = await this.executeTurnstile('contact');
+          }
+          if (!token) {
+            this.turnstileError = true;
+            this.isSubmittingContact = false;
+            return;
+          }
+          this.turnstileToken = token;
+          this.turnstileTokenTime = Date.now();
+
+          try {
+            const response = await fetch('/api/contact', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nombre: this.formData.nombre,
+                telefono: this.formData.telefono,
+                email: this.formData.email || null,
+                producto: this.formData.producto || null,
+                mensaje: this.formData.mensaje || '',
+                wsp: this.formData.wsp,
+                aceptarDatos: this.formData.aceptarDatos,
+                turnstile_token: token
+              })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.detail || 'Ocurrió un error al procesar tu solicitud.');
+            }
+
             this.formSubmitted = true;
             this.$nextTick(() => {
               const contactoSection = document.getElementById('contacto');
@@ -781,11 +1163,23 @@
                 contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             });
+          } catch (err) {
+            console.error('Error al enviar formulario:', err);
+            this.contactSubmitError = err.message || 'Error de conexión con el servidor. Por favor intentá nuevamente.';
+          } finally {
+            this.isSubmittingContact = false;
+            // El token es de un solo uso: reset (re-ejecuta el widget invisible)
+            if (window.turnstile && this.turnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
+            }
+            this.turnstileToken = '';
+            this.turnstileTokenTime = 0;
           }
         },
 
         resetContactForm() {
           this.formSubmitted = false;
+          this.contactSubmitError = null;
           this.formData = {
             nombre: '',
             telefono: '',
@@ -793,44 +1187,78 @@
             producto: '',
             mensaje: '',
             wsp: false,
-            aceptarDatos: false,
-            recaptcha: false
+            aceptarDatos: false
           };
+          this.turnstileToken = '';
+          this.turnstileError = false;
           this.$nextTick(() => {
             const contactoSection = document.getElementById('contacto');
             if (contactoSection) {
               contactoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            this.initTurnstileWidget();
           });
         },
 
-        submitReview() {
-          if (!this.isReviewFormValid) return;
-          
-          const initials = this.newReview.name
-            .trim()
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2) || 'U';
+        async submitReview() {
+          if (!this.isReviewFormValid || this.isSubmittingReview) return;
 
-          this.reviews.push({
-            name: this.newReview.name,
-            role: this.newReview.role || 'Cliente Asegurado',
-            avatar: initials,
-            rating: Number(this.newReview.rating),
-            text: this.newReview.text
-          });
+          this.isSubmittingReview = true;
+          this.reviewSubmitError = null;
+          this.reviewTurnstileError = false;
 
-          this.currentReview = this.reviews.length - 1;
-          this.reviewSubmitted = true;
+          // Verificación anti-bots invisible (misma mecánica que el formulario de contacto)
+          let token = this.reviewTurnstileToken;
+          const tokenFresh = token && (Date.now() - this.reviewTurnstileTokenTime) < 4 * 60 * 1000;
+          if (!tokenFresh) {
+            token = await this.executeTurnstile('review');
+          }
+          if (!token) {
+            this.reviewTurnstileError = true;
+            this.isSubmittingReview = false;
+            return;
+          }
+          this.reviewTurnstileToken = token;
+          this.reviewTurnstileTokenTime = Date.now();
 
-          setTimeout(() => {
-            this.reviewModalOpen = false;
-            this.reviewSubmitted = false;
-            this.newReview = { name: '', role: '', rating: 5, text: '' };
-          }, 2000);
+          try {
+            const response = await fetch('/api/reviews', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: this.newReview.name,
+                role: this.newReview.role || 'Cliente Asegurado',
+                rating: Number(this.newReview.rating),
+                text: this.newReview.text,
+                turnstile_token: token
+              })
+            });
+
+            const savedReview = await response.json();
+            if (!response.ok) {
+              throw new Error(savedReview.detail || 'No se pudo guardar tu opinión.');
+            }
+
+            this.reviews.push(savedReview);
+            this.currentReview = this.reviews.length - 1;
+            this.reviewSubmitted = true;
+
+            setTimeout(() => {
+              this.reviewModalOpen = false;
+              this.reviewSubmitted = false;
+              this.newReview = { name: '', role: '', rating: 5, text: '' };
+            }, 2000);
+          } catch (err) {
+            console.error('Error al enviar reseña:', err);
+            this.reviewSubmitError = err.message || 'Error al guardar la reseña. Por favor intentá nuevamente.';
+          } finally {
+            this.isSubmittingReview = false;
+            if (window.turnstile && this.reviewTurnstileWidgetId !== null) {
+              try { window.turnstile.reset(this.reviewTurnstileWidgetId); } catch (e) {}
+            }
+            this.reviewTurnstileToken = '';
+            this.reviewTurnstileTokenTime = 0;
+          }
         },
 
         productosPersonas: [

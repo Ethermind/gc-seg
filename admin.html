@@ -297,11 +297,11 @@
             <span>⭐</span> Testimonios
             <span class="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="reviews.length"></span>
           </button>
-          <button @click="currentTab = 'admins'" 
-                  :class="currentTab === 'admins' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+          <button @click="currentTab = 'coverages'" 
+                  :class="currentTab === 'coverages' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
                   class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
-            <span>👥</span> Administradores
-            <span class="bg-purple-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="adminUsers.length"></span>
+            <span>🛡️</span> Coberturas
+            <span class="bg-brand-cobalt text-white text-[10px] px-2 py-0.5 rounded-full" x-text="coverages.length"></span>
           </button>
           <button @click="currentTab = 'manuals'" 
                   :class="currentTab === 'manuals' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
@@ -309,15 +309,28 @@
             <span>📚</span> Manuales
             <span class="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="manuals.length"></span>
           </button>
+          <button @click="currentTab = 'faqs'" 
+                  :class="currentTab === 'faqs' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>❓</span> FAQs
+            <span class="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="faqs.length"></span>
+          </button>
+          <button @click="currentTab = 'admins'" 
+                  :class="currentTab === 'admins' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>👥</span> Administradores
+            <span class="bg-purple-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="adminUsers.length"></span>
+          </button>
         </div>
 
         <!-- Quick Action Buttons -->
         <div>
           <template x-if="currentTab === 'reviews'">
-            <button @click="openReviewModal(null)" class="bg-brand-cobalt hover:bg-brand-cobaltHover text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-              <span>+</span> Nueva Opinión
-            </button>
-          </template>
+           </template>
+          <template x-if="currentTab === 'coverages'">
+           </template>
+          <template x-if="currentTab === 'faqs'">
+           </template>
         </div>
       </div>
 
@@ -614,10 +627,10 @@
                 <select x-model="manualForm.producto" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none bg-white text-slate-800">
                   <option value="" disabled>Seleccionar producto...</option>
                   <optgroup label="Personas">
-                    <template x-for="p in manualProductosPersonas" :key="p"><option :value="p" x-text="p"></option></template>
+                    <template x-for="p in allCoverageTitlesPersonas" :key="p"><option :value="p" x-text="p"></option></template>
                   </optgroup>
                   <optgroup label="Empresas y Comercios">
-                    <template x-for="p in manualProductosEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
+                    <template x-for="p in allCoverageTitlesEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
                   </optgroup>
                 </select>
               </div>
@@ -656,10 +669,10 @@
               <select x-model="manualProductFilter" @change="fetchManuals()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
                 <option value="">Todos los productos</option>
                 <optgroup label="Personas">
-                  <template x-for="p in manualProductosPersonas" :key="p"><option :value="p" x-text="p"></option></template>
+                  <template x-for="p in allCoverageTitlesPersonas" :key="p"><option :value="p" x-text="p"></option></template>
                 </optgroup>
                 <optgroup label="Empresas y Comercios">
-                  <template x-for="p in manualProductosEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
+                  <template x-for="p in allCoverageTitlesEmpresas" :key="p"><option :value="p" x-text="p"></option></template>
                 </optgroup>
               </select>
             </div>
@@ -708,6 +721,146 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: COBERTURAS (PERSONAS & EMPRESAS) -->
+      <div x-show="currentTab === 'coverages'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Coberturas Ofrecidas</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Editá los textos, iconos, orden y estado de las coberturas de Personas y Empresas.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría:</label>
+              <select x-model="coverageCategoryFilter" @change="fetchCoverages()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
+                <option value="">Todas las categorías</option>
+                <option value="personas">👤 Personas</option>
+                <option value="empresas">🏢 Empresas</option>
+              </select>
+              <button @click="openCoverageModal(null)" class="bg-brand-cobalt hover:bg-brand-cobaltHover text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+                <span>+</span> Nueva Cobertura
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Orden</th>
+                  <th class="py-3.5 px-4">Título & Icono</th>
+                  <th class="py-3.5 px-4">Categoría</th>
+                  <th class="py-3.5 px-4">Descripción</th>
+                  <th class="py-3.5 px-4">Badge</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="c in coverages" :key="c.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3.5 px-4 font-mono font-bold text-slate-400" x-text="c.orden"></td>
+                    <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-mono" x-text="c.icono"></span>
+                        <span x-text="c.titulo"></span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider"
+                            :class="c.categoria === 'personas' ? 'bg-blue-50 text-brand-cobalt border border-blue-100' : 'bg-amber-50 text-amber-800 border border-amber-200'"
+                            x-text="c.categoria === 'personas' ? '👤 Personas' : '🏢 Empresas'"></span>
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-600 max-w-xs truncate" :title="c.descripcion" x-text="c.descripcion"></td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span x-show="c.badge" class="bg-brand-accent text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full" x-text="c.badge"></span>
+                      <span x-show="!c.badge" class="text-slate-300">—</span>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <button @click="toggleCoverageActivo(c)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
+                              :class="c.activo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
+                        <span x-text="c.activo ? '✓ Activa' : 'Inactiva'"></span>
+                      </button>
+                    </td>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <button @click="openCoverageModal(c)" class="p-2 bg-blue-50 hover:bg-blue-100 text-brand-cobalt rounded-lg transition" title="Editar Cobertura">✏️</button>
+                        <button @click="confirmDeleteCoverage(c)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar Cobertura">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="coverages.length === 0 && !loading">
+                  <td colspan="7" class="py-10 text-center text-slate-400 text-sm">
+                    No se encontraron coberturas. 🛡️
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: PREGUNTAS FRECUENTES (FAQS) -->
+      <div x-show="currentTab === 'faqs'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Preguntas Frecuentes</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Administrá las preguntas y respuestas que se exhiben en la página principal.</p>
+            </div>
+            <button @click="openFaqModal(null)" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+              <span>+</span> Nueva FAQ
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Orden</th>
+                  <th class="py-3.5 px-4">Pregunta</th>
+                  <th class="py-3.5 px-4">Respuesta</th>
+                  <th class="py-3.5 px-4">Categoría</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="f in faqs" :key="f.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3.5 px-4 font-mono font-bold text-slate-400" x-text="f.orden"></td>
+                    <td class="py-3.5 px-4 font-bold text-slate-900 max-w-xs" x-text="f.pregunta"></td>
+                    <td class="py-3.5 px-4 text-slate-600 max-w-sm truncate" :title="f.respuesta" x-text="f.respuesta"></td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600" x-text="f.categoria || 'General'"></span>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <button @click="toggleFaqActivo(f)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
+                              :class="f.activo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
+                        <span x-text="f.activo ? '✓ Activa' : 'Inactiva'"></span>
+                      </button>
+                    </td>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <button @click="openFaqModal(f)" class="p-2 bg-blue-50 hover:bg-blue-100 text-brand-cobalt rounded-lg transition" title="Editar FAQ">✏️</button>
+                        <button @click="confirmDeleteFaq(f)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar FAQ">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="faqs.length === 0 && !loading">
+                  <td colspan="6" class="py-10 text-center text-slate-400 text-sm">
+                    No se encontraron preguntas frecuentes. ❓
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -912,6 +1065,111 @@
     </div>
   </div>
 
+  <!-- MODAL: CREAR / EDITAR COBERTURA -->
+  <div x-show="coverageModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="coverageModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
+      <button @click="coverageModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <h3 class="text-2xl font-black text-slate-900 mb-1" x-text="coverageForm.id ? 'Editar Cobertura' : 'Nueva Cobertura'"></h3>
+      <p class="text-slate-500 mb-6">Configurá la información que se mostrará en el catálogo de la web.</p>
+
+      <form @submit.prevent="saveCoverage()" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Categoría*</label>
+            <select x-model="coverageForm.categoria" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none bg-white font-medium">
+              <option value="personas">👤 Personas</option>
+              <option value="empresas">🏢 Empresas</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Orden*</label>
+            <input type="number" x-model.number="coverageForm.orden" min="0" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Título*</label>
+            <input type="text" x-model="coverageForm.titulo" required maxlength="100" placeholder="Ej: Auto, ART..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Icono Lucide*</label>
+            <input type="text" x-model="coverageForm.icono" required maxlength="50" placeholder="Ej: car, home, store, hard-hat" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none font-mono">
+            <p class="text-[10px] text-slate-400 mt-0.5">Nombre en lucide.dev (ej: car, bike, shield)</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Badge (Opcional)</label>
+          <input type="text" x-model="coverageForm.badge" maxlength="20" placeholder="Ej: Nuevo, Destacado" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Descripción*</label>
+          <textarea x-model="coverageForm.descripcion" required rows="4" placeholder="Explicación detallada de lo que cubre esta póliza..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none leading-relaxed"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <input type="checkbox" id="coverage_activo" x-model="coverageForm.activo" class="w-4 h-4 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
+          <label for="coverage_activo" class="text-xs font-semibold text-slate-700 cursor-pointer">Cobertura activa y visible en la web</label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="coverageModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-bold text-xs shadow transition">
+            <span x-text="coverageForm.id ? 'Guardar Cambios' : 'Crear Cobertura'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR FAQ -->
+  <div x-show="faqModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="faqModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
+      <button @click="faqModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <h3 class="text-2xl font-black text-slate-900 mb-1" x-text="faqForm.id ? 'Editar Pregunta Frecuente' : 'Nueva Pregunta Frecuente'"></h3>
+      <p class="text-slate-500 mb-6">Gestioná las dudas frecuentes de los usuarios.</p>
+
+      <form @submit.prevent="saveFaq()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Pregunta*</label>
+          <input type="text" x-model="faqForm.pregunta" required placeholder="Ej: ¿Trabajan con una sola compañía?" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Respuesta*</label>
+          <textarea x-model="faqForm.respuesta" required rows="4" placeholder="Explicación detallada..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none leading-relaxed"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Categoría (Opcional)</label>
+            <input type="text" x-model="faqForm.categoria" placeholder="general, cotizacion, siniestros..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Orden*</label>
+            <input type="number" x-model.number="faqForm.orden" min="0" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <input type="checkbox" id="faq_activo" x-model="faqForm.activo" class="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
+          <label for="faq_activo" class="text-xs font-semibold text-slate-700 cursor-pointer">Pregunta activa y visible en la web</label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="faqModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow transition">
+            <span x-text="faqForm.id ? 'Guardar Cambios' : 'Crear FAQ'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.data('adminApp', () => ({
@@ -957,8 +1215,30 @@
         manualForm: { producto: '', titulo: '' },
         manualFile: null,
         manualUploading: false,
-        manualProductosPersonas: ['Auto', 'Moto', 'Hogar', 'Vida', 'Retiro', 'Accidentes Personales', 'Viajes', 'Bicicletas y Ecomovilidad', 'Celulares y Portátiles', 'Caución para Alquileres'],
-        manualProductosEmpresas: ['Comercio', 'Consorcio', 'Responsabilidad Civil', 'ART', 'Caución Empresas', 'Transporte', 'Equipos y Maquinarias', 'Flotas', 'Retiro para Empleados'],
+        manualProductosPersonasFallback: ['Auto', 'Moto', 'Hogar', 'Vida', 'Retiro', 'Accidentes Personales', 'Viajes', 'Bicicletas y Ecomovilidad', 'Celulares y Portátiles', 'Caución para Alquileres'],
+        manualProductosEmpresasFallback: ['Comercio', 'Consorcio', 'Responsabilidad Civil', 'ART', 'Caución Empresas', 'Transporte', 'Equipos y Maquinarias', 'Flotas', 'Retiro para Empleados'],
+
+        // Coverages state
+        coverages: [],
+        coverageCategoryFilter: '',
+        coverageModalOpen: false,
+        coverageForm: { id: null, categoria: 'personas', titulo: '', icono: 'shield', descripcion: '', badge: '', orden: 1, activo: true },
+
+        // FAQs state
+        faqs: [],
+        faqModalOpen: false,
+        faqForm: { id: null, pregunta: '', respuesta: '', categoria: '', orden: 1, activo: true },
+
+        // Dynamic getters for manuals product selector based on registered coverages
+        get allCoverageTitlesPersonas() {
+          const fromDb = this.coverages.filter(c => c.categoria === 'personas').map(c => c.titulo);
+          return fromDb.length > 0 ? fromDb : this.manualProductosPersonasFallback;
+        },
+
+        get allCoverageTitlesEmpresas() {
+          const fromDb = this.coverages.filter(c => c.categoria === 'empresas').map(c => c.titulo);
+          return fromDb.length > 0 ? fromDb : this.manualProductosEmpresasFallback;
+        },
 
         // Delete confirmation modal
         deleteModalOpen: false,
@@ -1095,7 +1375,9 @@
             this.fetchLeads(),
             this.fetchReviewsAdmin(),
             this.fetchAdminUsers(),
-            this.fetchManuals()
+            this.fetchManuals(),
+            this.fetchCoverages(),
+            this.fetchFaqs()
           ]);
           this.loading = false;
         },
@@ -1423,6 +1705,224 @@
           const cleanPhone = lead.telefono.replace(/[^0-9]/g, '');
           const msg = encodeURIComponent(`Hola ${lead.nombre}, nos comunicamos desde Giaconi-Capra® PAS en relación a tu consulta por seguro de ${lead.producto || 'cobertura'}.`);
           return `https://wa.me/${cleanPhone}?text=${msg}`;
+        },
+
+        // ==========================================
+        // MÉTODOS PARA COBERTURAS
+        // ==========================================
+        async fetchCoverages() {
+          try {
+            let url = '/api/coverages/admin';
+            if (this.coverageCategoryFilter) {
+              url += `?categoria=${encodeURIComponent(this.coverageCategoryFilter)}`;
+            }
+            const res = await this.authFetch(url);
+            if (res.ok) this.coverages = await res.json();
+          } catch (e) {
+            this.showToast('Error al cargar coberturas.', 'error');
+          }
+        },
+
+        openCoverageModal(coverage = null) {
+          if (coverage) {
+            this.coverageForm = {
+              id: coverage.id,
+              categoria: coverage.categoria,
+              titulo: coverage.titulo,
+              icono: coverage.icono,
+              descripcion: coverage.descripcion,
+              badge: coverage.badge || '',
+              orden: coverage.orden || 0,
+              activo: coverage.activo !== undefined ? coverage.activo : true
+            };
+          } else {
+            const nextOrder = (this.coverages.length + 1);
+            this.coverageForm = {
+              id: null,
+              categoria: this.coverageCategoryFilter || 'personas',
+              titulo: '',
+              icono: 'shield',
+              descripcion: '',
+              badge: '',
+              orden: nextOrder,
+              activo: true
+            };
+          }
+          this.coverageModalOpen = true;
+        },
+
+        async saveCoverage() {
+          try {
+            const isEdit = !!this.coverageForm.id;
+            const url = isEdit ? `/api/coverages/admin/${this.coverageForm.id}` : `/api/coverages/admin`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const payload = {
+              categoria: this.coverageForm.categoria,
+              titulo: this.coverageForm.titulo.trim(),
+              icono: this.coverageForm.icono.trim().toLowerCase(),
+              descripcion: this.coverageForm.descripcion.trim(),
+              badge: this.coverageForm.badge ? this.coverageForm.badge.trim() : null,
+              orden: Number(this.coverageForm.orden) || 0,
+              activo: Boolean(this.coverageForm.activo)
+            };
+
+            const res = await this.authFetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || 'Error al guardar cobertura.');
+
+            this.coverageModalOpen = false;
+            this.fetchCoverages();
+            this.showToast(isEdit ? 'Cobertura actualizada.' : 'Cobertura creada con éxito.');
+          } catch (e) {
+            this.showToast(e.message || 'Error al guardar cobertura.', 'error');
+          }
+        },
+
+        async toggleCoverageActivo(coverage) {
+          try {
+            const newStatus = !coverage.activo;
+            const res = await this.authFetch(`/api/coverages/admin/${coverage.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ activo: newStatus })
+            });
+            if (res.ok) {
+              coverage.activo = newStatus;
+              this.showToast(newStatus ? 'Cobertura activada.' : 'Cobertura desactivada.');
+            } else {
+              throw new Error();
+            }
+          } catch (e) {
+            this.showToast('Error al cambiar estado de la cobertura.', 'error');
+          }
+        },
+
+        confirmDeleteCoverage(c) {
+          this.deleteModalMessage = `Se eliminará la cobertura "${c.titulo}" (${c.categoria}). Esta acción no se puede deshacer.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/coverages/admin/${c.id}`, { method: 'DELETE' });
+              if (res.ok) {
+                this.coverages = this.coverages.filter(x => x.id !== c.id);
+                this.showToast('Cobertura eliminada.');
+              } else {
+                throw new Error();
+              }
+            } catch (e) {
+              this.showToast('Error al eliminar la cobertura.', 'error');
+            }
+          };
+          this.deleteModalOpen = true;
+        },
+
+        // ==========================================
+        // MÉTODOS PARA PREGUNTAS FRECUENTES (FAQS)
+        // ==========================================
+        async fetchFaqs() {
+          try {
+            const res = await this.authFetch('/api/faqs/admin');
+            if (res.ok) this.faqs = await res.json();
+          } catch (e) {
+            this.showToast('Error al cargar preguntas frecuentes.', 'error');
+          }
+        },
+
+        openFaqModal(faq = null) {
+          if (faq) {
+            this.faqForm = {
+              id: faq.id,
+              pregunta: faq.pregunta,
+              respuesta: faq.respuesta,
+              categoria: faq.categoria || '',
+              orden: faq.orden || 0,
+              activo: faq.activo !== undefined ? faq.activo : true
+            };
+          } else {
+            const nextOrder = (this.faqs.length + 1);
+            this.faqForm = {
+              id: null,
+              pregunta: '',
+              respuesta: '',
+              categoria: 'general',
+              orden: nextOrder,
+              activo: true
+            };
+          }
+          this.faqModalOpen = true;
+        },
+
+        async saveFaq() {
+          try {
+            const isEdit = !!this.faqForm.id;
+            const url = isEdit ? `/api/faqs/admin/${this.faqForm.id}` : `/api/faqs/admin`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const payload = {
+              pregunta: this.faqForm.pregunta.trim(),
+              respuesta: this.faqForm.respuesta.trim(),
+              categoria: this.faqForm.categoria ? this.faqForm.categoria.trim() : null,
+              orden: Number(this.faqForm.orden) || 0,
+              activo: Boolean(this.faqForm.activo)
+            };
+
+            const res = await this.authFetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || 'Error al guardar FAQ.');
+
+            this.faqModalOpen = false;
+            this.fetchFaqs();
+            this.showToast(isEdit ? 'FAQ actualizada.' : 'FAQ creada con éxito.');
+          } catch (e) {
+            this.showToast(e.message || 'Error al guardar la FAQ.', 'error');
+          }
+        },
+
+        async toggleFaqActivo(faq) {
+          try {
+            const newStatus = !faq.activo;
+            const res = await this.authFetch(`/api/faqs/admin/${faq.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ activo: newStatus })
+            });
+            if (res.ok) {
+              faq.activo = newStatus;
+              this.showToast(newStatus ? 'FAQ activada.' : 'FAQ desactivada.');
+            } else {
+              throw new Error();
+            }
+          } catch (e) {
+            this.showToast('Error al cambiar estado de la FAQ.', 'error');
+          }
+        },
+
+        confirmDeleteFaq(f) {
+          this.deleteModalMessage = `Se eliminará la pregunta "${f.pregunta.slice(0, 50)}...". Esta acción no se puede deshacer.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/faqs/admin/${f.id}`, { method: 'DELETE' });
+              if (res.ok) {
+                this.faqs = this.faqs.filter(x => x.id !== f.id);
+                this.showToast('FAQ eliminada.');
+              } else {
+                throw new Error();
+              }
+            } catch (e) {
+              this.showToast('Error al eliminar la FAQ.', 'error');
+            }
+          };
+          this.deleteModalOpen = true;
         }
       }));
     });

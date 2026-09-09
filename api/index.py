@@ -5,11 +5,11 @@ from slowapi.errors import RateLimitExceeded
 from api.config import settings
 from api.database import init_db
 from api.ratelimit import limiter
-from api.routes import contact, reviews, health, admin, auth, manuals
+from api.routes import contact, reviews, health, admin, auth, manuals, coverages, faqs
 
 app = FastAPI(
     title="Giaconi-Capra® PAS — Backend API",
-    description="API Serverless para gestión de cotizaciones, leads, testimonios, autenticación y administración",
+    description="API Serverless para gestion de cotizaciones, leads, testimonios, autenticacion y administracion",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -41,6 +41,8 @@ api_router.include_router(reviews.router)
 api_router.include_router(health.router)
 api_router.include_router(admin.router)
 api_router.include_router(manuals.router)
+api_router.include_router(coverages.router)
+api_router.include_router(faqs.router)
 
 app.include_router(api_router)
 
@@ -51,6 +53,8 @@ app.include_router(reviews.router)
 app.include_router(health.router)
 app.include_router(admin.router)
 app.include_router(manuals.router)
+app.include_router(coverages.router)
+app.include_router(faqs.router)
 
 @app.get("/")
 def root_status():
@@ -60,8 +64,8 @@ def root_status():
         "docs": "/api/docs"
     }
 
-# Config pública para el frontend: mantiene frontend y backend consistentes
-# (misma site key de Turnstile en ambos lados -> los envíos no fallan por desajuste)
+# Config publica para el frontend: mantiene frontend y backend consistentes
+# (misma site key de Turnstile en ambos lados -> los envios no fallan por desajuste)
 @app.get("/api/config")
 @app.get("/config")
 def public_config():

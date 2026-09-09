@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, Dat
 from sqlalchemy.orm import deferred
 from api.database import Base
 
+
 class ContactLead(Base):
     __tablename__ = "contact_leads"
 
@@ -18,11 +19,12 @@ class ContactLead(Base):
     user_agent = Column(Text, nullable=True)
     status = Column(String(20), default="nuevo", index=True, nullable=False)
     created_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         index=True,
         nullable=False
     )
+
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -38,11 +40,12 @@ class Review(Base):
     text = Column(Text, nullable=False)
     is_approved = Column(Boolean, default=True, index=True, nullable=False)
     created_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         index=True,
         nullable=False
     )
+
 
 class AdminUser(Base):
     __tablename__ = "admin_users"
@@ -55,11 +58,12 @@ class AdminUser(Base):
     role = Column(String(20), default="admin", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
+
 
 class Manual(Base):
     """Manuales de producto en PDF, almacenados como blob en la base de datos."""
@@ -71,9 +75,44 @@ class Manual(Base):
     file_name = Column(String(255), nullable=False)
     content_type = Column(String(50), default="application/pdf", nullable=False)
     size_bytes = Column(Integer, default=0, nullable=False)
-    # deferred: el blob solo se lee de la DB cuando se descarga el archivo,
-    # evitando cargar megabytes en los listados.
     data = deferred(Column(LargeBinary, nullable=False))
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+
+class Coverage(Base):
+    """Coberturas de seguros por categoria (Personas / Empresas)."""
+    __tablename__ = "coverages"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    categoria = Column(String(20), index=True, nullable=False)
+    titulo = Column(String(100), nullable=False)
+    icono = Column(String(50), nullable=False)
+    descripcion = Column(Text, nullable=False)
+    badge = Column(String(20), nullable=True)
+    orden = Column(Integer, default=0, index=True)
+    activo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+        nullable=False
+    )
+
+
+class FAQ(Base):
+    """Preguntas Frecuentes gestionables desde el panel de administracion."""
+    __tablename__ = "faqs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    pregunta = Column(Text, nullable=False)
+    respuesta = Column(Text, nullable=False)
+    categoria = Column(String(50), nullable=True, index=True)
+    orden = Column(Integer, default=0, index=True)
+    activo = Column(Boolean, default=True, nullable=False)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

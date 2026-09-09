@@ -1,331 +1,365 @@
 # Giaconi-Capra® PAS — Website & Insurance Quote Manager
 
-Corporate website and insurance quote platform for **Giaconi-Capra® Productores Asesores de Seguros**. Built as a static frontend (Tailwind CSS + Alpine.js) backed by a **serverless FastAPI (Python) API**, flexible persistence (**SQLite locally / PostgreSQL in production**) and an integrated **Admin Panel (CRUD)**.
+Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra® Productores Asesores de Seguros**. Desarrollado con frontend estático reactivo (Tailwind CSS + Alpine.js) conectado a una **API Serverless FastAPI (Python)**, persistencia flexible (**SQLite en local / PostgreSQL en producción**) y un **Panel de Administración (CRUD)** completo.
 
 ---
 
-## 🚦 Project Status (Read First)
+## 🚦 Estado del Proyecto
 
-This repository currently contains **two landing pages**:
-
-| File | Role | Description |
+| Archivo | Rol | Descripción |
 | :--- | :--- | :--- |
-| `index.html` | **POC** (Proof of Concept) | The page currently served at `/`. Uses **in-memory mock data only**: the contact form shows a success message without calling the API, and testimonials are a hardcoded array. Nothing is persisted. |
-| `index-new.html` | **MVP** (in development) | The real product under active development. Wired to the backend API (`/api/contact`, `/api/reviews`). ✅ Data persistence fixed (see [Known Issues](#-known-issues)). |
-| `admin.html` | Admin Panel | Fully functional SPA (JWT auth + CRUD). Works against the backend API. |
-
-The MVP (`index-new.html`) will replace the POC in production once development is complete.
+| `index.html` | **Producción (MVP)** | Landing page principal conectada al backend (`/api/contact`, `/api/reviews`, `/api/coverages`, `/api/faqs`, `/api/manuals`). Cuenta con Turnstile invisible y datos 100% dinámicos desde la base de datos. |
+| `index-OLD.html` | **Backup / Histórico** | Copia de respaldo de la versión previa estática / POC. |
+| `admin.html` | **Panel de Administración** | SPA administrativa completa con autenticación JWT, métricas en tiempo real y CRUD para leads, testimonios, coberturas, FAQs, manuales PDF y administradores. |
 
 ---
 
-## 🚀 Features
+## 🚀 Características Principales
 
-* **Responsive UI:** Built with Tailwind CSS, adapted to mobile, tablet and desktop.
-* **Interactive Coverage Catalog:** Tabs (Individuals / Business) and modals with product details.
-* **Contact & Quote Form:** Real-time validation (email format, phone sanitization, character limits, Ley 25.326 consent).
-* **Cloudflare Turnstile:** Server-side anti-bot verification on the quote form and public reviews modal (safe bypass for development/localhost).
-* **Dynamic Testimonials Carousel:** Reads published reviews from the backend; visitors can submit their own (*MVP only*).
-* **Product Manuals (PDF) Manager:** admins upload PDF manuals per product from the dashboard; the landing's product modals list the real manuals stored in the database (with a friendly fallback when none are loaded).
-* **Admin Panel (`admin.html`):** Dashboard for CRUD management of quote requests (`contact_leads`) and review moderation (`reviews`), with direct WhatsApp links.
-* **Dual Persistence (SQLite / PostgreSQL):** Transparent connection via SQLAlchemy.
-* **Serverless Architecture for Vercel:** Decoupled frontend with Python Serverless Functions and an optimized connection pool.
-* **WhatsApp Integration:** Floating button and priority chat contact option.
+* **Interfaz Responsiva & Moderna:** Diseñada con Tailwind CSS y tipografía *Plus Jakarta Sans*, adaptada a móviles, tablets y monitores de escritorio.
+* **Catálogo Dinámico de Coberturas:** Pestañas separadas para *Personas* y *Empresas*. Se gestionan (título, descripción, icono Lucide, badge y orden) desde el panel de administración y se reflejan en tiempo real en la web.
+* **Formulario de Contacto y Cotizaciones:** Validación en tiempo real (formato de correo, sanitización de teléfonos, longitud de mensajes, consentimiento de Ley 25.326). El listado de coberturas se sincroniza dinámicamente con la base de datos.
+* **Preguntas Frecuentes (FAQs) Dinámicas:** Acordeón interactivo cuyas preguntas, respuestas, categorías y orden se cargan desde la API y se administran desde el panel.
+* **Cloudflare Turnstile (Invisible):** Verificación anti-bots sin captchas ni checkboxes molestos ("No soy un robot" eliminado). Protege tanto el envío de cotizaciones como las opiniones de clientes.
+* **Rate Limiting por IP (`slowapi`):** Límite configurado a 10 peticiones/minuto por IP en los endpoints públicos de cotización y opiniones (`/api/contact` y `/api/reviews`).
+* **Carrusel Dinámico de Testimonios:** Lee reseñas aprobadas desde el backend y permite a clientes publicar opiniones con calificación por estrellas (1 a 5).
+* **Gestor de Manuales PDF por Producto:** Carga de manuales en PDF desde el panel (almacenados como blobs en base de datos). Los manuales se vinculan automáticamente con la cobertura seleccionada y se listan en el modal de detalle.
+* **Panel de Control Administrativo (`admin.html`):**
+  - Métricas en vivo (solicitudes totales, nuevas, opiniones, administradores).
+  - Gestión de Cotizaciones (cambio de estado, filtros, detalle con IP/dispositivo, botón directo a WhatsApp).
+  - Moderación de Opiniones (crear, editar, aprobar/ocultar y eliminar).
+  - Gestión de Coberturas (Personas y Empresas).
+  - Gestión de Preguntas Frecuentes (FAQs).
+  - Gestor de Manuales PDF (asociación dinámica a coberturas).
+  - Gestión de Usuarios Administradores (roles `admin` y `superadmin`, reseteo de contraseñas, protecciones contra eliminación propia o del último superadmin).
+* **Persistencia Dual (SQLite / PostgreSQL):** Conexión transparente mediante SQLAlchemy 2.0 (SQLite local y PostgreSQL para Vercel/Neon/Supabase).
+* **Arquitectura Serverless optimizada para Vercel:** Handlers ASGI desacoplados, pool de conexiones reciclable y migración DDL automática en cold start (`init_db()`).
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Stack Tecnológico
 
 ### Frontend
-* **HTML5 Semantic Structure**
-* **Tailwind CSS v3** (CDN / custom brand config)
+* **HTML5 Semántico**
+* **Tailwind CSS v3** (CDN con configuración de paleta de marca)
 * **Alpine.js v3** + `@alpinejs/collapse`
 * **Lucide Icons**
+* **Cloudflare Turnstile** (JavaScript API invisible)
 * **Google Fonts** (Plus Jakarta Sans)
-* **Cloudflare Turnstile**
 
-### Backend & Persistence
-* **Python 3.12+ / FastAPI** (REST endpoints + automatic OpenAPI docs)
-* **SQLAlchemy 2.0 & Pydantic v2** (ORM, schema validation/sanitization)
-* **PostgreSQL / SQLite** (Vercel Postgres, Neon, Supabase, or local SQLite)
-* **HTTPX** (async client for the Cloudflare Turnstile API)
-* **PyJWT + bcrypt** (admin authentication)
+### Backend & Persistencia
+* **Python 3.12+ / FastAPI** (REST endpoints y documentación Swagger/OpenAPI)
+* **SQLAlchemy 2.0 & Pydantic v2** (ORM, validación estricta y sanitización)
+* **SlowAPI** (Rate Limiter con mitigación de spam por IP)
+* **PostgreSQL / SQLite** (PostgreSQL en Vercel/Neon/Supabase, SQLite local)
+* **HTTPX** (Cliente asíncrono para verificar tokens de Turnstile ante Cloudflare)
+* **PyJWT + bcrypt** (Autenticación y hashing seguro de contraseñas)
 
 ---
 
-## 📂 Project Structure
+## 📂 Estructura del Repositorio
 
 ```text
 .
 ├── .vscode/
-│   └── launch.json             # F5 debugging config for VS Code
-├── api/                        # Serverless FastAPI backend
-│   ├── index.py                # ASGI entrypoint
-│   ├── config.py               # Settings & env loading (.env.local / .env)
-│   ├── database.py             # SQLAlchemy engine & connection pool
-│   ├── models.py               # Relational database models
-│   ├── schemas.py              # Pydantic validation schemas
-│   ├── auth.py                 # Security helpers (bcrypt hashing, JWT tokens, middleware)
+│   └── launch.json             # Configuración de depuración con F5 en VS Code
+├── api/                        # Backend Serverless FastAPI
+│   ├── index.py                # ASGI entrypoint + exception handlers
+│   ├── config.py               # Carga de variables de entorno y settings
+│   ├── database.py             # Engine SQLAlchemy y pool de conexiones
+│   ├── models.py               # Modelos relacionales ORM (6 entidades)
+│   ├── schemas.py              # Esquemas Pydantic para request/response
+│   ├── auth.py                 # Hashing bcrypt, JWT tokens y middleware
+│   ├── ratelimit.py            # Instancia Limiter de slowapi por IP
 │   ├── routes/
-│   │   ├── auth.py             # Login, initial setup (/api/auth/*)
-│   │   ├── contact.py          # POST /api/contact (quote submissions)
-│   │   ├── reviews.py          # GET & POST /api/reviews (public reviews)
-│   │   ├── manuals.py          # GET /api/manuals + PDF download (public)
-│   │   ├── admin.py            # CRUD endpoints for the dashboard (/api/admin/*)
-│   │   └── health.py           # GET /api/health (health check)
+│   │   ├── auth.py             # Autenticación y bootstrap (/api/auth/*)
+│   │   ├── contact.py          # Cotizaciones públicas (/api/contact)
+│   │   ├── reviews.py          # Testimonios públicos (/api/reviews)
+│   │   ├── coverages.py        # Coberturas públicas y admin (/api/coverages)
+│   │   ├── faqs.py             # Preguntas frecuentes públicas y admin (/api/faqs)
+│   │   ├── manuals.py          # Manuales públicos y descargas (/api/manuals)
+│   │   ├── admin.py            # Dashboard admin (/api/admin/*)
+│   │   └── health.py           # Health check (/api/health)
 │   └── services/
-│       └── turnstile.py        # Cloudflare Turnstile verification service
-├── scripts/                    # Database scripts & utilities
-│   ├── init_db.sql             # DDL for tables and indexes
-│   ├── seed_data.sql           # Initial testimonials
-│   └── setup_db.py             # Python auto-initialization script
-├── img/                        # Graphics & insurance company logos
-├── index.html                  # POC landing (mock/in-memory data) — currently live at /
-├── index-new.html              # MVP landing (API-connected) — in development
-├── admin.html                  # Admin panel SPA (JWT auth + CRUD)
-├── requirements.txt            # Python dependencies for Vercel
-├── vercel.json                 # Vercel routing/rewrites config
-├── .env.example                # Environment variables template
-├── local.db                    # Local SQLite database (not committed)
-└── README.md                   # This file
+│       └── turnstile.py        # Servicio de verificación Cloudflare Turnstile
+├── scripts/                    # Scripts de base de datos
+│   ├── init_db.sql             # DDL completo con índices optimizados
+│   ├── seed_data.sql           # Testimonios iniciales en SQL
+│   └── setup_db.py             # Script Python para creación y seed inicial
+├── img/                        # Recursos gráficos y logotipos
+├── index.html                  # Landing page principal (MVP productivo conectado a API)
+├── index-OLD.html              # Copia de respaldo histórica
+├── admin.html                  # Panel de administración SPA (JWT + 6 tabs)
+├── requirements.txt            # Dependencias de Python
+├── vercel.json                 # Configuración de routing y rewrites en Vercel
+├── .env.example                # Plantilla de variables de entorno
+└── README.md                   # Esta documentación
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Esquema de Base de Datos
 
-### 1. `contact_leads` (Quote Requests)
-| Field | Type | Description |
+### 1. `contact_leads` (Solicitudes de Cotización)
+| Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
-| `nombre` | `VARCHAR(100)` | Full name |
-| `telefono` | `VARCHAR(50)` | Phone / WhatsApp |
-| `email` | `VARCHAR(255)` | Email address |
-| `producto` | `VARCHAR(100)` | Coverage of interest |
-| `mensaje` | `TEXT` | Message or details |
-| `wsp_preferred` | `BOOLEAN` | Prefers WhatsApp contact |
-| `aceptar_datos` | `BOOLEAN` | Ley 25.326 consent |
-| `ip_address` | `VARCHAR(45)` | Client IP |
-| `user_agent` | `TEXT` | Browser/device |
-| `status` | `VARCHAR(20)` | Status (`nuevo`, `contactado`, `en_gestion`, `cerrado`) |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Creation timestamp |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `nombre` | `VARCHAR(100)` | Nombre completo |
+| `telefono` | `VARCHAR(50)` | Teléfono / WhatsApp |
+| `email` | `VARCHAR(255)` | Correo electrónico |
+| `producto` | `VARCHAR(100)` | Cobertura solicitada |
+| `mensaje` | `TEXT` | Mensaje o detalle |
+| `wsp_preferred` | `BOOLEAN` | Preferencia de contacto por WhatsApp |
+| `aceptar_datos` | `BOOLEAN` | Aceptación Ley 25.326 |
+| `ip_address` | `VARCHAR(45)` | Dirección IP del cliente |
+| `user_agent` | `TEXT` | Dispositivo y navegador |
+| `status` | `VARCHAR(20)` | Estado (`nuevo`, `contactado`, `en_gestion`, `cerrado`) |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha y hora de creación |
 
-### 2. `reviews` (Client Testimonials)
-| Field | Type | Description |
+### 2. `reviews` (Testimonios y Opiniones)
+| Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
-| `name` | `VARCHAR(100)` | Author name |
-| `role` | `VARCHAR(100)` | Role or coverage |
-| `avatar` | `VARCHAR(10)` | Avatar initials (e.g., `CM`) |
-| `rating` | `SMALLINT` | 1 to 5 stars |
-| `text` | `TEXT` | Review text |
-| `is_approved` | `BOOLEAN` | Moderation / web visibility flag |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Publication date |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `name` | `VARCHAR(100)` | Nombre del autor |
+| `role` | `VARCHAR(100)` | Rol o producto contratado |
+| `avatar` | `VARCHAR(10)` | Iniciales del avatar (ej: `CM`) |
+| `rating` | `SMALLINT` | Puntuación de 1 a 5 estrellas |
+| `text` | `TEXT` | Mensaje de la opinión |
+| `is_approved` | `BOOLEAN` | Visibilidad pública en la web |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de publicación |
 
-### 3. `admin_users` (Admin Users)
-| Field | Type | Description |
+### 3. `admin_users` (Usuarios Administradores)
+| Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
-| `username` | `VARCHAR(50) UNIQUE` | Unique username |
-| `email` | `VARCHAR(255) UNIQUE` | Unique email |
-| `hashed_password` | `VARCHAR(255)` | bcrypt hash (12 rounds) |
-| `full_name` | `VARCHAR(100)` | Full name |
-| `role` | `VARCHAR(20)` | Role (`superadmin`, `admin`) — *note: roles are stored but not yet enforced* |
-| `is_active` | `BOOLEAN` | Account status |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Registration date |
-| `last_login` | `TIMESTAMP WITH TIME ZONE` | Last login date |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `username` | `VARCHAR(50) UNIQUE` | Nombre de usuario |
+| `email` | `VARCHAR(255) UNIQUE` | Correo electrónico |
+| `hashed_password` | `VARCHAR(255)` | Hash bcrypt (12 rondas) |
+| `full_name` | `VARCHAR(100)` | Nombre y apellido |
+| `role` | `VARCHAR(20)` | Rol (`superadmin`, `admin`) |
+| `is_active` | `BOOLEAN` | Estado de la cuenta |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de alta |
+| `last_login` | `TIMESTAMP WITH TIME ZONE` | Último inicio de sesión |
 
-### 4. `manuals` (Product Manuals — PDFs stored as DB blobs)
-| Field | Type | Description |
+### 4. `manuals` (Manuales y Documentación PDF)
+| Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `id` | `SERIAL PRIMARY KEY` | Unique identifier |
-| `producto` | `VARCHAR(100)` | Product/coverage the manual belongs to |
-| `titulo` | `VARCHAR(150)` | Display title |
-| `file_name` | `VARCHAR(255)` | Original file name |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `producto` | `VARCHAR(100)` | Cobertura asociada |
+| `titulo` | `VARCHAR(150)` | Título descriptivo |
+| `file_name` | `VARCHAR(255)` | Nombre original del archivo |
 | `content_type` | `VARCHAR(50)` | MIME type (`application/pdf`) |
-| `size_bytes` | `INTEGER` | File size in bytes |
-| `data` | `BYTEA`/`BLOB` | PDF binary content (loaded lazily, only on download) |
-| `created_at` | `TIMESTAMP WITH TIME ZONE` | Upload timestamp |
+| `size_bytes` | `INTEGER` | Tamaño en bytes (máx 4 MB) |
+| `data` | `BYTEA` / `BLOB` | Contenido binario del PDF (carga diferida) |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de subida |
 
-> Max upload size: **4 MB** (Vercel serverless request limit is ~4.5 MB).
+### 5. `coverages` (Coberturas de Personas y Empresas)
+| Campo | Tipo | Descripción |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `categoria` | `VARCHAR(20)` | `personas` o `empresas` |
+| `titulo` | `VARCHAR(100)` | Nombre de la cobertura (ej: Auto, ART) |
+| `icono` | `VARCHAR(50)` | Nombre del icono Lucide (ej: `car`, `store`) |
+| `descripcion` | `TEXT` | Descripción completa de la póliza |
+| `badge` | `VARCHAR(20)` | Etiqueta opcional (ej: `Nuevo`) |
+| `orden` | `INTEGER` | Posición de visualización |
+| `activo` | `BOOLEAN` | Visible o pausada en la web |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de creación |
+
+### 6. `faqs` (Preguntas Frecuentes)
+| Campo | Tipo | Descripción |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | Identificador único |
+| `pregunta` | `TEXT` | Pregunta planteada |
+| `respuesta` | `TEXT` | Respuesta detallada |
+| `categoria` | `VARCHAR(50)` | Agrupador (ej: `general`, `cotizacion`) |
+| `orden` | `INTEGER` | Orden en el acordeón |
+| `activo` | `BOOLEAN` | Visible o inactiva |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | Fecha de creación |
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Variables de Entorno
 
-Create a `.env` file based on `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Available variables:
+Crear el archivo `.env` basado en `.env.example`:
 
 ```ini
-# Option 1: Local SQLite database (fast local development, no server needed)
+# Base de Datos Local (SQLite)
 DATABASE_URL=sqlite:///./local.db
 
-# Option 2: PostgreSQL (Vercel Postgres, Neon, Supabase or local)
-# DATABASE_URL=postgresql://user:password@localhost:5432/gc_seg_db
+# Base de Datos de Producción (PostgreSQL en Vercel, Neon o Supabase)
+# DATABASE_URL=postgresql://usuario:contrasena@host:5432/nombre_db
 
-# Cloudflare Turnstile (anti-bot)
-# Leave empty in development for an automatic bypass (ENVIRONMENT=development),
-# or use Cloudflare's official test keys (always pass):
-#   TURNSTILE_SITE_KEY=1x00000000000000000000AA
-#   TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
-# For production, get your keys at: https://dash.cloudflare.com/ -> Turnstile
-TURNSTILE_SECRET_KEY=
-TURNSTILE_SITE_KEY=
+# Cloudflare Turnstile
+# En desarrollo (ENVIRONMENT=development) puede dejarse vacío o usar las claves de test de Cloudflare:
+#   Site Key: 1x00000000000000000000AA
+#   Secret Key: 1x0000000000000000000000000000000AA
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
-# Environment: development | production
+# Entorno
 ENVIRONMENT=development
 
-# JWT settings for the admin panel (REQUIRED in production)
-JWT_SECRET_KEY=replace-with-a-long-random-secret
+# Configuración JWT para el Panel Administrativo
+JWT_SECRET_KEY=tu-clave-secreta-super-larga-y-aleatoria-para-produccion
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=480
 
-# Allowed CORS origins (optional, defaults to all)
+# CORS
 ALLOWED_ORIGINS=*
 ```
 
-Notes:
-* **Turnstile bypass (dev only):** with `ENVIRONMENT=development` and no `TURNSTILE_SECRET_KEY` configured, verification is skipped so you can test without Cloudflare credentials. **Warning:** in `production` a missing secret makes every form submission fail.
-* **JWT secret:** the code ships with an insecure fallback value for development. **Always** set `JWT_SECRET_KEY` to a long random string in production — anyone who knows the fallback can forge admin tokens.
-* **SQLite path anchoring:** relative SQLite URLs (e.g. `sqlite:///./local.db`) are always resolved against the **project root**, regardless of the process working directory. This matters because `vercel dev` runs the Python function from `.vercel/cache/index_py/` — without anchoring, writes used to land in a throwaway database inside that cache.
-
 ---
 
-## 💻 Local Development (Conda on WSL / Linux)
+## 💻 Puesta en Marcha Local
 
-### 1. Create and activate the Conda environment
+### 1. Entorno Virtual Python
 ```bash
-conda create -n gc-seg python=3.12 -y
-conda activate gc-seg
-```
-
-### 2. Install dependencies
-```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure `.env` and initialize the database
+### 2. Inicialización de Base de Datos
 ```bash
 cp .env.example .env
-python scripts/setup_db.py   # optional: tables are also auto-created on API startup
+python scripts/setup_db.py
 ```
+> La API también crea las tablas automáticamente al iniciar gracias a `init_db()` en `api/index.py`.
 
-> The API automatically creates the database tables on startup if they don't exist (idempotent). `setup_db.py` is still useful to seed the initial testimonials.
+### 3. Ejecución
 
-### 4. Run the project
+**Opción A: Con Uvicorn (desarrollo directo)**
+```bash
+uvicorn api.index:app --reload --port 8000
+```
+- Web principal: [http://localhost:8000](http://localhost:8000)
+- Panel de control: [http://localhost:8000/admin.html](http://localhost:8000/admin.html)
+- Documentación interactiva Swagger: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
 
-#### Recommended: full Vercel simulation
+**Opción B: Con Vercel CLI (emulación idéntica a producción)**
 ```bash
 npx vercel dev
 ```
-This emulates the Vercel router, serving frontend and backend under a single port:
-* Landing (POC): [http://localhost:3000](http://localhost:3000)
-* MVP preview: [http://localhost:3000/index-new.html](http://localhost:3000/index-new.html)
-* Admin Panel: [http://localhost:3000/admin.html](http://localhost:3000/admin.html)
-
-> ⚠️ **The frontend calls relative API paths (`/api/*`).** A plain static file server (e.g. `python -m http.server`) will **not** proxy those calls to FastAPI — forms and testimonials will fail in that setup. If you want to run the backend standalone for API work, use uvicorn (`uvicorn api.index:app --reload --port 8000`) alongside `npx vercel dev` is unnecessary; use it only with Swagger UI for direct endpoint testing at [http://localhost:8000/api/docs](http://localhost:8000/api/docs).
 
 ---
 
-## 🛡️ Admin Panel (`admin.html`)
+## 🚀 Guía de Instalación y Despliegue en Vercel (Paso a Paso)
 
-The panel is a **SPA (Single-Page Application)** with full JWT authentication, available at `/admin.html`:
+El proyecto está preparado de forma nativa para funcionar en **Vercel** como un frontend estático combinado con **Python Serverless Functions** (`/api/*`).
 
-### Authentication System
-
-**First run (bootstrap):** if the `admin_users` table is empty, the panel automatically shows an initial setup form to create the first administrator with the `superadmin` role.
-
-**Afterwards:** a secure login form (username/email + password). The JWT is stored in `localStorage` and validated automatically on page reload.
-
-**Security implemented:**
-- 🔐 Passwords hashed with **bcrypt** (12 salt rounds)
-- 🎟️ Signed **JWT** tokens (HS256), configurable expiration (default: 8 hours)
-- 🚫 All `/api/admin/*` endpoints require a valid Bearer Token (HTTP 401 otherwise)
-- 🛡️ Safeguards: you cannot delete your own account nor the last remaining admin
-
-### Dashboard Features
-
-1. **Real-time metrics:** total requests, pending, reviews, admins and average rating.
-2. **Request manager (`contact_leads`):** live search, status filter, one-click status changes, direct **WhatsApp** button, full detail modal (IP, agent, date) and deletion with confirmation.
-3. **Review manager (`reviews`):** manual creation, editing (name, role, stars, text), visibility toggle (publish/hide) and deletion with confirmation.
-4. **Admin user manager (`admin_users`):** list users, create new admins, change passwords, delete users with safeguards.
+### Requisitos Previos
+1. Una cuenta en [Vercel](https://vercel.com).
+2. El repositorio subido a tu cuenta de **GitHub**, **GitLab** o **Bitbucket**.
+3. Una base de datos PostgreSQL (Vercel Postgres, Neon, Supabase, etc.).
 
 ---
 
-## 🐞 Debugging in Visual Studio Code
-
-The repo includes a ready-to-use `.vscode/launch.json` for debugging the backend with breakpoints:
-
-1. **Select the interpreter:** `Ctrl + Shift + P` → `Python: Select Interpreter` → choose `gc-seg` (Conda).
-2. **Set breakpoints** in any file under `api/` (e.g. `api/routes/contact.py`).
-3. **Start debugging:** press `F5` (**Python: FastAPI (Backend gc-seg)**).
-4. The debugger will pause at your breakpoints when requests arrive from the frontend or Swagger.
+### Paso 1: Importar el Proyecto en Vercel
+1. Ingresá a tu panel de Vercel y hacé clic en **"Add New..." > "Project"**.
+2. Seleccioná el repositorio del proyecto (`gc-seg`).
+3. En **Framework Preset**, dejalo en **Other** (el archivo `vercel.json` se encarga del enrutamiento).
+4. En **Root Directory**, dejalo en `./`.
 
 ---
 
-## 🚀 Deployment on Vercel
+### Paso 2: Crear y Vincular la Base de Datos PostgreSQL
+> ⚠️ **Importante:** SQLite **NO** funciona en Vercel porque el sistema de archivos serverless es de solo lectura y efímero entre ejecuciones. En producción es obligatorio usar PostgreSQL.
 
-1. **Import the repository** into Vercel from GitHub.
-2. **Create or link a PostgreSQL database:**
-   - In the project's **Storage** tab, create a **Vercel Postgres** database (or link **Neon** / **Supabase**).
-   - Vercel will automatically inject `POSTGRES_URL` (used by `api/config.py`).
+**Opción A: Vercel Postgres / Neon integrado (Recomendado)**
+1. En la pestaña **Storage** de tu panel de Vercel, hacé clic en **Create Database** y elegí **Postgres** (desarrollado por Neon).
+2. Aceptá los términos y dale un nombre (ej: `gc-seg-db`).
+3. Una vez creada, hacé clic en **Connect Project** y seleccioná tu proyecto. Vercel inyectará automáticamente las variables `POSTGRES_URL`, `POSTGRES_PRISMA_URL`, etc.
 
-   > ⚠️ **SQLite does NOT work on Vercel.** Serverless filesystems are read-only (except `/tmp`) and ephemeral across invocations — writes fail or disappear. **PostgreSQL is mandatory in production.**
-3. **Run the DDL scripts** in the Vercel Storage SQL console (or your SQL client):
-   - `scripts/init_db.sql`
-   - `scripts/seed_data.sql` (optional — initial reviews)
-4. **Set environment variables** in the Vercel dashboard:
-   - `TURNSTILE_SECRET_KEY` / `TURNSTILE_SITE_KEY`: your real Cloudflare Turnstile keys.
-   - `JWT_SECRET_KEY`: a long, random secret for signing admin JWTs.
-   - `ENVIRONMENT`: `production`
-5. **Deploy.** Vercel builds the Serverless Function in `/api/*` and serves static files from the root.
-   - Note: `index.html` (the POC) is served at `/`. To make the MVP live, promote `index-new.html` to `index.html`.
-6. **First admin access:** open `https://your-domain.vercel.app/admin.html`. If `admin_users` is empty, the system will guide you through creating the first administrator.
+**Opción B: Base de datos externa (Supabase / Neon / Render / AWS RDS)**
+- Simplemente agregá la variable de entorno `DATABASE_URL` con el connection string de tu base (ej: `postgresql://usuario:pass@host:5432/nombre_db`).
 
 ---
 
-## 🐛 Known Issues
+### Paso 3: Configurar Variables de Entorno en Vercel
+En la sección **Settings > Environment Variables** de tu proyecto en Vercel, configurá las siguientes variables para el entorno **Production**:
 
-1. **The live landing (`/`) is the POC:** form submissions and reviews are in-memory mocks; nothing is stored. Expected behavior until the MVP (`index-new.html`) is promoted to `index.html`.
-2. **No rate limiting** on `/api/auth/login` or the public forms.
-3. **Admin roles are partially enforced:** deleting a `superadmin` requires being a `superadmin` and the system always keeps at least one. Role checks are not applied to other actions (creating admins, changing passwords) yet.
-
-### Recently Fixed
-
-* ✅ **MVP data persistence** (`index-new.html`): relative SQLite URLs are now anchored to the project root — `vercel dev` runs functions from `.vercel/cache/index_py/`, and writes previously landed in a throwaway database inside that cache. Tables are also auto-created on startup, and the API logs a loud error if SQLite is used on Vercel (where only PostgreSQL persists).
-* ✅ **Anti-bot widget key mismatch:** the MVP fetches the site key from `GET /api/config`, so frontend and backend never use mismatched key pairs (mismatches made every submission fail with HTTP 400).
-* ✅ **Validation gaps closed:** review `rating` is bounded to 1–5 (Pydantic + DB `CHECK` constraint, mirrored in `init_db.sql`), lead `status` only accepts `nuevo|contactado|en_gestion|cerrado`, and admin `role` only accepts `admin|superadmin`.
+| Variable | Valor / Ejemplo | Descripción |
+| :--- | :--- | :--- |
+| `ENVIRONMENT` | `production` | Activa validaciones estrictas y modo productivo |
+| `JWT_SECRET_KEY` | *(cadena aleatoria larga, ej: `openssl rand -hex 32`)* | Clave secreta para firmar los tokens de sesión del panel admin |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `480` | Duración del token de sesión (8 horas) |
+| `TURNSTILE_SITE_KEY` | *(Tu Site Key de Cloudflare)* | Clave pública del widget de seguridad |
+| `TURNSTILE_SECRET_KEY` | *(Tu Secret Key de Cloudflare)* | Clave secreta para validación de bots en el backend |
+| `ALLOWED_ORIGINS` | `*` o `https://tu-dominio.com` | Orígenes CORS permitidos |
 
 ---
 
-## 📡 API Overview
+### Paso 4: Obtener las claves de Cloudflare Turnstile (Gratis)
+1. Entrá a [dash.cloudflare.com](https://dash.cloudflare.com) (podés crear una cuenta gratuita sin ingresar tarjeta).
+2. En el menú lateral, seleccioná **Turnstile** > **Add Site**.
+3. **Site name:** `Giaconi-Capra PAS`
+4. **Domain:** Agregá tu dominio de Vercel (ej: `tu-proyecto.vercel.app`) y tu dominio definitivo (ej: `giaconi-capra.com.ar`).
+5. **Widget Mode:** Elegí **Managed** o **Invisible**.
+6. Guardá y copiá la **Site Key** y la **Secret Key** a las variables de entorno de Vercel.
 
-| Method | Endpoint | Auth | Description |
+---
+
+### Paso 5: Inicializar las Tablas e Índices
+Aunque la API ejecuta `init_db()` automáticamente al arrancar, se recomienda ejecutar el DDL para asegurar todos los índices:
+1. Abrí la pestaña **Storage** en Vercel > tu base de datos Postgres > consola **Query / SQL Editor**.
+2. Copiá y pegá el contenido completo de [`scripts/init_db.sql`](scripts/init_db.sql) y ejecutalo.
+3. *(Opcional)* Si deseás precargar los testimonios de prueba, copiá y ejecutá también [`scripts/seed_data.sql`](scripts/seed_data.sql).
+
+---
+
+### Paso 6: Desplegar y Configurar el Administrador Inicial
+1. Hacé clic en **Deploy** en Vercel.
+2. Una vez finalizado el build, ingresá a la URL de tu aplicación:
+   - Sitio público: `https://tu-proyecto.vercel.app/`
+   - Panel de control: `https://tu-proyecto.vercel.app/admin.html`
+3. Al entrar a `admin.html` por primera vez, el sistema detectará que no existen administradores y te mostrará la pantalla de **Setup Inicial** para crear el usuario **Superadministrador Principal**.
+4. ¡Listo! Ya podés administrar cotizaciones, coberturas, manuales PDF, testimonios y preguntas frecuentes en vivo.
+
+---
+
+## 🛡️ Panel de Administración (`admin.html`)
+
+El panel es una **SPA (Single-Page Application)** accesible en `/admin.html`:
+
+1. **Bootstrap inicial:** Si la tabla `admin_users` está vacía, el sistema muestra automáticamente la pantalla de configuración del primer superadministrador.
+2. **Pestañas disponibles:**
+   - 📋 **Cotizaciones:** Listado de leads, buscador en tiempo real, filtro por estado (`nuevo`, `contactado`, `en_gestion`, `cerrado`), modal de detalle con IP y botón directo para abrir conversación en WhatsApp.
+   - ⭐ **Testimonios:** Aprobación/ocultamiento con un click, creación manual y edición.
+   - 👥 **Administradores:** Creación de usuarios con roles `admin` y `superadmin`, cambio de contraseña y eliminación protegida.
+   - 📚 **Manuales:** Carga de documentos PDF (hasta 4 MB) vinculados dinámicamente a las coberturas existentes.
+   - 🛡️ **Coberturas:** Creación y edición completa de pólizas de Personas y Empresas (título, descripción, icono de Lucide, badge, orden y toggle activo/inactivo).
+   - ❓ **FAQs:** Gestión de preguntas frecuentes para la web.
+
+---
+
+## 📡 Catálogo de Endpoints de la API
+
+| Método | Endpoint | Autenticación | Descripción |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | — | Health check + DB connectivity |
-| `GET` | `/api/config` | — | Public config (Turnstile site key, environment) |
-| `POST` | `/api/contact` | Turnstile | Submit a quote request |
-| `GET` | `/api/reviews` | — | List approved reviews |
-| `POST` | `/api/reviews` | Turnstile | Submit a public review |
-| `GET` | `/api/manuals` | — | List product manuals metadata (optional `?producto=`) |
-| `GET` | `/api/manuals/{id}/download` | — | Download the manual PDF |
-| `GET/POST/DELETE` | `/api/admin/manuals` | JWT | Manage manuals (PDF upload, max 4 MB) |
-| `GET` | `/api/auth/setup-status` | — | Whether the panel needs initial setup |
-| `POST` | `/api/auth/setup` | — | Create the first admin (only when none exist) |
-| `POST` | `/api/auth/login` | — | Login, returns JWT |
-| `GET` | `/api/auth/me` | JWT | Current admin profile |
-| `GET` | `/api/admin/stats` | JWT | Dashboard metrics |
-| `GET/POST` | `/api/admin/leads` | JWT | List / create leads |
-| `PATCH/DELETE` | `/api/admin/leads/{id}` | JWT | Update status / delete lead |
-| `GET/POST` | `/api/admin/reviews` | JWT | List / create reviews |
-| `PUT/DELETE` | `/api/admin/reviews/{id}` | JWT | Edit / moderate / delete review |
-| `GET/POST` | `/api/admin/users` | JWT | List / create admin users |
-| `PUT` | `/api/admin/users/{id}/password` | JWT | Change an admin's password |
-| `DELETE` | `/api/admin/users/{id}` | JWT | Delete an admin (with safeguards) |
-
-Interactive docs (Swagger UI): `/api/docs` — OpenAPI spec: `/api/openapi.json`.
-
-> Note: routes are intentionally registered both with and without the `/api` prefix (Vercel rewrite compatibility), so Swagger shows duplicated entries.
+| `GET` | `/api/health` | Pública | Estado general de la API y conexión a base de datos |
+| `GET` | `/api/config` | Pública | Configuración pública (Turnstile site key) |
+| `POST` | `/api/contact` | Turnstile + Rate Limit (10/min) | Enviar formulario de cotización |
+| `GET` | `/api/reviews` | Pública | Listar testimonios aprobados para la web |
+| `POST` | `/api/reviews` | Turnstile + Rate Limit (10/min) | Publicar nueva opinión de cliente |
+| `GET` | `/api/coverages` | Pública | Listar coberturas activas (filtro `?categoria=`) |
+| `GET` | `/api/faqs` | Pública | Listar preguntas frecuentes activas |
+| `GET` | `/api/manuals` | Pública | Listar metadatos de manuales PDF |
+| `GET` | `/api/manuals/{id}/download` | Pública | Descarga o visualización del PDF |
+| `GET` | `/api/auth/setup-status` | Pública | Informa si el sistema requiere primer administrador |
+| `POST` | `/api/auth/setup` | Pública (solo si vacía) | Crear primer superadministrador |
+| `POST` | `/api/auth/login` | Pública | Iniciar sesión (retorna Bearer Token) |
+| `GET` | `/api/auth/me` | JWT | Perfil del administrador autenticado |
+| `GET` | `/api/admin/stats` | JWT | Métricas globales del dashboard |
+| `GET/POST` | `/api/admin/leads` | JWT | Listar y crear cotizaciones |
+| `PATCH/DELETE` | `/api/admin/leads/{id}` | JWT | Actualizar estado o eliminar cotización |
+| `GET/POST` | `/api/admin/reviews` | JWT | Listar y crear testimonios |
+| `PUT/DELETE` | `/api/admin/reviews/{id}` | JWT | Editar, aprobar/ocultar o eliminar testimonio |
+| `GET/POST` | `/api/coverages/admin` | JWT | Listar y dar de alta coberturas |
+| `PUT/DELETE` | `/api/coverages/admin/{id}` | JWT | Modificar o eliminar cobertura |
+| `GET/POST` | `/api/faqs/admin` | JWT | Listar y dar de alta preguntas frecuentes |
+| `PUT/DELETE` | `/api/faqs/admin/{id}` | JWT | Modificar o eliminar pregunta frecuente |
+| `GET/POST` | `/api/admin/manuals` | JWT | Listar y subir manuales PDF |
+| `DELETE` | `/api/admin/manuals/{id}` | JWT | Eliminar manual |
+| `GET/POST` | `/api/admin/users` | JWT | Listar y dar de alta administradores |
+| `PUT` | `/api/admin/users/{id}/password`| JWT | Modificar contraseña de un administrador |
+| `DELETE` | `/api/admin/users/{id}` | JWT | Eliminar administrador con validación de seguridad |
