@@ -16,15 +16,17 @@ security = HTTPBearer(auto_error=False)
 
 def hash_password(password: str) -> str:
     """Genera un hash seguro usando bcrypt con salt."""
+    # bcrypt solo considera los primeros 72 bytes; a partir de bcrypt 5.x lanza
+    # ValueError en vez de truncar silenciosamente. Truncamos de forma explícita.
     salt = bcrypt.gensalt(rounds=12)
-    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    hashed = bcrypt.hashpw(password.encode("utf-8")[:72], salt)
     return hashed.decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica si la contraseña coincide con el hash bcrypt."""
     try:
         return bcrypt.checkpw(
-            plain_password.encode("utf-8"), 
+            plain_password.encode("utf-8")[:72],
             hashed_password.encode("utf-8")
         )
     except Exception as e:

@@ -32,8 +32,9 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
   - Gestión de Preguntas Frecuentes (FAQs).
   - Gestor de Manuales PDF (asociación dinámica a coberturas).
   - Gestión de Usuarios Administradores (roles `admin` y `superadmin`, reseteo de contraseñas, protecciones contra eliminación propia o del último superadmin).
-* **Persistencia Dual (SQLite / PostgreSQL):** Conexión transparente mediante SQLAlchemy 2.0 (SQLite local y PostgreSQL para Vercel/Neon/Supabase).
+* **Persistencia Dual (SQLite / PostgreSQL):** Conexión transparente mediante SQLAlchemy 2.1 (SQLite local y PostgreSQL para Vercel/Neon/Supabase, driver `psycopg` v3).
 * **Arquitectura Serverless optimizada para Vercel:** Handlers ASGI desacoplados, pool de conexiones reciclable y migración DDL automática en cold start (`init_db()`).
+* **Builds reproducibles:** `requirements.txt` está pineado al 100% (freeze exacto) y un smoke test E2E (`scripts/smoke_test.py`) corre en CI en cada push; `/api/health` expone las versiones efectivamente desplegadas.
 
 ---
 
@@ -49,7 +50,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 
 ### Backend & Persistencia
 * **Python 3.12+ / FastAPI** (REST endpoints y documentación Swagger/OpenAPI)
-* **SQLAlchemy 2.0 & Pydantic v2** (ORM, validación estricta y sanitización)
+* **SQLAlchemy 2.1 & Pydantic v2** (ORM, validación estricta y sanitización)
 * **SlowAPI** (Rate Limiter con mitigación de spam por IP)
 * **PostgreSQL / SQLite** (PostgreSQL en Vercel/Neon/Supabase, SQLite local)
 * **HTTPX** (Cliente asíncrono para verificar tokens de Turnstile ante Cloudflare)
@@ -90,7 +91,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 ├── index.html                  # Landing page principal (MVP productivo conectado a API)
 ├── index-OLD.html              # Copia de respaldo histórica
 ├── admin.html                  # Panel de administración SPA (JWT + 6 tabs)
-├── requirements.txt            # Dependencias de Python
+├── requirements.txt            # Dependencias de Python (freeze exacto — no editar a mano)
 ├── vercel.json                 # Configuración de routing y rewrites en Vercel
 ├── .env.example                # Plantilla de variables de entorno
 └── README.md                   # Esta documentación

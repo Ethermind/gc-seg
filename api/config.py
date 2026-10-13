@@ -57,10 +57,18 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        url = self.DATABASE_URL
-        # Normalize postgres:// to postgresql:// for SQLAlchemy 2.0
+        url = self.DATABASE_URL.strip()
+        # Normalizar esquemas heredados: las integraciones de Vercel/Neon suelen
+        # inyectar "postgres://"; SQLAlchemy entiende "postgresql://".
         if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
+            url = "postgresql://" + url[len("postgres://"):]
+        # El driver NUNCA lo decide la URL: lo decide el paquete instalado
+        # (psycopg v3, pineado en requirements.txt). Algunos entornos inyectan
+        # sufijos de driver ("postgresql+psycopg://", "+psycopg2", ...); si el
+        # paquete correspondiente no esta instalado, create_engine revienta en
+        # el import y tumba TODA la funcion serverless (FUNCTION_INVOCATION_FAILED).
+        if url.startswith("postgresql+"):
+            url = "postgresql://" + url.split("://", 1)[1]
         # Anclar rutas SQLite relativas a la raíz del proyecto:
         # evita que "vercel dev" (CWD = .vercel/cache/...) o cualquier otro
         # directorio de trabajo escriban en un archivo .db distinto.

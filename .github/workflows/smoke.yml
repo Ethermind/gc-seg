@@ -1,0 +1,33 @@
+name: Smoke Test E2E
+
+# Corre los flujos críticos de la API en cada push/PR. Si una dependencia
+# recién publicada en PyPI rompe la instalación o el runtime (como hizo
+# SQLAlchemy 2.1 con el driver psycopg), el commit queda marcado con una X
+# roja en GitHub ANTES de que Vercel termine de desplegar.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependencias (set pineado de requirements.txt)
+        run: pip install -r requirements.txt
+
+      - name: Mostrar versiones efectivamente resueltas (visibilidad del build)
+        run: |
+          python -c "import sqlalchemy, fastapi, psycopg, platform; print(f'python={platform.python_version()} sqlalchemy={sqlalchemy.__version__} fastapi={fastapi.__version__} psycopg={psycopg.__version__}')"
+
+      - name: Smoke test E2E
+        run: python scripts/smoke_test.py
