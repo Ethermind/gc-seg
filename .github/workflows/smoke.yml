@@ -22,12 +22,15 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Instalar dependencias (set pineado de requirements.txt)
-        run: pip install -r requirements.txt
+      - name: Instalar dependencias (set pineado + deps de desarrollo)
+        run: pip install -r requirements-dev.txt
 
       - name: Mostrar versiones efectivamente resueltas (visibilidad del build)
         run: |
           python -c "import sqlalchemy, fastapi, psycopg, platform; print(f'python={platform.python_version()} sqlalchemy={sqlalchemy.__version__} fastapi={fastapi.__version__} psycopg={psycopg.__version__}')"
+
+      - name: Unit tests (141 tests: config, schemas, auth/JWT, endpoints, resiliencia, rate limit)
+        run: pytest -q
 
       - name: Smoke test E2E
         run: python scripts/smoke_test.py

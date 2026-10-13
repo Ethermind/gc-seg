@@ -1,0 +1,4 @@
+# Dependencias SOLO para desarrollo/CI (no se instalan en producción:
+# la función serverless de Vercel instala únicamente requirements.txt)
+-r requirements.txt
+pytest==9.1.1

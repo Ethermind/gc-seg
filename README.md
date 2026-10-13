@@ -244,6 +244,22 @@ npx vercel dev
 
 ---
 
+## 🧪 Tests
+
+Suite de **141 unit/integration tests** (pytest) + smoke test E2E. Todo corre contra una base SQLite temporal: no toca datos reales ni necesita red.
+
+```bash
+pip install -r requirements-dev.txt   # incluye requirements.txt + pytest
+pytest -q                              # unidad: config, schemas, auth/JWT, endpoints, resiliencia, rate limit
+python scripts/smoke_test.py           # E2E: login → FAQ → cobertura → PDF up/download byte-idéntico
+```
+
+Ambos corren también en GitHub Actions (`.github/workflows/smoke.yml`) en cada push: si una dependencia rompe compatibilidad, el commit queda marcado en rojo **antes** de que Vercel despliegue. Además `GET /api/health` expone las versiones efectivamente desplegadas (`sqlalchemy`, `db_driver`, `python`, `environment`).
+
+> ⚠️ Cuando actualices dependencias: subí versiones en el venv, corré `pytest -q` y `python scripts/smoke_test.py`, y recién después regenerá el freeze con `pip freeze --exclude-editable > requirements.txt`.
+
+---
+
 ## 🚀 Guía de Instalación y Despliegue en Vercel (Paso a Paso)
 
 El proyecto está preparado de forma nativa para funcionar en **Vercel** como un frontend estático combinado con **Python Serverless Functions** (`/api/*`).
