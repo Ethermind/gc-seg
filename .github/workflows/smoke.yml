@@ -52,7 +52,7 @@ jobs:
         run: |
           python -c "import sqlalchemy, fastapi, psycopg, platform; print(f'python={platform.python_version()} sqlalchemy={sqlalchemy.__version__} fastapi={fastapi.__version__} psycopg={psycopg.__version__}')"
 
-      - name: Unit tests (suite pytest: config, schemas, auth/JWT, endpoints, resiliencia, rate limit)
+      - name: Unit tests — suite pytest (config, schemas, auth/JWT, endpoints, resiliencia, rate limit)
         run: pytest -q
 
       - name: Smoke test E2E
