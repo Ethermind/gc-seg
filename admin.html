@@ -64,7 +64,7 @@
     <span x-text="toast.message"></span>
   </div>
 
-  <!-- PANTALLA 1: LOADING INICIAL -->
+  <!-- SCREEN 1: INITIAL LOADING -->
   <div x-show="authState === 'loading'" class="flex-grow flex items-center justify-center p-6" x-cloak>
     <div class="text-center space-y-3">
       <div class="w-12 h-12 border-4 border-brand-cobalt border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -72,7 +72,7 @@
     </div>
   </div>
 
-  <!-- PANTALLA 2: SETUP PRIMER ADMINISTRADOR (BOOTSTRAP) -->
+  <!-- SCREEN 2: FIRST ADMIN SETUP (BOOTSTRAP) -->
   <div x-show="authState === 'setup'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
     <!-- Background glow -->
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-cobalt/20 rounded-full blur-3xl"></div>
@@ -133,7 +133,7 @@
     </div>
   </div>
 
-  <!-- PANTALLA 3: LOGIN DE ADMINISTRADOR -->
+  <!-- SCREEN 3: ADMIN LOGIN -->
   <div x-show="authState === 'login'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-cobalt/20 rounded-full blur-3xl"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl"></div>
@@ -180,10 +180,10 @@
     </div>
   </div>
 
-  <!-- PANTALLA 4: DASHBOARD ADMINISTRATIVO COMPLETO (AUTENTICADO) -->
+  <!-- SCREEN 4: FULL ADMIN DASHBOARD (AUTHENTICATED) -->
   <div x-show="authState === 'authenticated'" class="flex-grow flex flex-col" x-cloak>
     
-    <!-- Navbar Superior -->
+    <!-- Top Navbar -->
     <header class="bg-brand-dark border-b border-slate-800 text-white sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
@@ -334,7 +334,7 @@
         </div>
       </div>
 
-      <!-- TAB 1: LEADS / SOLICITUDES -->
+      <!-- TAB 1: LEADS / REQUESTS -->
       <div x-show="currentTab === 'leads'" x-cloak>
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           
@@ -446,7 +446,7 @@
         </div>
       </div>
 
-      <!-- TAB 2: REVIEWS / TESTIMONIOS -->
+      <!-- TAB 2: REVIEWS / TESTIMONIALS -->
       <div x-show="currentTab === 'reviews'" x-cloak>
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           
@@ -542,7 +542,7 @@
         </div>
       </div>
 
-      <!-- TAB 3: ADMINISTRADORES (ADMIN USERS) -->
+      <!-- TAB 3: ADMINISTRATORS (ADMIN USERS) -->
       <div x-show="currentTab === 'admins'" x-cloak>
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           
@@ -612,11 +612,11 @@
         </div>
       </div>
 
-      <!-- TAB 4: MANUALES (PDF por producto) -->
+      <!-- TAB 4: MANUALS (PDF per product) -->
       <div x-show="currentTab === 'manuals'" x-cloak>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <!-- Formulario de Carga -->
+          <!-- Upload Form -->
           <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 h-fit">
             <h3 class="text-base font-bold text-slate-900 mb-1">Cargar nuevo manual</h3>
             <p class="text-xs text-slate-500 mb-5">El PDF se asocia al producto elegido y aparece automáticamente en su ventana de detalle en la web. Máximo 4 MB.</p>
@@ -624,11 +624,11 @@
             <form @submit.prevent="uploadManual()" class="space-y-4">
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Producto*</label>
-                <!-- NOTA: no usar un <select required> oculto aqui: al no tener <option>,
-                     la validacion nativa del navegador bloquea silenciosamente el submit
-                     ("invalid form control is not focusable") y el manual nunca se sube.
-                     La validacion la hace el boton submit via :disabled. -->
-                <!-- Custom dropdown con iconos -->
+                <!-- NOTE: do not use a hidden <select required> here: having no <option>,
+                     the browser's native validation silently blocks the submit
+                     ("invalid form control is not focusable") and the manual never uploads.
+                     Validation is handled by the submit button via :disabled. -->
+                <!-- Custom dropdown with icons -->
                 <div x-data="{ manualProdDdOpen: false }" @click.away="manualProdDdOpen = false" @keydown.escape.window="manualProdDdOpen = false" class="relative">
                   <!-- Trigger -->
                   <button type="button" @click="manualProdDdOpen = !manualProdDdOpen"
@@ -667,7 +667,7 @@
                        x-effect="if (manualProdDdOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
                        class="absolute z-50 w-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto py-1" x-cloak>
 
-                    <!-- Grupo Personas -->
+                    <!-- 'Personas' group -->
                     <div class="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Personas</div>
                     <template x-for="prod in allCoverageItemsPersonas" :key="'mdd-p-' + prod.title">
                       <div @click="manualForm.producto = prod.title; manualProdDdOpen = false"
@@ -678,7 +678,7 @@
                       </div>
                     </template>
 
-                    <!-- Grupo Empresas -->
+                    <!-- 'Empresas' group -->
                     <div class="px-3 pt-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
                     <template x-for="prod in allCoverageItemsEmpresas" :key="'mdd-e-' + prod.title">
                       <div @click="manualForm.producto = prod.title; manualProdDdOpen = false"
@@ -716,14 +716,14 @@
             </form>
           </div>
 
-          <!-- Listado de Manuales -->
+          <!-- Manuals Listing -->
           <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
               <div>
                 <h3 class="text-base font-bold text-slate-900">Manuales cargados</h3>
                 <p class="text-xs text-slate-500 mt-0.5">Documentación pública disponible en la web.</p>
               </div>
-              <!-- Custom filter dropdown con iconos -->
+              <!-- Custom filter dropdown with icons -->
               <div x-data="{ filterDdOpen: false }" @click.away="filterDdOpen = false" @keydown.escape.window="filterDdOpen = false" class="relative">
                 <!-- Trigger -->
                 <button type="button" @click="filterDdOpen = !filterDdOpen"
@@ -762,14 +762,14 @@
                      x-effect="if (filterDdOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
                      class="absolute right-0 z-50 w-56 mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-60 overflow-y-auto py-1" x-cloak>
 
-                  <!-- Todos -->
+                  <!-- 'All' -->
                   <div @click="manualProductFilter = ''; fetchManuals(); filterDdOpen = false"
                        class="px-3 py-2 text-xs cursor-pointer transition"
                        :class="!manualProductFilter ? 'bg-blue-50 text-brand-cobalt font-semibold' : 'text-slate-500 hover:bg-slate-50'">
                     Todos los productos
                   </div>
 
-                  <!-- Grupo Personas -->
+                  <!-- 'Personas' group -->
                   <div class="px-3 pt-2 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Personas</div>
                   <template x-for="prod in allCoverageItemsPersonas" :key="'fdd-p-' + prod.title">
                     <div @click="manualProductFilter = prod.title; fetchManuals(); filterDdOpen = false"
@@ -780,7 +780,7 @@
                     </div>
                   </template>
 
-                  <!-- Grupo Empresas -->
+                  <!-- 'Empresas' group -->
                   <div class="px-3 pt-2 pb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
                   <template x-for="prod in allCoverageItemsEmpresas" :key="'fdd-e-' + prod.title">
                     <div @click="manualProductFilter = prod.title; fetchManuals(); filterDdOpen = false"
@@ -842,7 +842,7 @@
         </div>
       </div>
 
-      <!-- TAB 5: COBERTURAS (PERSONAS & EMPRESAS) -->
+      <!-- TAB 5: COVERAGES (PERSONAS & EMPRESAS) -->
       <div x-show="currentTab === 'coverages'" x-cloak>
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
@@ -897,7 +897,7 @@
                       <span x-show="!c.badge" class="text-slate-300">—</span>
                     </td>
                     <td class="py-3.5 px-4 whitespace-nowrap">
-                      <button @click="toggleCoverageActivo(c)"
+                      <button @click="toggleCoverageActive(c)"
                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
                               :class="c.activo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
                         <span x-text="c.activo ? '✓ Activa' : 'Inactiva'"></span>
@@ -922,7 +922,7 @@
         </div>
       </div>
 
-      <!-- TAB 6: PREGUNTAS FRECUENTES (FAQS) -->
+      <!-- TAB 6: FREQUENTLY ASKED QUESTIONS (FAQS) -->
       <div x-show="currentTab === 'faqs'" x-cloak>
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
@@ -957,7 +957,7 @@
                       <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600" x-text="f.categoria || 'General'"></span>
                     </td>
                     <td class="py-3.5 px-4 whitespace-nowrap">
-                      <button @click="toggleFaqActivo(f)"
+                      <button @click="toggleFaqActive(f)"
                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
                               :class="f.activo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
                         <span x-text="f.activo ? '✓ Activa' : 'Inactiva'"></span>
@@ -985,7 +985,7 @@
     </main>
   </div>
 
-  <!-- MODAL: DETALLE DE SOLICITUD -->
+  <!-- MODAL: REQUEST DETAIL -->
   <div x-show="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="detailModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
       <button @click="detailModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1041,7 +1041,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR / EDITAR OPINIÓN -->
+  <!-- MODAL: CREATE / EDIT REVIEW -->
   <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="reviewModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
       <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1093,7 +1093,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR NUEVO ADMINISTRADOR -->
+  <!-- MODAL: CREATE NEW ADMINISTRATOR -->
   <div x-show="createAdminModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="createAdminModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
       <button @click="createAdminModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1142,7 +1142,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CAMBIAR CONTRASEÑA -->
+  <!-- MODAL: CHANGE PASSWORD -->
   <div x-show="passwordModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="passwordModalOpen = false" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl relative border border-slate-100 text-xs">
       <button @click="passwordModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1166,7 +1166,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CONFIRMAR ELIMINACIÓN -->
+  <!-- MODAL: CONFIRM DELETION -->
   <div x-show="deleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="deleteModalOpen = false" class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-100 text-center">
       <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-xl">🗑️</div>
@@ -1182,7 +1182,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR / EDITAR COBERTURA -->
+  <!-- MODAL: CREATE / EDIT COVERAGE -->
   <div x-show="coverageModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="coverageModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
       <button @click="coverageModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1242,7 +1242,7 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR / EDITAR FAQ -->
+  <!-- MODAL: CREATE / EDIT FAQ -->
   <div x-show="faqModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="faqModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
       <button @click="faqModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
@@ -1290,7 +1290,7 @@
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.data('adminApp', () => ({
-        // Estados principales de la SPA: 'loading' | 'setup' | 'login' | 'authenticated'
+        // Main SPA states: 'loading' | 'setup' | 'login' | 'authenticated'
         authState: 'loading',
         isSubmittingAuth: false,
         currentUser: {},
@@ -1300,7 +1300,7 @@
         loading: false,
         stats: { total_leads: 0, new_leads: 0, total_reviews: 0, total_admins: 0, avg_rating: 5.0 },
 
-        // Forms Auth
+        // Auth forms
         setupForm: { username: '', email: '', full_name: '', password: '', confirm_password: '' },
         loginForm: { username: '', password: '' },
 
@@ -1332,8 +1332,8 @@
         manualForm: { producto: '', titulo: '' },
         manualFile: null,
         manualUploading: false,
-        manualProductosPersonasFallback: ['Auto', 'Moto', 'Hogar', 'Vida', 'Retiro', 'Accidentes Personales', 'Viajes', 'Bicicletas y Ecomovilidad', 'Celulares y Portátiles', 'Caución para Alquileres'],
-        manualProductosEmpresasFallback: ['Comercio', 'Consorcio', 'Responsabilidad Civil', 'ART', 'Caución Empresas', 'Transporte', 'Equipos y Maquinarias', 'Flotas', 'Retiro para Empleados'],
+        manualProductFallbackPersonas: ['Auto', 'Moto', 'Hogar', 'Vida', 'Retiro', 'Accidentes Personales', 'Viajes', 'Bicicletas y Ecomovilidad', 'Celulares y Portátiles', 'Caución para Alquileres'],
+        manualProductFallbackEmpresas: ['Comercio', 'Consorcio', 'Responsabilidad Civil', 'ART', 'Caución Empresas', 'Transporte', 'Equipos y Maquinarias', 'Flotas', 'Retiro para Empleados'],
 
         // Coverages state
         coverages: [],
@@ -1346,7 +1346,7 @@
         faqModalOpen: false,
         faqForm: { id: null, pregunta: '', respuesta: '', categoria: '', orden: 1, activo: true },
 
-        // Mapa de iconos fallback para productos (cuando no hay coverages en la DB)
+        // Fallback icon map for products (when there are no coverages in the DB)
         _fallbackIconMap: {
           'Auto': 'car', 'Moto': 'motorbike', 'Hogar': 'home', 'Vida': 'heart-pulse',
           'Retiro': 'trending-up', 'Accidentes Personales': 'activity', 'Viajes': 'plane',
@@ -1360,25 +1360,25 @@
         // Dynamic getters for manuals product selector based on registered coverages
         get allCoverageTitlesPersonas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'personas').map(c => c.titulo);
-          return fromDb.length > 0 ? fromDb : this.manualProductosPersonasFallback;
+          return fromDb.length > 0 ? fromDb : this.manualProductFallbackPersonas;
         },
 
         get allCoverageTitlesEmpresas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'empresas').map(c => c.titulo);
-          return fromDb.length > 0 ? fromDb : this.manualProductosEmpresasFallback;
+          return fromDb.length > 0 ? fromDb : this.manualProductFallbackEmpresas;
         },
 
-        // Getters enriquecidos con iconos para los dropdowns custom
+        // Icon-enriched getters for the custom dropdowns
         get allCoverageItemsPersonas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'personas');
           if (fromDb.length > 0) return fromDb.map(c => ({ title: c.titulo, icon: c.icono || 'shield' }));
-          return this.manualProductosPersonasFallback.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
+          return this.manualProductFallbackPersonas.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
         },
 
         get allCoverageItemsEmpresas() {
           const fromDb = this.coverages.filter(c => c.categoria === 'empresas');
           if (fromDb.length > 0) return fromDb.map(c => ({ title: c.titulo, icon: c.icono || 'shield' }));
-          return this.manualProductosEmpresasFallback.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
+          return this.manualProductFallbackEmpresas.map(t => ({ title: t, icon: this._fallbackIconMap[t] || 'shield' }));
         },
 
         // Delete confirmation modal
@@ -1391,7 +1391,7 @@
 
         async initApp() {
           try {
-            // 1. Verificar si el sistema requiere Setup Inicial
+            // 1. Check whether the system requires Initial Setup
             const setupRes = await fetch('/api/auth/setup-status');
             const setupData = await setupRes.json();
 
@@ -1400,7 +1400,7 @@
               return;
             }
 
-            // 2. Si ya hay admins, verificar si existe un token guardado válido
+            // 2. If admins exist, check for a valid saved token
             if (this.token) {
               const meRes = await this.authFetch('/api/auth/me');
               if (meRes.ok) {
@@ -1411,7 +1411,7 @@
               }
             }
 
-            // 3. Si no hay token o expiró -> Login
+            // 3. If there is no token or it expired -> Login
             this.authState = 'login';
           } catch (e) {
             console.error('Error init app:', e);
@@ -1419,7 +1419,7 @@
           }
         },
 
-        // Helper para peticiones autenticadas
+        // Helper for authenticated requests
         async authFetch(url, options = {}) {
           options.headers = options.headers || {};
           if (this.token) {
@@ -1427,7 +1427,7 @@
           }
           const res = await fetch(url, options);
           if (res.status === 401 && this.authState === 'authenticated') {
-            this.logout('Sesión expirada. Por favor vuelva a iniciar sesión.');
+            this.logout('Session expired. Please log in again.');
           }
           return res;
         },
@@ -1437,10 +1437,10 @@
           setTimeout(() => { this.toast.show = false; }, 3500);
         },
 
-        // Setup inicial
+        // Initial setup
         async submitSetup() {
           if (this.setupForm.password !== this.setupForm.confirm_password) {
-            this.showToast('Las contraseñas no coinciden.', 'error');
+            this.showToast('Passwords do not match.', 'error');
             return;
           }
           this.isSubmittingAuth = true;
@@ -1458,13 +1458,13 @@
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Error al configurar administrador.');
+            if (!res.ok) throw new Error(data.detail || 'Error configuring administrator.');
 
             this.token = data.access_token;
             this.currentUser = data.user;
             localStorage.setItem('gc_admin_token', this.token);
             this.authState = 'authenticated';
-            this.showToast('¡Administrador creado con éxito! Bienvenido.');
+            this.showToast('Administrator created successfully! Welcome.');
             this.refreshAll();
           } catch (err) {
             this.showToast(err.message, 'error');
@@ -1485,14 +1485,14 @@
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Credenciales incorrectas.');
+            if (!res.ok) throw new Error(data.detail || 'Incorrect credentials.');
 
             this.token = data.access_token;
             this.currentUser = data.user;
             localStorage.setItem('gc_admin_token', this.token);
             this.authState = 'authenticated';
             this.loginForm = { username: '', password: '' };
-            this.showToast(`¡Hola, ${this.currentUser.full_name || this.currentUser.username}!`);
+            this.showToast(`Hello, ${this.currentUser.full_name || this.currentUser.username}!`);
             this.refreshAll();
           } catch (err) {
             this.showToast(err.message, 'error');
@@ -1506,7 +1506,7 @@
           this.currentUser = {};
           localStorage.removeItem('gc_admin_token');
           this.authState = 'login';
-          this.showToast(customMsg || 'Sesión cerrada correctamente.');
+          this.showToast(customMsg || 'Session closed successfully.');
         },
 
         async refreshAll() {
@@ -1539,7 +1539,7 @@
             const res = await this.authFetch(url);
             if (res.ok) this.leads = await res.json();
           } catch (e) {
-            this.showToast('Error al cargar solicitudes.', 'error');
+            this.showToast('Error loading requests.', 'error');
           }
         },
 
@@ -1550,7 +1550,7 @@
             const res = await this.authFetch(url);
             if (res.ok) this.reviews = await res.json();
           } catch (e) {
-            this.showToast('Error al cargar testimonios.', 'error');
+            this.showToast('Error loading reviews.', 'error');
           }
         },
 
@@ -1575,12 +1575,12 @@
               const idx = this.leads.findIndex(l => l.id === leadId);
               if (idx !== -1) this.leads[idx] = updated;
               this.fetchStats();
-              this.showToast(`Estado actualizado a ${newStatus}.`);
+              this.showToast(`Status updated to ${newStatus}.`);
             } else {
               throw new Error();
             }
           } catch (e) {
-            this.showToast('No se pudo actualizar el estado.', 'error');
+            this.showToast('Could not update the status.', 'error');
           }
         },
 
@@ -1590,17 +1590,17 @@
         },
 
         confirmDeleteLead(lead) {
-          this.deleteModalMessage = `Se eliminará la solicitud #${lead.id} de ${lead.nombre}. Esta acción no se puede deshacer.`;
+          this.deleteModalMessage = `Request #${lead.id} from ${lead.nombre} will be deleted. This action cannot be undone.`;
           this.pendingDeleteAction = async () => {
             try {
               const res = await this.authFetch(`/api/admin/leads/${lead.id}`, { method: 'DELETE' });
               if (res.ok) {
                 this.leads = this.leads.filter(l => l.id !== lead.id);
                 this.fetchStats();
-                this.showToast('Solicitud eliminada.');
+                this.showToast('Request deleted.');
               }
             } catch (e) {
-              this.showToast('Error al eliminar.', 'error');
+              this.showToast('Error deleting.', 'error');
             }
           };
           this.deleteModalOpen = true;
@@ -1631,12 +1631,12 @@
               this.reviewModalOpen = false;
               this.fetchReviewsAdmin();
               this.fetchStats();
-              this.showToast(isEdit ? 'Opinión actualizada.' : 'Opinión creada con éxito.');
+              this.showToast(isEdit ? 'Review updated.' : 'Review created successfully.');
             } else {
               throw new Error();
             }
           } catch (e) {
-            this.showToast('Error al guardar la opinión.', 'error');
+            this.showToast('Error saving the review.', 'error');
           }
         },
 
@@ -1650,31 +1650,31 @@
             });
             if (res.ok) {
               review.is_approved = newStatus;
-              this.showToast(newStatus ? 'Opinión publicada en la web.' : 'Opinión ocultada.');
+              this.showToast(newStatus ? 'Review published on the website.' : 'Review hidden.');
             }
           } catch (e) {
-            this.showToast('Error al cambiar visibilidad.', 'error');
+            this.showToast('Error changing visibility.', 'error');
           }
         },
 
         confirmDeleteReview(review) {
-          this.deleteModalMessage = `Se eliminará la opinión de ${review.name}.`;
+          this.deleteModalMessage = `The review from ${review.name} will be deleted.`;
           this.pendingDeleteAction = async () => {
             try {
               const res = await this.authFetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE' });
               if (res.ok) {
                 this.reviews = this.reviews.filter(r => r.id !== review.id);
                 this.fetchStats();
-                this.showToast('Opinión eliminada.');
+                this.showToast('Review deleted.');
               }
             } catch (e) {
-              this.showToast('Error al eliminar.', 'error');
+              this.showToast('Error deleting.', 'error');
             }
           };
           this.deleteModalOpen = true;
         },
 
-        // Administradores
+        // Administrators
         openCreateAdminModal() {
           this.newAdminForm = { username: '', email: '', full_name: '', password: '', role: 'admin' };
           this.createAdminModalOpen = true;
@@ -1694,7 +1694,7 @@
             this.createAdminModalOpen = false;
             this.fetchAdminUsers();
             this.fetchStats();
-            this.showToast(`Administrador @${data.username} creado con éxito.`);
+            this.showToast(`Administrator @${data.username} created successfully.`);
           } catch (err) {
             this.showToast(err.message, 'error');
           }
@@ -1718,16 +1718,16 @@
             if (!res.ok) throw new Error(data.detail || 'Error al cambiar contraseña.');
 
             this.passwordModalOpen = false;
-            this.showToast('Contraseña actualizada correctamente.');
+            this.showToast('Password updated successfully.');
           } catch (err) {
             this.showToast(err.message, 'error');
           }
         },
 
-        // Devuelve si el usuario actual puede eliminar al admin 'u':
-        // - Nadie puede eliminarse a sí mismo.
-        // - Un superadmin solo puede ser eliminado por otro superadmin,
-        //   y nunca si es el último superadmin que queda en el sistema.
+        // Returns whether the current user can delete admin 'u':
+        // - Nobody can delete themselves.
+        // - A superadmin can only be deleted by another superadmin,
+        //   and never if it is the last superadmin left in the system.
         canDeleteAdmin(u) {
           if (!u || u.id === this.currentUser.id) return false;
           if (u.role === 'superadmin') {
@@ -1739,7 +1739,7 @@
         },
 
         confirmDeleteAdmin(user) {
-          this.deleteModalMessage = `Se eliminará al administrador @${user.username} (${user.full_name || ''}). Esta acción no se puede deshacer.`;
+          this.deleteModalMessage = `Administrator @${user.username} (${user.full_name || ''}) will be deleted. This action cannot be undone.`;
           this.pendingDeleteAction = async () => {
             try {
               const res = await this.authFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
@@ -1748,7 +1748,7 @@
 
               this.adminUsers = this.adminUsers.filter(u => u.id !== user.id);
               this.fetchStats();
-              this.showToast('Administrador eliminado.');
+              this.showToast('Administrator deleted.');
             } catch (err) {
               this.showToast(err.message, 'error');
             }
@@ -1783,7 +1783,7 @@
           return Math.max(1, Math.round(bytes / 1024)) + ' KB';
         },
 
-        // Manuales (PDF por producto)
+        // Manuals (PDF per product)
         async fetchManuals() {
           try {
             let url = '/api/admin/manuals';
@@ -1791,7 +1791,7 @@
             const res = await this.authFetch(url);
             if (res.ok) this.manuals = await res.json();
           } catch (e) {
-            this.showToast('Error al cargar manuales.', 'error');
+            this.showToast('Error loading manuals.', 'error');
           }
         },
 
@@ -1808,16 +1808,16 @@
             fd.append('titulo', this.manualForm.titulo.trim());
             fd.append('file', this.manualFile);
 
-            // OJO: no seteamos Content-Type manualmente; el browser lo arma con el boundary del multipart
+            // NOTE: we do NOT set Content-Type manually; the browser builds it with the multipart boundary
             const res = await this.authFetch('/api/admin/manuals', { method: 'POST', body: fd });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || 'Error al subir el manual.');
+            if (!res.ok) throw new Error(data.detail || 'Error uploading the manual.');
 
             this.manualForm = { producto: '', titulo: '' };
             this.manualFile = null;
             if (this.$refs.manualFileInput) this.$refs.manualFileInput.value = '';
             this.fetchManuals();
-            this.showToast('Manual cargado. Ya está visible en la web.');
+            this.showToast('Manual uploaded. It is now visible on the website.');
           } catch (err) {
             this.showToast(err.message, 'error');
           } finally {
@@ -1832,10 +1832,10 @@
               const res = await this.authFetch(`/api/admin/manuals/${m.id}`, { method: 'DELETE' });
               if (res.ok) {
                 this.manuals = this.manuals.filter(x => x.id !== m.id);
-                this.showToast('Manual eliminado.');
+                this.showToast('Manual deleted.');
               }
             } catch (e) {
-              this.showToast('Error al eliminar el manual.', 'error');
+              this.showToast('Error deleting the manual.', 'error');
             }
           };
           this.deleteModalOpen = true;
@@ -1849,7 +1849,7 @@
         },
 
         // ==========================================
-        // MÉTODOS PARA COBERTURAS
+        // COVERAGE METHODS
         // ==========================================
         async fetchCoverages() {
           try {
@@ -1860,7 +1860,7 @@
             const res = await this.authFetch(url);
             if (res.ok) this.coverages = await res.json();
           } catch (e) {
-            this.showToast('Error al cargar coberturas.', 'error');
+            this.showToast('Error loading coverages.', 'error');
           }
         },
 
@@ -1919,13 +1919,13 @@
 
             this.coverageModalOpen = false;
             this.fetchCoverages();
-            this.showToast(isEdit ? 'Cobertura actualizada.' : 'Cobertura creada con éxito.');
+            this.showToast(isEdit ? 'Coverage updated.' : 'Coverage created successfully.');
           } catch (e) {
             this.showToast(e.message || 'Error al guardar cobertura.', 'error');
           }
         },
 
-        async toggleCoverageActivo(coverage) {
+        async toggleCoverageActive(coverage) {
           try {
             const newStatus = !coverage.activo;
             const res = await this.authFetch(`/api/coverages/admin/${coverage.id}`, {
@@ -1935,42 +1935,42 @@
             });
             if (res.ok) {
               coverage.activo = newStatus;
-              this.showToast(newStatus ? 'Cobertura activada.' : 'Cobertura desactivada.');
+              this.showToast(newStatus ? 'Coverage activated.' : 'Coverage deactivated.');
             } else {
               throw new Error();
             }
           } catch (e) {
-            this.showToast('Error al cambiar estado de la cobertura.', 'error');
+            this.showToast('Error changing coverage status.', 'error');
           }
         },
 
         confirmDeleteCoverage(c) {
-          this.deleteModalMessage = `Se eliminará la cobertura "${c.titulo}" (${c.categoria}). Esta acción no se puede deshacer.`;
+          this.deleteModalMessage = `Coverage "${c.titulo}" (${c.categoria}) will be deleted. This action cannot be undone.`;
           this.pendingDeleteAction = async () => {
             try {
               const res = await this.authFetch(`/api/coverages/admin/${c.id}`, { method: 'DELETE' });
               if (res.ok) {
                 this.coverages = this.coverages.filter(x => x.id !== c.id);
-                this.showToast('Cobertura eliminada.');
+                this.showToast('Coverage deleted.');
               } else {
                 throw new Error();
               }
             } catch (e) {
-              this.showToast('Error al eliminar la cobertura.', 'error');
+              this.showToast('Error deleting the coverage.', 'error');
             }
           };
           this.deleteModalOpen = true;
         },
 
         // ==========================================
-        // MÉTODOS PARA PREGUNTAS FRECUENTES (FAQS)
+        // FAQ METHODS
         // ==========================================
         async fetchFaqs() {
           try {
             const res = await this.authFetch('/api/faqs/admin');
             if (res.ok) this.faqs = await res.json();
           } catch (e) {
-            this.showToast('Error al cargar preguntas frecuentes.', 'error');
+            this.showToast('Error loading frequently asked questions.', 'error');
           }
         },
 
@@ -2019,17 +2019,17 @@
             });
 
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || 'Error al guardar FAQ.');
+            if (!res.ok) throw new Error(data.detail || 'Error saving the FAQ.');
 
             this.faqModalOpen = false;
             this.fetchFaqs();
-            this.showToast(isEdit ? 'FAQ actualizada.' : 'FAQ creada con éxito.');
+            this.showToast(isEdit ? 'FAQ updated.' : 'FAQ created successfully.');
           } catch (e) {
-            this.showToast(e.message || 'Error al guardar la FAQ.', 'error');
+            this.showToast(e.message || 'Error saving the FAQ.', 'error');
           }
         },
 
-        async toggleFaqActivo(faq) {
+        async toggleFaqActive(faq) {
           try {
             const newStatus = !faq.activo;
             const res = await this.authFetch(`/api/faqs/admin/${faq.id}`, {
@@ -2039,28 +2039,28 @@
             });
             if (res.ok) {
               faq.activo = newStatus;
-              this.showToast(newStatus ? 'FAQ activada.' : 'FAQ desactivada.');
+              this.showToast(newStatus ? 'FAQ activated.' : 'FAQ deactivated.');
             } else {
               throw new Error();
             }
           } catch (e) {
-            this.showToast('Error al cambiar estado de la FAQ.', 'error');
+            this.showToast('Error changing FAQ status.', 'error');
           }
         },
 
         confirmDeleteFaq(f) {
-          this.deleteModalMessage = `Se eliminará la pregunta "${f.pregunta.slice(0, 50)}...". Esta acción no se puede deshacer.`;
+          this.deleteModalMessage = `The question "${f.pregunta.slice(0, 50)}..." will be deleted. This action cannot be undone.`;
           this.pendingDeleteAction = async () => {
             try {
               const res = await this.authFetch(`/api/faqs/admin/${f.id}`, { method: 'DELETE' });
               if (res.ok) {
                 this.faqs = this.faqs.filter(x => x.id !== f.id);
-                this.showToast('FAQ eliminada.');
+                this.showToast('FAQ deleted.');
               } else {
                 throw new Error();
               }
             } catch (e) {
-              this.showToast('Error al eliminar la FAQ.', 'error');
+              this.showToast('Error deleting the FAQ.', 'error');
             }
           };
           this.deleteModalOpen = true;

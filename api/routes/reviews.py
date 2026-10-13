@@ -31,35 +31,35 @@ def get_approved_reviews(db: Session = Depends(get_db)):
         )
         return reviews
     except Exception as e:
-        logger.error(f"Error al obtener opiniones de DB: {e}")
+        logger.error(f"Error fetching reviews from DB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudieron cargar las opiniones en este momento."
+            detail="Reviews could not be loaded at this time."
         )
 
 @router.post("", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
 async def create_review(
-    payload: ReviewCreate, 
+    payload: ReviewCreate,
     request: Request,
     db: Session = Depends(get_db)
 ):
-    # 1. Obtener IP del cliente
+    # 1. Get client IP
     client_ip = (
-        request.headers.get("x-forwarded-for", "").split(",")[0].strip() 
-        or request.client.host 
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or request.client.host
         if request.client else None
     )
 
-    # 2. Validar Cloudflare Turnstile
+    # 2. Validate Cloudflare Turnstile
     is_valid_captcha = await verify_turnstile(payload.turnstile_token, client_ip)
     if not is_valid_captcha:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La verificación de seguridad (anti-bots) falló. Por favor reintente."
+            detail="Security verification (anti-bot) failed. Please try again."
         )
 
-    # 3. Guardar Opinión
+    # 3. Save review
     try:
         avatar = generate_avatar_initials(payload.name)
         new_review = Review(
@@ -68,18 +68,18 @@ async def create_review(
             avatar=avatar,
             rating=payload.rating,
             text=payload.text,
-            is_approved=False  # Pendiente de moderación por defecto
+            is_approved=False  # Pending moderation by default
         )
         db.add(new_review)
         db.commit()
         db.refresh(new_review)
 
-        logger.info(f"Nueva opinión registrada exitosamente. ID: {new_review.id}")
+        logger.info(f"New review registered successfully. ID: {new_review.id}")
         return new_review
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al guardar opinión en DB: {e}")
+        logger.error(f"Error saving review to DB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ocurrió un error al guardar tu opinión."
+            detail="An error occurred while saving your review."
         )

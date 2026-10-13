@@ -9,13 +9,13 @@
   <meta property="og:description" content="Asesoramiento cercano, transparente y personalizado para personas, familias y empresas.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_AR">
-  <!-- TODO: reemplazar por el dominio real una vez definido -->
+  <!-- TODO: replace with the real domain once defined -->
   <link rel="canonical" href="https://www.giaconi-capra.com.ar/">
   <meta name="theme-color" content="#080e1a">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Alpine.js Plugins (debe ir antes del core) -->
+  <!-- Alpine.js Plugins (must come before the core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js Core -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -61,7 +61,7 @@
       :class="{ 'overflow-hidden': modalOpen || reviewModalOpen }"
       @keydown.escape.window="modalOpen = false; reviewModalOpen = false; mobileMenuOpen = false">
 
-  <!-- Botón Flotante de WhatsApp -->
+  <!-- Floating WhatsApp Button -->
   <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" 
      class="fixed bottom-6 right-6 z-50 bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group" 
      aria-label="Contacto directo por WhatsApp">
@@ -115,7 +115,7 @@
       </button>
     </div>
 
-    <!-- Menú Mobile -->
+    <!-- Mobile Menu -->
     <div x-show="mobileMenuOpen" 
          @click.outside="mobileMenuOpen = false" 
          x-transition:enter="transition ease-out duration-200"
@@ -170,7 +170,7 @@
     </div>
   </section>
 
-  <!-- Coberturas Section -->
+  <!-- Coverages Section -->
   <section id="coberturas" class="py-20 bg-slate-100 scroll-mt-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-12">
@@ -197,7 +197,7 @@
         </div>
       </div>
 
-      <!-- Grilla Personas -->
+      <!-- Personas grid -->
       <div x-show="activeTab === 'personas'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <template x-for="prod in productosPersonas" :key="prod.id">
           <div @click="openModal(prod)" @keydown.enter="openModal(prod)" @keydown.space.prevent="openModal(prod)" role="button" tabindex="0" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition border border-slate-200/80 cursor-pointer flex flex-col justify-between group focus:outline-none focus:ring-2 focus:ring-brand-cobalt">
@@ -216,7 +216,7 @@
         </template>
       </div>
 
-      <!-- Grilla Empresas -->
+      <!-- Empresas grid -->
       <div x-show="activeTab === 'empresas'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" x-cloak>
         <template x-for="prod in productosEmpresas" :key="prod.id">
           <div @click="openModal(prod)" @keydown.enter="openModal(prod)" @keydown.space.prevent="openModal(prod)" role="button" tabindex="0" class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition border border-slate-200/80 cursor-pointer flex flex-col justify-between group relative focus:outline-none focus:ring-2 focus:ring-brand-cobalt">
@@ -240,14 +240,14 @@
     </div>
   </section>
 
-  <!-- Modal Detalle Producto -->
+  <!-- Product Detail Modal -->
   <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/75 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="modalOpen = false" role="dialog" aria-modal="true" aria-labelledby="modalProdTitle" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100">
       <button @click="modalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Cerrar modal">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
       
-      <!-- Contenedor estático para inyectar un único icono vía x-ref -->
+      <!-- Static container to inject a single icon via x-ref -->
       <div x-ref="modalIcon" class="mb-4 text-brand-cobalt"></div>
 
       <h3 id="modalProdTitle" class="text-2xl font-black text-slate-900 mb-3" x-text="selectedProd.title"></h3>
@@ -258,7 +258,7 @@
           <span>📚</span> Manuales y Documentación
         </h4>
         <div class="space-y-2">
-          <template x-for="(manual, idx) in manualesDelProducto(selectedProd)" :key="idx">
+          <template x-for="(manual, idx) in manualsForProduct(selectedProd)" :key="idx">
             <a :href="manual.url" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-brand-cobalt font-semibold hover:border-brand-cobalt transition">
               <span class="flex items-center gap-2">
                 <span>📄</span>
@@ -267,7 +267,7 @@
               <span class="text-[10px] bg-blue-50 text-brand-cobalt px-2 py-1 rounded-md font-bold uppercase">PDF</span>
             </a>
           </template>
-          <template x-if="manualsApiOk && manualesDelProducto(selectedProd).length === 0">
+          <template x-if="manualsApiOk && manualsForProduct(selectedProd).length === 0">
             <p class="text-xs text-slate-400 italic text-center py-2">
               Todavía no hay manuales cargados para esta cobertura. Consultanos y te enviamos la documentación.
             </p>
@@ -283,7 +283,7 @@
     </div>
   </div>
 
-  <!-- Nosotros -->
+  <!-- About Us -->
   <section id="nosotros" class="py-20 bg-white scroll-mt-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -322,7 +322,7 @@
     </div>
   </section>
 
-  <!-- Testimonios -->
+  <!-- Testimonials -->
   <section id="testimonios" class="py-20 bg-brand-dark text-white relative overflow-hidden scroll-mt-20">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="text-center mb-10">
@@ -369,7 +369,7 @@
     </div>
   </section>
 
-  <!-- Modal Opinión -->
+  <!-- Review Modal -->
   <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
     <div @click.outside="reviewModalOpen = false" role="dialog" aria-modal="true" aria-labelledby="modalReviewTitle" class="bg-brand-surface border border-slate-800 text-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative">
       <button @click="reviewModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cobalt" aria-label="Cerrar modal">
@@ -379,14 +379,14 @@
       <h3 id="modalReviewTitle" class="text-2xl font-black mb-2 text-white">Dejá tu opinión</h3>
       <p class="text-xs text-slate-400 mb-6">Tu experiencia nos ayuda a seguir mejorando y brindar el mejor servicio.</p>
 
-      <!-- Feedback de Error -->
+      <!-- Error Feedback -->
       <template x-if="reviewSubmitError">
         <div class="bg-red-500/20 border border-red-500/40 text-red-300 rounded-xl p-3 text-xs mb-4">
           <span x-text="reviewSubmitError"></span>
         </div>
       </template>
 
-      <!-- Feedback de Éxito -->
+      <!-- Success Feedback -->
       <template x-if="reviewSubmitted">
         <div class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl p-6 text-center my-4">
           <div class="text-3xl mb-2">🎉</div>
@@ -431,7 +431,7 @@
           <textarea x-model="newReview.text" maxlength="3000" required rows="3" placeholder="Contanos tu experiencia con nuestro servicio..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none"></textarea>
         </div>
 
-        <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+        <!-- Invisible Cloudflare Turnstile: hidden container for the widget (not visible to the user) -->
         <div id="turnstile-review-widget" class="hidden" aria-hidden="true"></div>
         <p x-show="reviewTurnstileError" x-cloak class="text-xs text-red-400 mt-1.5 font-medium">
           Por favor, completá la verificación anti-bots antes de publicar.
@@ -457,7 +457,7 @@
     </div>
   </div>
 
-  <!-- Formulario de Contacto -->
+  <!-- Contact Form -->
   <section id="contacto" class="py-20 bg-slate-50 scroll-mt-20">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-12 border border-slate-200/80">
@@ -477,7 +477,7 @@
           </div>
         </template>
 
-        <!-- Feedback de Error General -->
+        <!-- General Error Feedback -->
         <template x-if="contactSubmitError">
           <div class="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 text-xs font-medium mb-6">
             ⚠️ <span x-text="contactSubmitError"></span>
@@ -507,7 +507,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">¿Qué necesitás asegurar?</label>
-              <!-- Custom dropdown con iconos -->
+              <!-- Custom dropdown with icons -->
               <div x-data="{ prodDropdownOpen: false }" @click.away="prodDropdownOpen = false" @keydown.escape.window="prodDropdownOpen = false" class="relative">
                 <!-- Trigger -->
                 <button type="button" @click="prodDropdownOpen = !prodDropdownOpen"
@@ -546,13 +546,13 @@
                      x-effect="if (prodDropdownOpen) $nextTick(() => { if (window.lucide) lucide.createIcons() })"
                      class="absolute z-50 w-full mt-1.5 bg-white rounded-xl border border-slate-200 shadow-xl max-h-72 overflow-y-auto py-1" x-cloak>
 
-                  <!-- Opción vacía -->
+                  <!-- Empty option -->
                   <div @click="formData.producto = ''; prodDropdownOpen = false"
                        class="px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-50 cursor-pointer transition">
                     Seleccionar una opción (Opcional)
                   </div>
 
-                  <!-- Grupo Personas -->
+                  <!-- 'Personas' group -->
                   <div class="px-4 pt-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Personas</div>
                   <template x-for="prod in productosPersonas" :key="'dd-p-' + prod.id">
                     <div @click="formData.producto = prod.title; prodDropdownOpen = false"
@@ -563,7 +563,7 @@
                     </div>
                   </template>
 
-                  <!-- Grupo Empresas -->
+                  <!-- 'Empresas' group -->
                   <div class="px-4 pt-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-t border-slate-100">Empresas y Comercios</div>
                   <template x-for="prod in productosEmpresas" :key="'dd-e-' + prod.id">
                     <div @click="formData.producto = prod.title; prodDropdownOpen = false"
@@ -574,7 +574,7 @@
                     </div>
                   </template>
 
-                  <!-- Otro -->
+                  <!-- 'Other' -->
                   <div class="border-t border-slate-100">
                     <div @click="formData.producto = 'Otro'; prodDropdownOpen = false"
                          class="px-4 py-2.5 flex items-center gap-3 text-sm cursor-pointer transition"
@@ -596,16 +596,16 @@
             <textarea x-model="formData.mensaje" maxlength="3000" rows="3" placeholder="Detalles de tu consulta..." class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-cobalt focus:border-brand-cobalt outline-none text-slate-900 text-sm"></textarea>
           </div>
 
-          <!-- Contenedor Unificado para Checkboxes -->
+          <!-- Unified Checkboxes Container -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
 
-            <!-- Cloudflare Turnstile invisible: contenedor oculto para el widget (no visible para el usuario) -->
+            <!-- Invisible Cloudflare Turnstile: hidden container for the widget (not visible to the user) -->
             <div id="turnstile-widget" class="hidden" aria-hidden="true"></div>
             <p x-show="turnstileError" x-cloak class="text-xs text-red-500 mt-1.5 font-medium">
               Por favor, completá la verificación anti-bots antes de continuar.
             </p>
 
-            <!-- Checkbox: Preferencia WhatsApp -->
+            <!-- Checkbox: WhatsApp Preference -->
             <div class="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
               <label for="wsp" class="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" id="wsp" x-model="formData.wsp" class="w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
@@ -614,7 +614,7 @@
               <span class="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 px-2.5 py-1 rounded-full">Opcional</span>
             </div>
 
-            <!-- Checkbox 3: Protección de Datos -->
+            <!-- Checkbox 3: Data Protection -->
             <div class="flex items-start justify-between">
               <label for="datos" class="flex items-start gap-3 cursor-pointer select-none">
                 <input type="checkbox" id="datos" x-model="formData.aceptarDatos" required class="mt-0.5 w-5 h-5 text-brand-cobalt rounded border-slate-300 focus:ring-brand-cobalt">
@@ -644,7 +644,7 @@
     </div>
   </section>
 
-  <!-- Preguntas Frecuentes -->
+  <!-- Frequently Asked Questions -->
   <section id="faq" class="py-20 bg-white scroll-mt-20">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
@@ -680,7 +680,7 @@
     </div>
   </section>
 
-  <!-- Aseguradoras -->
+  <!-- Insurance Companies -->
   <section class="py-16 bg-brand-dark text-white border-t border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
@@ -699,7 +699,7 @@
     </div>
   </section>
 
-  <!-- Footer con Matrícula SSN -->
+  <!-- Footer with SSN License Number -->
   <footer class="bg-black text-slate-400 py-12 border-t border-slate-800/80 text-xs relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       <div class="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -740,21 +740,21 @@
       </div>
     </div>
 
-    <!-- Acceso discreto al panel de administración -->
+    <!-- Discreet access to the admin panel -->
     <a href="admin.html"
        class="absolute bottom-2 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none opacity-20 hover:opacity-70 transition-opacity duration-300 select-none focus:outline-none focus:opacity-70"
        aria-label="Acceso al panel de administración">π</a>
   </footer>
   <script>
-    // Clave de prueba oficial de Cloudflare Turnstile para localhost/desarrollo (siempre aprueba)
-    // Para producción, se puede definir window.TURNSTILE_SITE_KEY (o llega desde /api/config)
+    // Official Cloudflare Turnstile test key for localhost/development (always passes)
+    // For production, window.TURNSTILE_SITE_KEY can be defined (or it arrives from /api/config)
     window.TURNSTILE_SITE_KEY = window.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
     window.addEventListener('load', () => {
       if (window.lucide) lucide.createIcons();
     });
 
-    // Callback llamado por Cloudflare Turnstile al cargar su script
+    // Callback invoked by Cloudflare Turnstile when its script loads
     window.onTurnstileLoaded = function() {
       if (window.appComponentInstance && typeof window.appComponentInstance.initTurnstileWidget === 'function') {
         window.appComponentInstance.initTurnstileWidget();
@@ -773,7 +773,7 @@
         faqOpen: null,
         reviewInterval: null,
 
-        // Estados de carga y error asíncronos
+        // Async loading and error states
         isSubmittingContact: false,
         contactSubmitError: null,
         isSubmittingReview: false,
@@ -789,7 +789,7 @@
         _contactTsResolve: null,
         _reviewTsResolve: null,
 
-        // Estado Formulario de Contacto
+        // Contact form state
         formData: {
           nombre: '',
           telefono: '',
@@ -800,7 +800,7 @@
           aceptarDatos: false
         },
 
-        // Estado Formulario de Opinión
+        // Review form state
         newReview: {
           name: '',
           role: '',
@@ -808,8 +808,8 @@
           text: ''
         },
 
-        // Catálogo de manuales (se carga desde el backend; si la API no
-        // responde se usa la documentación de muestra embebida como fallback)
+        // Manuals catalog (loaded from the backend; if the API does not
+        // respond, the embedded sample documentation is used as fallback)
         manualsCatalog: [],
         manualsApiOk: false,
 
@@ -850,16 +850,16 @@
           this.fetchCoverages();
           this.fetchFaqs();
           this.$nextTick(() => {
-            // Verificación anti-bots invisible: se valida solo al cargar la página
+            // Invisible anti-bot verification: validated once on page load
             this.initTurnstileWidget();
             this.initTurnstileReviewWidget();
             this.startTurnstileAutoRefresh();
           });
         },
 
-        // Sincroniza la configuración pública con el backend (evita desajustes
-        // entre la site key del widget y la secret key del servidor, que hacían
-        // fallar los envíos y daban la sensación de que "no se guarda nada").
+        // Syncs the public configuration with the backend (prevents mismatches
+        // between the widget's site key and the server's secret key, which used
+        // to make submissions fail and gave the feeling that "nothing is saved").
         async fetchPublicConfig() {
           try {
             const res = await fetch('/api/config');
@@ -878,13 +878,13 @@
               this.initTurnstileReviewWidget();
             }
           } catch (e) {
-            // API no disponible: se conserva la clave por defecto (modo pruebas).
+            // API unavailable: the default key is kept (test mode).
             console.warn('No se pudo obtener /api/config; usando Turnstile de prueba.');
           }
         },
 
-        // Renderiza un widget Turnstile INVISIBLE: Cloudflare valida al visitante
-        // en segundo plano apenas carga la página, sin mostrar ningún checkbox.
+        // Renders an INVISIBLE Turnstile widget: Cloudflare validates the visitor
+        // in the background as soon as the page loads, without any checkbox.
         renderTurnstile(containerId, which) {
           const container = document.getElementById(containerId);
           if (!container || !window.turnstile || typeof window.turnstile.render !== 'function') return;
@@ -919,7 +919,7 @@
         initTurnstileWidget() { this.renderTurnstile('turnstile-widget', 'contact'); },
         initTurnstileReviewWidget() { this.renderTurnstile('turnstile-review-widget', 'review'); },
 
-        // Mantiene los tokens de Turnstile siempre frescos (duración ~5 min):
+        // Keeps Turnstile tokens fresh at all times (~5 min duration):
         startTurnstileAutoRefresh() {
           setInterval(() => {
             if (!window.turnstile) return;
@@ -932,9 +932,9 @@
           }, 4 * 60 * 1000);
         },
 
-        // Pide un token fresco "al vuelo" (por si el visitante dejó la página abierta
-        // mucho tiempo antes de enviar). En desarrollo sin script de Cloudflare,
-        // devuelve un token simbólico que el backend bypasea.
+        // Requests a fresh token "on the fly" (in case the visitor left the page open
+        // for a long time before submitting). In development without Cloudflare's
+        // script, returns a symbolic token that the backend bypasses.
         executeTurnstile(which) {
           return new Promise((resolve) => {
             if (!window.turnstile) return resolve('mock-turnstile-token');
@@ -950,7 +950,7 @@
               this[resolveKey] = null;
               return resolve('mock-turnstile-token');
             }
-            // Salvavidas: si Cloudflare no responde en 8s, se reporta el fallo
+            // Lifeline: if Cloudflare does not respond within 8s, the failure is reported
             setTimeout(() => {
               if (this[resolveKey]) { this[resolveKey] = null; resolve(null); }
             }, 8000);
@@ -981,9 +981,9 @@
           }
         },
 
-        // Devuelve los manuales del producto. Si el backend respondió, muestra
-        // los cargados desde el panel admin; si no, cae a los mocks embebidos.
-        manualesDelProducto(prod) {
+        // Returns the product's manuals. If the backend responded, shows the ones
+        // uploaded from the admin panel; otherwise falls back to embedded mocks.
+        manualsForProduct(prod) {
           if (!prod || !prod.title) return [];
           if (this.manualsApiOk) {
             return this.manualsCatalog
@@ -1086,21 +1086,21 @@
         },
 
         get isContactFormValid() {
-          const nombreOk = this.formData.nombre.trim().length > 0 && this.formData.nombre.length <= 40;
-          const telefonoOk = this.formData.telefono.trim().length >= 6;
+          const nameOk = this.formData.nombre.trim().length > 0 && this.formData.nombre.length <= 40;
+          const phoneOk = this.formData.telefono.trim().length >= 6;
           const emailOk = this.isEmailValid;
-          const mensajeOk = this.formData.mensaje.length <= 3000;
-          const datosOk = this.formData.aceptarDatos;
+          const messageOk = this.formData.mensaje.length <= 3000;
+          const dataOk = this.formData.aceptarDatos;
 
-          return nombreOk && telefonoOk && emailOk && mensajeOk && datosOk;
+          return nameOk && phoneOk && emailOk && messageOk && dataOk;
         },
 
         get isReviewFormValid() {
-          const nombreOk = this.newReview.name.trim().length > 0 && this.newReview.name.length <= 40;
-          const rolOk = this.newReview.role.length <= 40;
-          const textoOk = this.newReview.text.trim().length > 0 && this.newReview.text.length <= 3000;
+          const nameOk = this.newReview.name.trim().length > 0 && this.newReview.name.length <= 40;
+          const roleOk = this.newReview.role.length <= 40;
+          const textOk = this.newReview.text.trim().length > 0 && this.newReview.text.length <= 3000;
 
-          return nombreOk && rolOk && textoOk;
+          return nameOk && roleOk && textOk;
         },
 
         nextReview() {
@@ -1120,8 +1120,8 @@
           this.contactSubmitError = null;
           this.turnstileError = false;
 
-          // Verificación anti-bots invisible: reutiliza el token si tiene < 4 min,
-          // si no, pide uno nuevo al vuelo (el usuario no ve ni toca nada)
+          // Invisible anti-bot verification: reuses the token if it is < 4 min old,
+          // otherwise requests a new one on the fly (the user neither sees nor touches anything)
           let token = this.turnstileToken;
           const tokenFresh = token && (Date.now() - this.turnstileTokenTime) < 4 * 60 * 1000;
           if (!tokenFresh) {
@@ -1153,7 +1153,7 @@
 
             const data = await response.json();
             if (!response.ok) {
-              throw new Error(data.detail || 'Ocurrió un error al procesar tu solicitud.');
+              throw new Error(data.detail || 'An error occurred while processing your request.');
             }
 
             this.formSubmitted = true;
@@ -1168,7 +1168,7 @@
             this.contactSubmitError = err.message || 'Error de conexión con el servidor. Por favor intentá nuevamente.';
           } finally {
             this.isSubmittingContact = false;
-            // El token es de un solo uso: reset (re-ejecuta el widget invisible)
+            // The token is single-use: reset (re-executes the invisible widget)
             if (window.turnstile && this.turnstileWidgetId !== null) {
               try { window.turnstile.reset(this.turnstileWidgetId); } catch (e) {}
             }
@@ -1207,7 +1207,7 @@
           this.reviewSubmitError = null;
           this.reviewTurnstileError = false;
 
-          // Verificación anti-bots invisible (misma mecánica que el formulario de contacto)
+          // Invisible anti-bot verification (same mechanics as the contact form)
           let token = this.reviewTurnstileToken;
           const tokenFresh = token && (Date.now() - this.reviewTurnstileTokenTime) < 4 * 60 * 1000;
           if (!tokenFresh) {
@@ -1236,7 +1236,7 @@
 
             const savedReview = await response.json();
             if (!response.ok) {
-              throw new Error(savedReview.detail || 'No se pudo guardar tu opinión.');
+              throw new Error(savedReview.detail || 'Could not save your review.');
             }
 
             this.reviews.push(savedReview);

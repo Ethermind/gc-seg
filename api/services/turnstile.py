@@ -9,26 +9,26 @@ CLOUDFLARE_TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v
 
 async def verify_turnstile(token: Optional[str], remote_ip: Optional[str] = None) -> bool:
     """
-    Verifica un token de Cloudflare Turnstile contra la API de Cloudflare.
-    En entorno 'development', permite bypass si la clave no está configurada.
+    Verifies a Cloudflare Turnstile token against Cloudflare's API.
+    In the 'development' environment, bypasses verification when no key is configured.
 
-    Claves de prueba oficiales de Cloudflare (útiles en desarrollo/CI):
-      - Secret que siempre APRUEBA: 1x0000000000000000000000000000000AA
-      - Secret que siempre RECHAZA: 2x0000000000000000000000000000000AA
-      - Site key que siempre APRUEBA: 1x00000000000000000000AA
+    Official Cloudflare test keys (useful for development/CI):
+      - Secret that always PASSES: 1x0000000000000000000000000000000AA
+      - Secret that always FAILS: 2x0000000000000000000000000000000AA
+      - Site key that always PASSES: 1x00000000000000000000AA
     """
     secret = settings.TURNSTILE_SECRET_KEY
 
-    # Sin clave configurada
+    # No key configured
     if not secret:
         if settings.ENVIRONMENT == "development":
-            logger.warning("Turnstile: Sin clave configurada en entorno de desarrollo. Bypass activado.")
+            logger.warning("Turnstile: No secret key configured in development environment. Bypass enabled.")
             return True
-        logger.error("Turnstile: Clave secreta no configurada en entorno de producción.")
+        logger.error("Turnstile: Secret key not configured in production environment.")
         return False
 
     if not token:
-        logger.warning("Turnstile: Token no suministrado.")
+        logger.warning("Turnstile: Token not provided.")
         return False
 
     try:
@@ -44,11 +44,11 @@ async def verify_turnstile(token: Optional[str], remote_ip: Optional[str] = None
             result = response.json()
             success = result.get("success", False)
             if not success:
-                logger.warning(f"Turnstile verificación falló: {result.get('error-codes', [])}")
+                logger.warning(f"Turnstile verification failed: {result.get('error-codes', [])}")
             return success
     except Exception as e:
-        logger.error(f"Error al verificar Turnstile con Cloudflare: {e}")
-        # En caso de falla de red crítica de Cloudflare, decidir según política
+        logger.error(f"Error verifying Turnstile with Cloudflare: {e}")
+        # On a critical Cloudflare network failure, decide per environment policy
         if settings.ENVIRONMENT == "development":
             return True
         return False

@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Asegurar que el path incluya la raiz del proyecto
+# Ensure the path includes the project root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from api.database import engine, Base, SessionLocal
@@ -9,22 +9,22 @@ from api.models import ContactLead, Review, Coverage, FAQ
 
 def setup_database():
     print("=" * 60)
-    print("Iniciando configuracion de Base de Datos para Giaconi-Capra® PAS")
+    print("Starting database setup for Giaconi-Capra® PAS")
     print(f"URL: {engine.url}")
     print("=" * 60)
 
-    # 1. Crear tablas
-    print("-> Creando tablas (contact_leads, reviews, coverages, faqs, admin_users, manuals)...")
+    # 1. Create tables
+    print("-> Creating tables (contact_leads, reviews, coverages, faqs, admin_users, manuals)...")
     Base.metadata.create_all(bind=engine)
-    print("✓ Tablas creadas o verificadas con exito.")
+    print("✓ Tables created or verified successfully.")
 
-    # 2. Cargar datos iniciales de prueba (Seed data)
+    # 2. Load initial seed data
     db = SessionLocal()
     try:
         # Seed Reviews
         existing_reviews = db.query(Review).count()
         if existing_reviews == 0:
-            print("-> Insertando testimonios iniciales...")
+            print("-> Inserting initial testimonials...")
             seed_reviews = [
                 Review(
                     name="Carlos Mendoza",
@@ -53,14 +53,14 @@ def setup_database():
             ]
             db.add_all(seed_reviews)
             db.commit()
-            print(f"✓ Se insertaron {len(seed_reviews)} testimonios iniciales.")
+            print(f"✓ Inserted {len(seed_reviews)} initial testimonials.")
         else:
-            print(f"✓ La tabla 'reviews' ya contiene {existing_reviews} registros. No se requirio carga inicial.")
+            print(f"✓ Table 'reviews' already contains {existing_reviews} records. No initial load required.")
 
         # Seed Coverages (Personas)
         existing_coverages = db.query(Coverage).count()
         if existing_coverages == 0:
-            print("-> Insertando coberturas iniciales...")
+            print("-> Inserting initial coverages...")
             seed_coverages = [
                 # Personas
                 Coverage(categoria="personas", titulo="Auto", icono="car", descripcion="Protege tu vehiculo frente a accidentes, robo, incendio y danos, con distintas alternativas de cobertura para elegir la que mejor se adapte a vos.", orden=1),
@@ -86,14 +86,14 @@ def setup_database():
             ]
             db.add_all(seed_coverages)
             db.commit()
-            print(f"✓ Se insertaron {len(seed_coverages)} coberturas iniciales.")
+            print(f"✓ Inserted {len(seed_coverages)} initial coverages.")
         else:
-            print(f"✓ La tabla 'coverages' ya contiene {existing_coverages} registros. No se requirio carga inicial.")
+            print(f"✓ Table 'coverages' already contains {existing_coverages} records. No initial load required.")
 
         # Seed FAQs
         existing_faqs = db.query(FAQ).count()
         if existing_faqs == 0:
-            print("-> Insertando FAQs iniciales...")
+            print("-> Inserting initial FAQs...")
             seed_faqs = [
                 FAQ(pregunta="Por que contratar mi seguro a traves de un Productor Asesor de Seguros?", respuesta="Porque no solo te ayudamos a contratar una poliza. Analizamos distintas alternativas, te explicamos que estas cubriendo y te acompanamos durante la vigencia del seguro y, especialmente, cuando ocurre un siniestro.", categoria="general", orden=1),
                 FAQ(pregunta="Trabajan con una sola compania de seguros?", respuesta="No. Trabajamos con distintas companias aseguradoras, lo que nos permite evaluar alternativas y buscar la cobertura que mejor se adapte a tus necesidades.", categoria="general", orden=2),
@@ -109,19 +109,19 @@ def setup_database():
             ]
             db.add_all(seed_faqs)
             db.commit()
-            print(f"✓ Se insertaron {len(seed_faqs)} FAQs iniciales.")
+            print(f"✓ Inserted {len(seed_faqs)} initial FAQs.")
         else:
-            print(f"✓ La tabla 'faqs' ya contiene {existing_faqs} registros. No se requirio carga inicial.")
+            print(f"✓ Table 'faqs' already contains {existing_faqs} records. No initial load required.")
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error durante el seed de datos: {e}")
+        print(f"❌ Error during data seeding: {e}")
         raise e
     finally:
         db.close()
 
     print("=" * 60)
-    print("✓ Configuracion de base de datos finalizada exitosamente.")
+    print("✓ Database setup finished successfully.")
     print("=" * 60)
 
 if __name__ == "__main__":

@@ -3,6 +3,11 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, SmallInteger, Dat
 from sqlalchemy.orm import deferred
 from api.database import Base
 
+# NOTE: attribute names in Spanish (nombre, producto, pregunta, categoria, ...)
+# match the live PostgreSQL column names and the JSON contract consumed by the
+# frontend. They are part of the API contract and must not be renamed
+# casually: doing so requires a database migration plus frontend changes.
+
 
 class ContactLead(Base):
     __tablename__ = "contact_leads"
@@ -66,7 +71,7 @@ class AdminUser(Base):
 
 
 class Manual(Base):
-    """Manuales de producto en PDF, almacenados como blob en la base de datos."""
+    """Product manuals as PDFs, stored as blobs in the database."""
     __tablename__ = "manuals"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -84,7 +89,7 @@ class Manual(Base):
 
 
 class Coverage(Base):
-    """Coberturas de seguros por categoria (Personas / Empresas)."""
+    """Insurance coverages by category (Personas / Empresas)."""
     __tablename__ = "coverages"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -104,7 +109,7 @@ class Coverage(Base):
 
 
 class FAQ(Base):
-    """Preguntas Frecuentes gestionables desde el panel de administracion."""
+    """Frequently asked questions, manageable from the admin panel."""
     __tablename__ = "faqs"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)

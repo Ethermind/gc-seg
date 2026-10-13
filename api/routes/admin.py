@@ -6,11 +6,11 @@ from sqlalchemy import func, or_
 from api.database import get_db
 from api.models import ContactLead, Review, AdminUser, Manual
 from api.schemas import (
-    LeadResponse, 
-    LeadUpdate, 
-    ContactCreate, 
-    ReviewResponse, 
-    ReviewCreate, 
+    LeadResponse,
+    LeadUpdate,
+    ContactCreate,
+    ReviewResponse,
+    ReviewCreate,
     ReviewUpdate,
     AdminUserResponse,
     AdminUserCreate,
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-# Límite de tamaño de PDF: las funciones serverless de Vercel aceptan ~4.5 MB por request
+# PDF size limit: Vercel serverless functions accept ~4.5 MB per request
 MAX_MANUAL_SIZE_BYTES = 4 * 1024 * 1024
 
 # ==============================================================================
@@ -50,14 +50,14 @@ def get_dashboard_stats(
             "avg_rating": round(float(avg_rating_res), 1)
         }
     except Exception as e:
-        logger.error(f"Error al obtener estadísticas de admin: {e}")
+        logger.error(f"Error getting admin stats: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al obtener métricas."
+            detail="Error retrieving metrics."
         )
 
 # ==============================================================================
-# CRUD LEADS / SOLICITUDES DE CONTACTO
+# LEADS / CONTACT REQUESTS CRUD
 # ==============================================================================
 @router.get("/leads", response_model=List[LeadResponse])
 def get_all_leads(
@@ -84,15 +84,15 @@ def get_all_leads(
         leads = query.order_by(ContactLead.created_at.desc(), ContactLead.id.desc()).all()
         return leads
     except Exception as e:
-        logger.error(f"Error al listar leads: {e}")
+        logger.error(f"Error listing leads: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al consultar solicitudes de contacto."
+            detail="Error querying contact requests."
         )
 
 @router.post("/leads", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 def create_lead_manual(
-    payload: ContactCreate, 
+    payload: ContactCreate,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -113,22 +113,22 @@ def create_lead_manual(
         return new_lead
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear lead manualmente: {e}")
+        logger.error(f"Error creating lead manually: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al crear la solicitud."
+            detail="Error creating the request."
         )
 
 @router.patch("/leads/{lead_id}", response_model=LeadResponse)
 def update_lead(
-    lead_id: int, 
-    payload: LeadUpdate, 
+    lead_id: int,
+    payload: LeadUpdate,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     lead = db.query(ContactLead).filter(ContactLead.id == lead_id).first()
     if not lead:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitud no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
 
     try:
         if payload.status is not None:
@@ -143,30 +143,30 @@ def update_lead(
         return lead
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al actualizar lead {lead_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al actualizar.")
+        logger.error(f"Error updating lead {lead_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating the request.")
 
 @router.delete("/leads/{lead_id}")
 def delete_lead(
-    lead_id: int, 
+    lead_id: int,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     lead = db.query(ContactLead).filter(ContactLead.id == lead_id).first()
     if not lead:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitud no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
 
     try:
         db.delete(lead)
         db.commit()
-        return {"success": True, "message": f"Solicitud #{lead_id} eliminada exitosamente."}
+        return {"success": True, "message": f"Request #{lead_id} deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar lead {lead_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar.")
+        logger.error(f"Error deleting lead {lead_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting the request.")
 
 # ==============================================================================
-# CRUD REVIEWS / TESTIMONIOS
+# REVIEWS / TESTIMONIALS CRUD
 # ==============================================================================
 @router.get("/reviews", response_model=List[ReviewResponse])
 def get_all_reviews_admin(
@@ -194,15 +194,15 @@ def get_all_reviews_admin(
         reviews = query.order_by(Review.created_at.desc(), Review.id.desc()).all()
         return reviews
     except Exception as e:
-        logger.error(f"Error al listar reviews en admin: {e}")
+        logger.error(f"Error listing reviews in admin: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al consultar opiniones."
+            detail="Error querying reviews."
         )
 
 @router.post("/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_review_admin(
-    payload: ReviewCreate, 
+    payload: ReviewCreate,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -222,19 +222,19 @@ def create_review_admin(
         return new_review
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear reseña en admin: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear opinión.")
+        logger.error(f"Error creating review in admin: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error creating the review.")
 
 @router.put("/reviews/{review_id}", response_model=ReviewResponse)
 def update_review_admin(
-    review_id: int, 
-    payload: ReviewUpdate, 
+    review_id: int,
+    payload: ReviewUpdate,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     review = db.query(Review).filter(Review.id == review_id).first()
     if not review:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opinión no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found.")
 
     try:
         if payload.name is not None:
@@ -254,30 +254,30 @@ def update_review_admin(
         return review
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al actualizar reseña {review_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al actualizar opinión.")
+        logger.error(f"Error updating review {review_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating the review.")
 
 @router.delete("/reviews/{review_id}")
 def delete_review_admin(
-    review_id: int, 
+    review_id: int,
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     review = db.query(Review).filter(Review.id == review_id).first()
     if not review:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opinión no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found.")
 
     try:
         db.delete(review)
         db.commit()
-        return {"success": True, "message": f"Opinión #{review_id} eliminada exitosamente."}
+        return {"success": True, "message": f"Review #{review_id} deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar reseña {review_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar opinión.")
+        logger.error(f"Error deleting review {review_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting the review.")
 
 # ==============================================================================
-# CRUD MANUALES (PDF por producto, guardados como blob en la DB)
+# MANUALS CRUD (PDF per product, stored as blobs in the DB)
 # ==============================================================================
 @router.get("/manuals", response_model=List[ManualResponse])
 def get_all_manuals_admin(
@@ -291,8 +291,8 @@ def get_all_manuals_admin(
             query = query.filter(Manual.producto == producto.strip())
         return query.order_by(Manual.producto.asc(), Manual.titulo.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar manuales en admin: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al consultar manuales.")
+        logger.error(f"Error listing manuals in admin: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error querying manuals.")
 
 @router.post("/manuals", response_model=ManualResponse, status_code=status.HTTP_201_CREATED)
 async def upload_manual(
@@ -306,21 +306,21 @@ async def upload_manual(
     titulo = (titulo or "").strip()
 
     if not producto or len(producto) > 100:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Producto inválido.")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid product.")
     if not titulo or len(titulo) > 150:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="El título es obligatorio (máx. 150 caracteres).")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A title is required (max 150 characters).")
 
     is_pdf = (file.content_type == "application/pdf") or (file.filename or "").lower().endswith(".pdf")
     if not is_pdf:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Solo se permiten archivos PDF.")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Only PDF files are allowed.")
 
     data = await file.read()
     if not data:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="El archivo está vacío.")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="The file is empty.")
     if len(data) > MAX_MANUAL_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="El PDF supera el máximo permitido de 4 MB."
+            detail="The PDF exceeds the maximum allowed size of 4 MB."
         )
 
     try:
@@ -335,12 +335,12 @@ async def upload_manual(
         db.add(new_manual)
         db.commit()
         db.refresh(new_manual)
-        logger.info(f"Manual #{new_manual.id} cargado: {titulo} ({producto}, {len(data)} bytes) por {current_user.username}")
+        logger.info(f"Manual #{new_manual.id} uploaded: {titulo} ({producto}, {len(data)} bytes) by {current_user.username}")
         return new_manual
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al guardar manual: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al guardar el manual.")
+        logger.error(f"Error saving manual: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error saving the manual.")
 
 @router.delete("/manuals/{manual_id}")
 def delete_manual_admin(
@@ -350,19 +350,19 @@ def delete_manual_admin(
 ):
     manual = db.query(Manual).filter(Manual.id == manual_id).first()
     if not manual:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual no encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual not found.")
 
     try:
         db.delete(manual)
         db.commit()
-        return {"success": True, "message": f"Manual \"{manual.titulo}\" eliminado exitosamente."}
+        return {"success": True, "message": f"Manual \"{manual.titulo}\" deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar manual {manual_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar el manual.")
+        logger.error(f"Error deleting manual {manual_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting the manual.")
 
 # ==============================================================================
-# CRUD USUARIOS ADMINISTRADORES
+# ADMIN USERS CRUD
 # ==============================================================================
 @router.get("/users", response_model=List[AdminUserResponse])
 def get_all_admin_users(
@@ -373,8 +373,8 @@ def get_all_admin_users(
         users = db.query(AdminUser).order_by(AdminUser.created_at.asc()).all()
         return users
     except Exception as e:
-        logger.error(f"Error al listar usuarios admin: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al listar administradores.")
+        logger.error(f"Error listing admin users: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error listing administrators.")
 
 @router.post("/users", response_model=AdminUserResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_user(
@@ -382,7 +382,7 @@ def create_admin_user(
     current_user: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    # Verificar si el nombre de usuario o email ya existen
+    # Check if username or email already exist
     existing = db.query(AdminUser).filter(
         or_(
             AdminUser.username == payload.username,
@@ -393,7 +393,7 @@ def create_admin_user(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un administrador con ese nombre de usuario o correo electrónico."
+            detail="An administrator with that username or email address already exists."
         )
 
     try:
@@ -412,8 +412,8 @@ def create_admin_user(
         return new_user
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear usuario administrador: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al crear administrador.")
+        logger.error(f"Error creating admin user: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error creating administrator.")
 
 @router.put("/users/{user_id}/password")
 def change_admin_password(
@@ -424,16 +424,16 @@ def change_admin_password(
 ):
     target_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
     if not target_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     try:
         target_user.hashed_password = hash_password(payload.new_password)
         db.commit()
-        return {"success": True, "message": f"Contraseña del usuario {target_user.username} actualizada con éxito."}
+        return {"success": True, "message": f"Password for user {target_user.username} updated successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al cambiar contraseña de admin {user_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al actualizar contraseña.")
+        logger.error(f"Error changing password of admin {user_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating the password.")
 
 @router.delete("/users/{user_id}")
 def delete_admin_user(
@@ -443,43 +443,43 @@ def delete_admin_user(
 ):
     target_user = db.query(AdminUser).filter(AdminUser.id == user_id).first()
     if not target_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    # Salvaguarda 1: No auto-eliminarse
+    # Safeguard 1: no self-deletion
     if current_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No podés eliminar tu propia cuenta de administrador mientras tenés la sesión activa."
+            detail="You cannot delete your own administrator account while you are logged in."
         )
 
-    # Salvaguarda 2: No eliminar si es el único administrador
+    # Safeguard 2: cannot delete the only remaining administrator
     total_admins = db.query(AdminUser).count()
     if total_admins <= 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No podés eliminar al único administrador restante del sistema."
+            detail="You cannot delete the only remaining administrator in the system."
         )
 
-    # Regla de roles 1: solo un superadmin puede eliminar a otro superadmin
+    # Role rule 1: only a superadmin can delete another superadmin
     if target_user.role == "superadmin":
         if current_user.role != "superadmin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo un superadministrador puede eliminar a otro superadministrador."
+                detail="Only a superadministrator can delete another superadministrator."
             )
-        # Regla de roles 2: el sistema siempre debe conservar al menos un superadmin
+        # Role rule 2: the system must always keep at least one superadmin
         total_superadmins = db.query(AdminUser).filter(AdminUser.role == "superadmin").count()
         if total_superadmins <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No podés eliminar al único superadministrador del sistema."
+                detail="You cannot delete the only superadministrator in the system."
             )
 
     try:
         db.delete(target_user)
         db.commit()
-        return {"success": True, "message": f"Administrador {target_user.username} eliminado exitosamente."}
+        return {"success": True, "message": f"Administrator {target_user.username} deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar usuario admin {user_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar administrador.")
+        logger.error(f"Error deleting admin user {user_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting administrator.")

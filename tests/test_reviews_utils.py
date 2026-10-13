@@ -1,22 +1,22 @@
-"""Tests de generate_avatar_initials (función pura de api.routes.reviews)."""
+"""Tests for generate_avatar_initials (pure function from api.routes.reviews)."""
 from api.routes.reviews import generate_avatar_initials
 
 
-def test_nombre_y_apellido_da_iniciales(self=None):
+def test_first_and_last_name_give_initials():
     assert generate_avatar_initials("Juan Perez") == "JP"
 
 
-def test_un_solo_nombre_toma_dos_letras():
+def test_single_name_takes_two_letters():
     assert generate_avatar_initials("Maria") == "MA"
 
 
-def test_vacio_devuelve_default(self=None):
+def test_empty_returns_default():
     assert generate_avatar_initials("   ") == "U"
 
 
-def test_minusculas_se_normalizan_a_mayusculas():
+def test_lowercase_is_normalized_to_uppercase():
     assert generate_avatar_initials("sofia giannini") == "SG"
 
 
-def test_tres_nombres_usa_los_primeros_dos():
+def test_three_names_uses_the_first_two():
     assert generate_avatar_initials("Ana Maria Lopez") == "AM"

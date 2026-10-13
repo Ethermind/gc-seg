@@ -9,15 +9,15 @@ from api.routes import contact, reviews, health, admin, auth, manuals, coverages
 
 app = FastAPI(
     title="Giaconi-Capra® PAS — Backend API",
-    description="API Serverless para gestion de cotizaciones, leads, testimonios, autenticacion y administracion",
+    description="Serverless API for quote management, leads, testimonials, authentication and administration",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
 
-# Crear/verificar tablas al arrancar (idempotente). Crucial en serverless,
-# donde los cold starts no ejecutan scripts/setup_db.py.
+# Create/verify tables on startup (idempotent). Crucial in serverless,
+# where cold starts do not run scripts/setup_db.py.
 init_db()
 
 # CORS Middleware
@@ -33,7 +33,7 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Router con prefijo /api
+# Router with /api prefix
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router)
 api_router.include_router(contact.router)
@@ -46,7 +46,7 @@ api_router.include_router(faqs.router)
 
 app.include_router(api_router)
 
-# Soporte directo sin prefijo /api (por si Vercel remueve el prefijo en el rewrite)
+# Direct support without the /api prefix (in case Vercel strips it in the rewrite)
 app.include_router(auth.router)
 app.include_router(contact.router)
 app.include_router(reviews.router)
@@ -64,12 +64,12 @@ def root_status():
         "docs": "/api/docs"
     }
 
-# Config publica para el frontend: mantiene frontend y backend consistentes
-# (misma site key de Turnstile en ambos lados -> los envios no fallan por desajuste)
+# Public config for the frontend: keeps frontend and backend consistent
+# (same Turnstile site key on both sides -> submissions do not fail on mismatch)
 @app.get("/api/config")
 @app.get("/config")
 def public_config():
-    # Devuelve null si no hay clave: el frontend cae a la site key de prueba de Cloudflare
+    # Returns null when no key is set: the frontend falls back to Cloudflare's test site key
     return {
         "turnstile_site_key": settings.TURNSTILE_SITE_KEY or None,
         "environment": settings.ENVIRONMENT,

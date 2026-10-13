@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Giaconi-Capra® PAS — Database Initialization & Optimization Script (PostgreSQL)
--- Compatible con Vercel Postgres, Neon, Supabase, AWS RDS, PostgreSQL Local (13+)
--- Idempotente: seguro de ejecutar múltiples veces sin borrar ni duplicar datos.
+-- Compatible with Vercel Postgres, Neon, Supabase, AWS RDS, local PostgreSQL (13+)
+-- Idempotent: safe to run multiple times without deleting or duplicating data.
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -112,10 +112,10 @@ CREATE INDEX IF NOT EXISTS idx_faqs_activo_orden ON faqs (activo, orden ASC);
 
 
 -- =============================================================================
--- SEED DATA INICIAL (IDEMPOTENTE CON ON CONFLICT DO NOTHING)
+-- INITIAL SEED DATA (IDEMPOTENT WITH ON CONFLICT DO NOTHING)
 -- =============================================================================
 
--- A. Testimonios iniciales
+-- A. Initial testimonials
 INSERT INTO reviews (name, role, avatar, rating, text, is_approved)
 VALUES
     (
@@ -144,10 +144,10 @@ VALUES
     )
 ON CONFLICT DO NOTHING;
 
--- B. Coberturas iniciales (Personas y Empresas)
+-- B. Initial coverages (Personas and Empresas)
 INSERT INTO coverages (categoria, titulo, icono, descripcion, badge, orden, activo)
 VALUES
-    -- Personas
+    -- Personas (product content, kept in Spanish)
     ('personas', 'Auto', 'car', 'Protegé tu vehículo frente a accidentes, robo, incendio y daños, con distintas alternativas de cobertura para elegir la que mejor se adapte a vos.', NULL, 1, TRUE),
     ('personas', 'Moto', 'motorbike', 'Coberturas para que disfrutes tu moto con mayor tranquilidad, protegiéndote frente a responsabilidad civil, robo, incendio y otros imprevistos.', NULL, 2, TRUE),
     ('personas', 'Hogar', 'home', 'Protegé tu casa y todo lo que hay en ella frente a incendio, robo, daños y otros imprevistos que pueden afectar tu patrimonio.', NULL, 3, TRUE),
@@ -159,7 +159,7 @@ VALUES
     ('personas', 'Celulares y Portátiles', 'smartphone', 'Protegé los dispositivos que te acompañan todos los días, como celulares, notebooks y tablets, frente a robo y otros imprevistos.', NULL, 9, TRUE),
     ('personas', 'Caución para Alquileres', 'key-round', 'El seguro de caución puede reemplazar la garantía propietaria y brindar al propietario el respaldo necesario.', NULL, 10, TRUE),
 
-    -- Empresas
+    -- Empresas (product content, kept in Spanish)
     ('empresas', 'Comercio', 'store', 'Protegé tu negocio, mercadería, instalaciones y equipamiento frente a los principales imprevistos.', NULL, 1, TRUE),
     ('empresas', 'Consorcio', 'building', 'Protegé el edificio, sus espacios comunes y la responsabilidad del consorcio frente a los principales riesgos e imprevistos.', NULL, 2, TRUE),
     ('empresas', 'Responsabilidad Civil', 'scale', 'Protegé tu patrimonio frente a reclamos por daños que, como consecuencia de tu actividad, puedas ocasionar a terceros.', NULL, 3, TRUE),
@@ -171,7 +171,7 @@ VALUES
     ('empresas', 'Retiro para Empleados', 'award', 'Ofrecé a tus colaboradores un beneficio pensado para su futuro, ayudándolos a construir un ahorro para complementar su jubilación.', 'Nuevo', 9, TRUE)
 ON CONFLICT (categoria, titulo) DO NOTHING;
 
--- C. Preguntas Frecuentes iniciales (FAQs)
+-- C. Initial Frequently Asked Questions (FAQs)
 INSERT INTO faqs (pregunta, respuesta, categoria, orden, activo)
 VALUES
     ('¿Por qué contratar mi seguro a través de un Productor Asesor de Seguros?', 'Porque no solo te ayudamos a contratar una póliza. Analizamos distintas alternativas, te explicamos qué estás cubriendo y te acompañamos durante la vigencia del seguro y, especialmente, cuando ocurre un siniestro.', 'general', 1, TRUE),
@@ -189,11 +189,11 @@ ON CONFLICT (pregunta) DO NOTHING;
 
 
 -- =============================================================================
--- RESINCRONIZACIÓN DE SECUENCIAS (IDEMPOTENTE)
--- Si alguna vez se insertaron filas con ids explícitos (p. ej. migrations o
--- seeds manuales), la secuencia queda atrás del max(id) y los INSERT de la
--- app fallan con "duplicate key value violates unique constraint".
--- Este bloque garantiza que nextval(seq) > max(id) para todas las tablas.
+-- SEQUENCE RESYNC (IDEMPOTENT)
+-- If rows were ever inserted with explicit ids (e.g. manual migrations or
+-- seeds), the sequence falls behind max(id) and subsequent app INSERTs
+-- fail with "duplicate key value violates unique constraint".
+-- This block guarantees nextval(seq) > max(id) for every table.
 -- =============================================================================
 SELECT setval('contact_leads_id_seq', COALESCE((SELECT MAX(id) FROM contact_leads), 1), (SELECT MAX(id) FROM contact_leads) IS NOT NULL);
 SELECT setval('reviews_id_seq', COALESCE((SELECT MAX(id) FROM reviews), 1), (SELECT MAX(id) FROM reviews) IS NOT NULL);

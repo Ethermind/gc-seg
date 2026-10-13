@@ -17,11 +17,11 @@ router = APIRouter(prefix="/faqs", tags=["FAQs"])
 # ==============================================================================
 @router.get("", response_model=List[FAQResponse])
 def list_faqs(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria"),
-    solo_activos: bool = Query(True, description="Solo FAQs activas"),
+    categoria: Optional[str] = Query(None, description="Filter by category"),
+    solo_activos: bool = Query(True, description="Only active FAQs"),
     db: Session = Depends(get_db)
 ):
-    """Lista FAQs publicamente (para el frontend)."""
+    """Lists FAQs publicly (for the frontend)."""
     try:
         query = db.query(FAQ)
         if categoria:
@@ -30,15 +30,15 @@ def list_faqs(
             query = query.filter(FAQ.activo == True)
         return query.order_by(FAQ.orden.asc(), FAQ.id.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar FAQs: {e}")
+        logger.error(f"Error listing FAQs: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudieron cargar las preguntas frecuentes."
+            detail="Frequently asked questions could not be loaded."
         )
 
 
 # ==============================================================================
-# ADMIN ENDPOINTS (protegidos con JWT)
+# ADMIN ENDPOINTS (protected with JWT)
 # ==============================================================================
 @router.get("/admin", response_model=List[FAQResponse])
 def list_faqs_admin(
@@ -46,17 +46,17 @@ def list_faqs_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Lista todas las FAQs (incluyendo inactivas) para admin."""
+    """Lists all FAQs (including inactive ones) for the admin panel."""
     try:
         query = db.query(FAQ)
         if categoria:
             query = query.filter(FAQ.categoria == categoria.strip())
         return query.order_by(FAQ.orden.asc(), FAQ.id.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar FAQs en admin: {e}")
+        logger.error(f"Error listing FAQs in admin: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al consultar FAQs."
+            detail="Error querying FAQs."
         )
 
 
@@ -66,7 +66,7 @@ def create_faq_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Crea una nueva FAQ."""
+    """Creates a new FAQ."""
     try:
         new_faq = FAQ(
             pregunta=payload.pregunta,
@@ -78,14 +78,14 @@ def create_faq_admin(
         db.add(new_faq)
         db.commit()
         db.refresh(new_faq)
-        logger.info(f"FAQ creada: {new_faq.pregunta[:50]}... por {current_user.username}")
+        logger.info(f"FAQ created: {new_faq.pregunta[:50]}... by {current_user.username}")
         return new_faq
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear FAQ: {e}")
+        logger.error(f"Error creating FAQ: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al crear la FAQ."
+            detail="Error creating the FAQ."
         )
 
 
@@ -96,10 +96,10 @@ def update_faq_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Actualiza una FAQ existente."""
+    """Updates an existing FAQ."""
     faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
     if not faq:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="FAQ no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="FAQ not found.")
 
     try:
         if payload.pregunta is not None:
@@ -118,8 +118,8 @@ def update_faq_admin(
         return faq
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al actualizar FAQ {faq_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al actualizar la FAQ.")
+        logger.error(f"Error updating FAQ {faq_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating the FAQ.")
 
 
 @router.delete("/admin/{faq_id}")
@@ -128,16 +128,16 @@ def delete_faq_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Elimina una FAQ."""
+    """Deletes a FAQ."""
     faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
     if not faq:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="FAQ no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="FAQ not found.")
 
     try:
         db.delete(faq)
         db.commit()
-        return {"success": True, "message": f"FAQ eliminada exitosamente."}
+        return {"success": True, "message": "FAQ deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar FAQ {faq_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar la FAQ.")
+        logger.error(f"Error deleting FAQ {faq_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting the FAQ.")

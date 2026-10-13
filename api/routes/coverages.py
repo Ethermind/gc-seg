@@ -17,11 +17,11 @@ router = APIRouter(prefix="/coverages", tags=["Coverages"])
 # ==============================================================================
 @router.get("", response_model=List[CoverageResponse])
 def list_coverages(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria: 'personas' o 'empresas'"),
-    solo_activos: bool = Query(True, description="Solo coberturas activas"),
+    categoria: Optional[str] = Query(None, description="Filter by category: 'personas' or 'empresas'"),
+    solo_activos: bool = Query(True, description="Only active coverages"),
     db: Session = Depends(get_db)
 ):
-    """Lista coberturas publicamente (para el frontend)."""
+    """Lists coverages publicly (for the frontend)."""
     try:
         query = db.query(Coverage)
         if categoria:
@@ -30,15 +30,15 @@ def list_coverages(
             query = query.filter(Coverage.activo == True)
         return query.order_by(Coverage.orden.asc(), Coverage.id.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar coberturas: {e}")
+        logger.error(f"Error listing coverages: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudieron cargar las coberturas."
+            detail="Coverages could not be loaded."
         )
 
 
 # ==============================================================================
-# ADMIN ENDPOINTS (protegidos con JWT)
+# ADMIN ENDPOINTS (protected with JWT)
 # ==============================================================================
 @router.get("/admin", response_model=List[CoverageResponse])
 def list_coverages_admin(
@@ -46,17 +46,17 @@ def list_coverages_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Lista todas las coberturas (incluyendo inactivas) para admin."""
+    """Lists all coverages (including inactive ones) for the admin panel."""
     try:
         query = db.query(Coverage)
         if categoria:
             query = query.filter(Coverage.categoria == categoria.strip().lower())
         return query.order_by(Coverage.orden.asc(), Coverage.id.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar coberturas en admin: {e}")
+        logger.error(f"Error listing coverages in admin: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al consultar coberturas."
+            detail="Error querying coverages."
         )
 
 
@@ -66,7 +66,7 @@ def create_coverage_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Crea una nueva cobertura."""
+    """Creates a new coverage."""
     try:
         new_cov = Coverage(
             categoria=payload.categoria,
@@ -80,14 +80,14 @@ def create_coverage_admin(
         db.add(new_cov)
         db.commit()
         db.refresh(new_cov)
-        logger.info(f"Cobertura creada: {new_cov.titulo} ({new_cov.categoria}) por {current_user.username}")
+        logger.info(f"Coverage created: {new_cov.titulo} ({new_cov.categoria}) by {current_user.username}")
         return new_cov
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al crear cobertura: {e}")
+        logger.error(f"Error creating coverage: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al crear la cobertura."
+            detail="Error creating the coverage."
         )
 
 
@@ -98,10 +98,10 @@ def update_coverage_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Actualiza una cobertura existente."""
+    """Updates an existing coverage."""
     cov = db.query(Coverage).filter(Coverage.id == coverage_id).first()
     if not cov:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cobertura no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coverage not found.")
 
     try:
         if payload.categoria is not None:
@@ -124,8 +124,8 @@ def update_coverage_admin(
         return cov
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al actualizar cobertura {coverage_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al actualizar la cobertura.")
+        logger.error(f"Error updating coverage {coverage_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating the coverage.")
 
 
 @router.delete("/admin/{coverage_id}")
@@ -134,16 +134,16 @@ def delete_coverage_admin(
     current_user = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Elimina una cobertura."""
+    """Deletes a coverage."""
     cov = db.query(Coverage).filter(Coverage.id == coverage_id).first()
     if not cov:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cobertura no encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coverage not found.")
 
     try:
         db.delete(cov)
         db.commit()
-        return {"success": True, "message": f"Cobertura \"{cov.titulo}\" eliminada exitosamente."}
+        return {"success": True, "message": f"Coverage \"{cov.titulo}\" deleted successfully."}
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al eliminar cobertura {coverage_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al eliminar la cobertura.")
+        logger.error(f"Error deleting coverage {coverage_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting the coverage.")

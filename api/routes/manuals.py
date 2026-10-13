@@ -17,30 +17,30 @@ def list_manuals(
     producto: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    """Lista los manuales disponibles (solo metadata, sin el contenido del PDF)."""
+    """Lists available manuals (metadata only, without the PDF content)."""
     try:
         query = db.query(Manual)
         if producto:
             query = query.filter(Manual.producto == producto.strip())
         return query.order_by(Manual.producto.asc(), Manual.titulo.asc()).all()
     except Exception as e:
-        logger.error(f"Error al listar manuales: {e}")
+        logger.error(f"Error listing manuals: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudieron cargar los manuales en este momento."
+            detail="Manuals could not be loaded at this time."
         )
 
 @router.get("/{manual_id}/download")
 def download_manual(manual_id: int, db: Session = Depends(get_db)):
-    """Descarga el PDF del manual (se abre inline en el navegador)."""
+    """Downloads the manual PDF (opens inline in the browser)."""
     manual = db.query(Manual).filter(Manual.id == manual_id).first()
     if not manual:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual no encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manual not found.")
 
     safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", manual.file_name or f"manual-{manual_id}.pdf")
     return Response(
-        # Coerción defensiva: según el driver (sqlite vs psycopg v3) el bytea puede
-        # llegar como bytes o memoryview; Response requiere bytes.
+        # Defensive coercion: depending on the driver (sqlite vs psycopg v3) the
+        # bytea value may arrive as bytes or memoryview; Response requires bytes.
         content=bytes(manual.data),
         media_type=manual.content_type or "application/pdf",
         headers={"Content-Disposition": f'inline; filename="{safe_name}"'}

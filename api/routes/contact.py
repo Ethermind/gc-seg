@@ -18,23 +18,23 @@ async def submit_contact(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    # 1. Obtener IP del cliente (considerando proxies de Vercel/Cloudflare)
+    # 1. Get client IP (considering Vercel/Cloudflare proxies)
     client_ip = (
-        request.headers.get("x-forwarded-for", "").split(",")[0].strip() 
-        or request.client.host 
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or request.client.host
         if request.client else None
     )
     user_agent = request.headers.get("user-agent", "")
 
-    # 2. Validar Cloudflare Turnstile
+    # 2. Validate Cloudflare Turnstile
     is_valid_captcha = await verify_turnstile(payload.turnstile_token, client_ip)
     if not is_valid_captcha:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La verificación de seguridad (anti-bots) falló. Por favor reintente."
+            detail="Security verification (anti-bot) failed. Please try again."
         )
 
-    # 3. Guardar Lead en Base de Datos
+    # 3. Save lead to the database
     try:
         new_lead = ContactLead(
             nombre=payload.nombre,
@@ -52,16 +52,16 @@ async def submit_contact(
         db.commit()
         db.refresh(new_lead)
 
-        logger.info(f"Nuevo contacto registrado exitosamente. ID: {new_lead.id}")
+        logger.info(f"New contact registered successfully. ID: {new_lead.id}")
         return ContactResponse(
             success=True,
-            message="¡Recibimos tu solicitud con éxito! En breve nos pondremos en contacto.",
+            message="We received your request successfully! We will contact you shortly.",
             id=new_lead.id
         )
     except Exception as e:
         db.rollback()
-        logger.error(f"Error al guardar solicitud de contacto en DB: {e}")
+        logger.error(f"Error saving contact request to DB: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente más tarde."
+            detail="An error occurred while processing your request. Please try again later."
         )

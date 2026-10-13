@@ -1,7 +1,7 @@
-"""Tests del rate limiting con slowapi (10 req/min en contact y reviews).
+"""Tests for slowapi rate limiting (10 req/min on contact and reviews).
 
-El resto de la suite corre con el limiter deshabilitado (fixture autouse);
-acá se habilita explícitamente y se resetea el storage in-memory.
+The rest of the suite runs with the limiter disabled (autouse fixture);
+here it is explicitly re-enabled and the in-memory storage is reset.
 """
 import pytest
 
@@ -9,10 +9,10 @@ from api.ratelimit import limiter
 
 
 def _reset_limiter():
-    """slowapi 0.1.x: Limiter.reset() si existe; si no, storage interno."""
+    """slowapi 0.1.x: Limiter.reset() if available; otherwise internals."""
     if hasattr(limiter, "reset"):
         limiter.reset()
-    else:  # pragma: no cover - fallback defensivo
+    else:  # pragma: no cover - defensive fallback
         limiter._storage.reset()
 
 
@@ -33,15 +33,15 @@ def _contact_payload():
 
 
 class TestRateLimitContact:
-    def test_once_pegadas_y_la_doce_es_429(self, client, limiter_on):
-        # turnstile en bypass (development + sin secret) -> no interfiere
+    def test_eleven_attempts_and_the_twelfth_is_429(self, client, limiter_on):
+        # turnstile is bypassed (development + no secret) -> does not interfere
         for i in range(10):
             r = client.post("/api/contact", json=_contact_payload())
-            assert r.status_code == 201, f"pegada {i + 1} debería pasar: {r.status_code}"
+            assert r.status_code == 201, f"attempt {i + 1} should pass: {r.status_code}"
         r = client.post("/api/contact", json=_contact_payload())
         assert r.status_code == 429
 
-    def test_429_devuelve_json_entendible(self, client, limiter_on):
+    def test_429_returns_understandable_json(self, client, limiter_on):
         for _ in range(11):
             r = client.post("/api/contact", json=_contact_payload())
         assert r.status_code == 429

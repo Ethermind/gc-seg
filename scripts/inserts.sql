@@ -1,8 +1,8 @@
 -- =============================================================================
 -- Giaconi-Capra® PAS — Seed Data
--- NOTA: NO incluir la columna id en los INSERT. Los ids los asigna la
--- secuencia SERIAL/IDENTITY de PostgreSQL; insertar ids explicitos deja la
--- secuencia desactualizada y los proximos INSERT de la app fallan con
+-- NOTE: do NOT include the id column in the INSERTs. Ids are assigned by the
+-- PostgreSQL SERIAL/IDENTITY sequence; inserting explicit ids leaves the
+-- sequence out of sync and subsequent app INSERTs fail with
 -- "duplicate key value violates unique constraint".
 -- =============================================================================
 
@@ -40,7 +40,7 @@ RETURNING *;
 
 INSERT INTO coverages (categoria, titulo, icono, descripcion, badge, orden, activo, created_at)
 VALUES
-    -- Personas
+    -- Personas (product content, kept in Spanish)
     ('personas', 'Auto', 'car', 'Protegé tu vehículo frente a accidentes, robo, incendio y daños, con distintas alternativas de cobertura para elegir la que mejor se adapte a vos.', NULL, 1, TRUE, NOW()),
     ('personas', 'Moto', 'motorbike', 'Coberturas para que disfrutes tu moto con mayor tranquilidad, protegiéndote frente a responsabilidad civil, robo, incendio y otros imprevistos.', NULL, 2, TRUE, NOW()),
     ('personas', 'Hogar', 'home', 'Protegé tu casa y todo lo que hay en ella frente a incendio, robo, daños y otros imprevistos que pueden afectar tu patrimonio.', NULL, 3, TRUE, NOW()),
@@ -52,7 +52,7 @@ VALUES
     ('personas', 'Celulares y Portátiles', 'smartphone', 'Protegé los dispositivos que te acompañan todos los días, como celulares, notebooks y tablets, frente a robo y otros imprevistos.', NULL, 9, TRUE, NOW()),
     ('personas', 'Caución para Alquileres', 'key-round', 'El seguro de caución puede reemplazar la garantía propietaria y brindar al propietario el respaldo necesario.', NULL, 10, TRUE, NOW()),
 
-    -- Empresas
+    -- Empresas (product content, kept in Spanish)
     ('empresas', 'Comercio', 'store', 'Protegé tu negocio, mercadería, instalaciones y equipamiento frente a los principales imprevistos.', NULL, 1, TRUE, NOW()),
     ('empresas', 'Consorcio', 'building', 'Protegé el edificio, sus espacios comunes y la responsabilidad del consorcio frente a los principales riesgos e imprevistos.', NULL, 2, TRUE, NOW()),
     ('empresas', 'Responsabilidad Civil', 'scale', 'Protegé tu patrimonio frente a reclamos por daños que, como consecuencia de tu actividad, puedas ocasionar a terceros.', NULL, 3, TRUE, NOW()),
@@ -157,9 +157,9 @@ VALUES
 RETURNING *;
 
 -- =============================================================================
--- Resincronización defensiva de secuencias (idempotente).
--- Garantiza que el proximo id generado sea mayor al max(id) existente,
--- aun si alguien volvio a insertar filas con ids explicitos.
+-- Defensive sequence resync (idempotent).
+-- Guarantees the next generated id is greater than the existing max(id),
+-- even if rows were inserted again with explicit ids.
 -- =============================================================================
 SELECT setval('reviews_id_seq', COALESCE((SELECT MAX(id) FROM reviews), 1), (SELECT MAX(id) FROM reviews) IS NOT NULL);
 SELECT setval('coverages_id_seq', COALESCE((SELECT MAX(id) FROM coverages), 1), (SELECT MAX(id) FROM coverages) IS NOT NULL);

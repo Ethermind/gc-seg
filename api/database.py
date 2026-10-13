@@ -25,11 +25,11 @@ elif db_url.startswith("postgresql"):
         "pool_recycle": 300,
     })
 
-# El engine se crea al importar el módulo (cold start serverless). Si la URL o el
-# driver DBAPI tienen un problema, NUNCA debe morir el import: eso convertiría un
-# error puntual de configuración en un FUNCTION_INVOCATION_FAILED que tira abajo
-# TODOS los endpoints. En su lugar degradamos: init_db/get_db loguean y las rutas
-# responden 500 JSON entendible, y queda un log claro con la acción correctiva.
+# The engine is created at module import time (serverless cold start). If the
+# URL or the DBAPI driver has a problem, the import must NEVER die: that would
+# turn a single configuration error into a FUNCTION_INVOCATION_FAILED taking
+# down ALL endpoints. Instead we degrade gracefully: init_db/get_db log clearly
+# and the routes answer an understandable JSON error.
 try:
     engine = create_engine(
         db_url,
@@ -38,10 +38,10 @@ try:
     )
 except Exception as e:
     logger.error(
-        "No se pudo inicializar el engine de base de datos. "
-        "Verificar el esquema de DATABASE_URL/POSTGRES_URL (se espera postgres:// o postgresql://, "
-        "sin sufijos de driver tipo +psycopg) y que el driver psycopg v3 esté instalado. "
-        f"URL efectiva: {db_url.split('@')[-1] if '@' in db_url else db_url.split(':')[0] + '://***'} | Error: {e}"
+        "Could not initialize the database engine. Check the DATABASE_URL/POSTGRES_URL "
+        "scheme (expected postgres:// or postgresql://, without driver suffixes like "
+        "+psycopg) and that the psycopg v3 driver is installed. "
+        f"Effective URL: {db_url.split('@')[-1] if '@' in db_url else db_url.split(':')[0] + '://***'} | Error: {e}"
     )
     engine = None
 
@@ -52,34 +52,34 @@ Base = declarative_base()
 
 def init_db() -> None:
     """
-    Crea las tablas automáticamente si no existen (idempotente).
-    Garantiza la persistencia aunque no se haya ejecutado scripts/setup_db.py.
-    ADVERTENCIA: SQLite no es viable en Vercel (filesystem efímero / solo lectura);
-    en ese entorno se debe configurar POSTGRES_URL/DATABASE_URL con PostgreSQL.
+    Creates tables automatically if they do not exist (idempotent).
+    Guarantees persistence even when scripts/setup_db.py was never run.
+    WARNING: SQLite is not viable on Vercel (ephemeral / read-only filesystem);
+    on that environment POSTGRES_URL/DATABASE_URL must point to PostgreSQL.
     """
     if engine is None:
-        logger.error("init_db omitido: el engine de base de datos no se pudo inicializar (ver log previo).")
+        logger.error("init_db skipped: the database engine could not be initialized (see previous log).")
         return
     if db_url.startswith("sqlite") and os.getenv("VERCEL"):
         logger.error(
-            "DATABASE_URL apunta a SQLite dentro de Vercel. El filesystem serverless "
-            "es efímero/solo-lectura: los datos NO van a persistir entre invocaciones. "
-            "Configurá POSTGRES_URL o DATABASE_URL con PostgreSQL (Vercel Postgres / Neon / Supabase)."
+            "DATABASE_URL points to SQLite inside Vercel. The serverless filesystem "
+            "is ephemeral/read-only: data will NOT persist between invocations. "
+            "Configure POSTGRES_URL or DATABASE_URL with PostgreSQL (Vercel Postgres / Neon / Supabase)."
         )
     try:
-        import api.models  # noqa: F401  (registra los modelos en Base.metadata)
+        import api.models  # noqa: F401  (registers models in Base.metadata)
         Base.metadata.create_all(bind=engine)
-        logger.info("Esquema de base de datos verificado/creado correctamente.")
+        logger.info("Database schema verified/created successfully.")
     except Exception as e:
-        logger.error(f"No se pudieron crear/verificar las tablas en la base de datos: {e}")
+        logger.error(f"Could not create/verify database tables: {e}")
 
 def get_db():
     if engine is None:
-        # 503 JSON limpio (no RuntimeError): FastAPI lo convierte en
-        # {"detail": ...} sin tumbar el worker.
+        # Clean JSON 503 (not a bare RuntimeError): FastAPI converts it to
+        # {"detail": ...} without killing the worker.
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="La base de datos no está disponible en este momento. Error de configuración de conexión."
+            detail="The database is not available at the moment. Connection configuration error."
         )
     db: Session = SessionLocal()
     try:

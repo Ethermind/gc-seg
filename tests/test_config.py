@@ -1,7 +1,8 @@
-"""Tests de api.config: normalización de URL de DB y parsing de CORS.
+"""Tests for api.config: DB URL normalization and CORS parsing.
 
-Los kwargs del constructor de pydantic-settings pisan a las env vars, así que
-cada caso instancia Settings directamente sin tocar el entorno del proceso.
+The pydantic-settings constructor keyword arguments take precedence over env
+vars, so each case instantiates Settings directly without mutating the process
+environment.
 """
 from pathlib import Path
 
@@ -13,49 +14,49 @@ def _settings(db_url: str) -> Settings:
 
 
 class TestDatabaseUrlNormalization:
-    def test_postgres_legacy_scheme_se_normaliza(self):
+    def test_legacy_postgres_scheme_is_normalized(self):
         s = _settings("postgres://user:pass@host:5432/db")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db"
 
-    def test_postgresql_scheme_queda_intacto(self):
+    def test_postgresql_scheme_is_untouched(self):
         s = _settings("postgresql://user:pass@host:5432/db")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db"
 
-    def test_sufijo_driver_psycopg_se_remueve(self):
-        # Regresión del outage 13/10/2026: integraciones que inyectan
-        # postgresql+psycopg:// no deben forzar un driver distinto al instalado.
+    def test_psycopg_driver_suffix_is_stripped(self):
+        # Regression test for the 2026-10-13 outage: integrations injecting
+        # postgresql+psycopg:// must not force a driver that isn't installed.
         s = _settings("postgresql+psycopg://user:pass@host:5432/db?sslmode=require")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db?sslmode=require"
 
-    def test_sufijo_driver_psycopg2_se_remueve(self):
+    def test_psycopg2_driver_suffix_is_stripped(self):
         s = _settings("postgresql+psycopg2://user:pass@host:5432/db")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db"
 
-    def test_espacios_en_la_url_se_limpian(self):
+    def test_url_whitespace_is_trimmed(self):
         s = _settings("  postgres://user:pass@host:5432/db  ")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db"
 
-    def test_sqlite_relativa_se_ancla_a_la_raiz_del_repo(self):
+    def test_relative_sqlite_is_anchored_to_repo_root(self):
         s = _settings("sqlite:///local.db")
         url = s.sqlalchemy_database_url
-        assert url.startswith("sqlite:////")  # absoluta
+        assert url.startswith("sqlite:////")  # absolute
         assert url.endswith("/local.db")
-        # Anclada a la raíz de ESTE repo (donde está .git), no al CWD
+        # Anchored at THIS repo's root (where .git lives), not at the CWD
         assert str(Path(__file__).resolve().parent.parent) in url
 
-    def test_sqlite_absoluta_no_se_toca(self):
-        s = _settings("sqlite:////tmp/algo.db")
-        assert s.sqlalchemy_database_url == "sqlite:////tmp/algo.db"
+    def test_absolute_sqlite_is_untouched(self):
+        s = _settings("sqlite:////tmp/something.db")
+        assert s.sqlalchemy_database_url == "sqlite:////tmp/something.db"
 
 
 class TestCorsOrigins:
-    def test_asterisco(self):
+    def test_asterisk(self):
         assert Settings(ALLOWED_ORIGINS="*").cors_origins == ["*"]
 
-    def test_lista_por_comas_con_espacios(self):
+    def test_comma_separated_list_with_spaces(self):
         s = Settings(ALLOWED_ORIGINS=" https://a.com ,https://b.com ")
         assert s.cors_origins == ["https://a.com", "https://b.com"]
 
-    def test_entradas_vacias_se_descartan(self):
+    def test_empty_entries_are_discarded(self):
         s = Settings(ALLOWED_ORIGINS="https://a.com,, ,")
         assert s.cors_origins == ["https://a.com"]

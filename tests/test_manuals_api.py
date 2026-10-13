@@ -1,7 +1,7 @@
-"""Tests de endpoints de Manuales PDF (admin: upload/delete; público: list/download)."""
+"""Tests for Manual PDF endpoints (admin: upload/delete; public: list/download)."""
 
 PDF_OK = b"%PDF-1.4 fake pdf content"
-MAX = 4 * 1024 * 1024  # mismo límite que api.routes.admin
+MAX = 4 * 1024 * 1024  # same limit as api.routes.admin
 
 
 def _upload(client, headers, file_bytes=PDF_OK, filename="manual.pdf", content_type="application/pdf",
@@ -15,38 +15,38 @@ def _upload(client, headers, file_bytes=PDF_OK, filename="manual.pdf", content_t
 
 
 class TestManualUploadValidations:
-    def test_upload_feliz_201(self, client, auth_headers):
+    def test_successful_upload_201(self, client, auth_headers):
         r = _upload(client, auth_headers)
         assert r.status_code == 201
         body = r.json()
         assert body["size_bytes"] == len(PDF_OK)
         assert body["content_type"] == "application/pdf"
 
-    def test_no_pdf_422(self, client, auth_headers):
-        r = _upload(client, auth_headers, file_bytes=b"holi", filename="foto.png", content_type="image/png")
+    def test_non_pdf_422(self, client, auth_headers):
+        r = _upload(client, auth_headers, file_bytes=b"hi", filename="photo.png", content_type="image/png")
         assert r.status_code == 422
 
-    def test_archivo_vacio_422(self, client, auth_headers):
+    def test_empty_file_422(self, client, auth_headers):
         r = _upload(client, auth_headers, file_bytes=b"")
         assert r.status_code == 422
 
-    def test_extension_pdf_con_content_type_raro_acepta(self, client, auth_headers):
+    def test_pdf_extension_with_odd_content_type_is_accepted(self, client, auth_headers):
         r = _upload(client, auth_headers, filename="manual.PDF", content_type="application/octet-stream")
         assert r.status_code == 201
 
-    def test_supera_4mb_413(self, client, auth_headers):
-        r = _upload(client, auth_headers, file_bytes=b"%PDF" + b"A" * (MAX))
+    def test_over_4mb_413(self, client, auth_headers):
+        r = _upload(client, auth_headers, file_bytes=b"%PDF" + b"A" * MAX)
         assert r.status_code == 413
 
-    def test_titulo_vacio_422(self, client, auth_headers):
+    def test_empty_title_422(self, client, auth_headers):
         r = _upload(client, auth_headers, titulo="   ")
         assert r.status_code == 422
 
-    def test_producto_vacio_422(self, client, auth_headers):
+    def test_empty_product_422(self, client, auth_headers):
         r = _upload(client, auth_headers, producto=" ")
         assert r.status_code == 422
 
-    def test_sin_token_rechaza(self, client):
+    def test_without_token_is_rejected(self, client):
         r = client.post(
             "/api/admin/manuals",
             files={"file": ("m.pdf", PDF_OK, "application/pdf")},
@@ -55,8 +55,8 @@ class TestManualUploadValidations:
         assert r.status_code in (401, 403)
 
 
-class TestManualDownloadYListado:
-    def test_download_bytes_identicos_y_headers(self, client, auth_headers):
+class TestManualDownloadAndListing:
+    def test_download_identical_bytes_and_headers(self, client, auth_headers):
         mid = _upload(client, auth_headers, filename="mi manual raro?.pdf").json()["id"]
         r = client.get(f"/api/manuals/{mid}/download")
         assert r.status_code == 200
@@ -64,15 +64,15 @@ class TestManualDownloadYListado:
         assert r.headers["content-type"] == "application/pdf"
         cd = r.headers["content-disposition"]
         assert "inline" in cd and ".pdf" in cd
-        # filename sanitizado: sin espacios ni caracteres raros
+        # sanitized filename: no spaces or weird characters
         import re
-        nombre = re.search(r'filename="([^"]+)"', cd).group(1)
-        assert re.fullmatch(r"[A-Za-z0-9_.\-]+", nombre)
+        name = re.search(r'filename="([^"]+)"', cd).group(1)
+        assert re.fullmatch(r"[A-Za-z0-9_.\-]+", name)
 
-    def test_download_inexistente_404(self, client):
+    def test_download_nonexistent_404(self, client):
         assert client.get("/api/manuals/9999/download").status_code == 404
 
-    def test_listado_publico_y_filtro_por_producto(self, client, auth_headers):
+    def test_public_listing_and_filter_by_product(self, client, auth_headers):
         _upload(client, auth_headers, producto="Auto", titulo="Manual Auto")
         _upload(client, auth_headers, producto="Moto", titulo="Manual Moto")
         assert len(client.get("/api/manuals").json()) == 2
