@@ -1,6 +1,6 @@
 # Giaconi-Capra® PAS — Website & Insurance Quote Manager
 
-Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra® Productores Asesores de Seguros**. Desarrollado con frontend estático reactivo (Tailwind CSS + Alpine.js) conectado a una **API Serverless FastAPI (Python)**, persistencia flexible (**SQLite en local / PostgreSQL en producción**) y un **Panel de Administración (CRUD)** completo.
+Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra® Productores Asesores de Seguros**. Desarrollado con frontend estático reactivo (Tailwind CSS + Alpine.js) conectado a una **API Serverless FastAPI (Python)**, persistencia **PostgreSQL unificada (local y producción)** y un **Panel de Administración (CRUD)** completo.
 
 ---
 
@@ -32,7 +32,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
   - Gestión de Preguntas Frecuentes (FAQs).
   - Gestor de Manuales PDF (asociación dinámica a coberturas).
   - Gestión de Usuarios Administradores (roles `admin` y `superadmin`, reseteo de contraseñas, protecciones contra eliminación propia o del último superadmin).
-* **Persistencia Dual (SQLite / PostgreSQL):** Conexión transparente mediante SQLAlchemy 2.1 (SQLite local y PostgreSQL para Vercel/Neon/Supabase, driver `psycopg` v3).
+* **Persistencia unificada en PostgreSQL:** Un solo motor para local, tests, CI y producción (Vercel/Neon/Supabase/Prisma), mediante SQLAlchemy 2.1 con driver `psycopg` v3. URLs no-PostgreSQL son rechazadas con error claro (modo degradado 503, nunca un crash de import).
 * **Arquitectura Serverless optimizada para Vercel:** Handlers ASGI desacoplados, pool de conexiones reciclable y migración DDL automática en cold start (`init_db()`).
 * **Builds reproducibles:** `requirements.txt` está pineado al 100% (freeze exacto) y un smoke test E2E (`scripts/smoke_test.py`) corre en CI en cada push; `/api/health` expone las versiones efectivamente desplegadas.
 
@@ -52,7 +52,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 * **Python 3.12+ / FastAPI** (REST endpoints y documentación Swagger/OpenAPI)
 * **SQLAlchemy 2.1 & Pydantic v2** (ORM, validación estricta y sanitización)
 * **SlowAPI** (Rate Limiter con mitigación de spam por IP)
-* **PostgreSQL / SQLite** (PostgreSQL en Vercel/Neon/Supabase, SQLite local)
+* **PostgreSQL** (local, tests, CI y producción — Vercel/Neon/Supabase/Prisma)
 * **HTTPX** (Cliente asíncrono para verificar tokens de Turnstile ante Cloudflare)
 * **PyJWT + bcrypt** (Autenticación y hashing seguro de contraseñas)
 
@@ -84,9 +84,11 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 │   └── services/
 │       └── turnstile.py        # Servicio de verificación Cloudflare Turnstile
 ├── scripts/                    # Scripts de base de datos
-│   ├── init_db.sql             # DDL completo con índices optimizados
+│   ├── init_db.sql             # DDL completo con índices optimizados (PostgreSQL)
 │   ├── seed_data.sql           # Testimonios iniciales en SQL
-│   └── setup_db.py             # Script Python para creación y seed inicial
+│   ├── setup_db.py             # Script Python para creación y seed inicial
+│   ├── pg_testutils.py         # Creación/reset idempotente de DBs de test y smoke
+│   └── smoke_test.py           # Smoke test E2E contra PostgreSQL dedicado
 ├── img/                        # Recursos gráficos y logotipos
 ├── index.html                  # Landing page principal (MVP productivo conectado a API)
 ├── index-OLD.html              # Copia de respaldo histórica
@@ -185,10 +187,10 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 Crear el archivo `.env` basado en `.env.example`:
 
 ```ini
-# Base de Datos Local (SQLite)
-DATABASE_URL=sqlite:///./local.db
+# Base de Datos Local (PostgreSQL nativo en localhost:5432)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gc_seg_db
 
-# Base de Datos de Producción (PostgreSQL en Vercel, Neon o Supabase)
+# Base de Datos de Producción (PostgreSQL en Vercel, Neon, Supabase o Prisma)
 # DATABASE_URL=postgresql://usuario:contrasena@host:5432/nombre_db
 
 # Cloudflare Turnstile
@@ -213,21 +215,32 @@ ALLOWED_ORIGINS=*
 
 ## 💻 Puesta en Marcha Local
 
-### 1. Entorno Virtual Python
+### 1. PostgreSQL local (una sola vez)
+El proyecto es **PostgreSQL-only**: local, tests, CI y producción corren el mismo motor.
+```bash
+sudo apt update && sudo apt install -y postgresql
+sudo service postgresql start
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+sudo -u postgres createdb gc_seg_db     # base de desarrollo
+sudo -u postgres createdb gc_seg_test   # base exclusiva de tests
+```
+> ⚠️ En WSL el servicio no arranca solo: ejecutá `sudo service postgresql start` al abrir cada sesión (las bases `gc_seg_test`/`gc_seg_smoke` las crean solas los tests si faltan).
+
+### 2. Entorno Virtual Python
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Inicialización de Base de Datos
+### 3. Inicialización de Base de Datos
 ```bash
 cp .env.example .env
 python scripts/setup_db.py
 ```
 > La API también crea las tablas automáticamente al iniciar gracias a `init_db()` en `api/index.py`.
 
-### 3. Ejecución
+### 4. Ejecución
 
 **Opción A: Con Uvicorn (desarrollo directo)**
 ```bash
@@ -246,15 +259,16 @@ npx vercel dev
 
 ## 🧪 Tests
 
-Suite de **141 unit/integration tests** (pytest) + smoke test E2E. Todo corre contra una base SQLite temporal: no toca datos reales ni necesita red.
+Suite de **unit/integration tests** (pytest) + smoke test E2E. Todo corre contra **PostgreSQL real** (paridad total con producción): las bases `gc_seg_test` y `gc_seg_smoke` las crean/resetean automáticamente los propios scripts (`scripts/pg_testutils.py`); nunca tocan la base de desarrollo.
 
 ```bash
-pip install -r requirements-dev.txt   # incluye requirements.txt + pytest
-pytest -q                              # unidad: config, schemas, auth/JWT, endpoints, resiliencia, rate limit
-python scripts/smoke_test.py           # E2E: login → FAQ → cobertura → PDF up/download byte-idéntico
+sudo service postgresql start           # prerequisito: PostgreSQL local corriendo
+pip install -r requirements-dev.txt     # incluye requirements.txt + pytest
+pytest -q                               # unidad: config, schemas, auth/JWT, endpoints, resiliencia, rate limit
+python scripts/smoke_test.py            # E2E: login → FAQ → cobertura → PDF up/download byte-idéntico
 ```
 
-Ambos corren también en GitHub Actions (`.github/workflows/smoke.yml`) en cada push: si una dependencia rompe compatibilidad, el commit queda marcado en rojo **antes** de que Vercel despliegue. Además `GET /api/health` expone las versiones efectivamente desplegadas (`sqlalchemy`, `db_driver`, `python`, `environment`).
+Ambos corren también en GitHub Actions (`.github/workflows/smoke.yml`) en cada push contra un **service container `postgres:17`** (misma major que producción): si una dependencia rompe compatibilidad, el commit queda marcado en rojo **antes** de que Vercel despliegue. Además `GET /api/health` expone las versiones efectivamente desplegadas (`sqlalchemy`, `db_driver`, `python`, `environment`).
 
 > ⚠️ Cuando actualices dependencias: subí versiones en el venv, corré `pytest -q` y `python scripts/smoke_test.py`, y recién después regenerá el freeze con `pip freeze --exclude-editable > requirements.txt`.
 
@@ -280,7 +294,7 @@ El proyecto está preparado de forma nativa para funcionar en **Vercel** como un
 ---
 
 ### Paso 2: Crear y Vincular la Base de Datos PostgreSQL
-> ⚠️ **Importante:** SQLite **NO** funciona en Vercel porque el sistema de archivos serverless es de solo lectura y efímero entre ejecuciones. En producción es obligatorio usar PostgreSQL.
+> ⚠️ **Importante:** este proyecto es **PostgreSQL-only**: SQLite no está soportado en ningún entorno (además, el filesystem serverless de Vercel es efímero y de solo lectura). Si la URL configurada no es PostgreSQL, la API responde 503 con un diagnóstico claro en `/api/health`.
 
 **Opción A: Vercel Postgres / Neon integrado (Recomendado)**
 1. En la pestaña **Storage** de tu panel de Vercel, hacé clic en **Create Database** y elegí **Postgres** (desarrollado por Neon).

@@ -39,8 +39,8 @@ def download_manual(manual_id: int, db: Session = Depends(get_db)):
 
     safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", manual.file_name or f"manual-{manual_id}.pdf")
     return Response(
-        # Defensive coercion: depending on the driver (sqlite vs psycopg v3) the
-        # bytea value may arrive as bytes or memoryview; Response requires bytes.
+        # Defensive coercion: psycopg v3 may hand BYTEA back as bytes or
+        # memoryview depending on the column fetch path; Response requires bytes.
         content=bytes(manual.data),
         media_type=manual.content_type or "application/pdf",
         headers={"Content-Disposition": f'inline; filename="{safe_name}"'}

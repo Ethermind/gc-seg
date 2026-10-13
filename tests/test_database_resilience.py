@@ -36,6 +36,16 @@ class TestEngineNone:
         assert "not initialized" in result["database"]
 
 
+class TestPostgresOnlyGuard:
+    def test_sqlite_urls_are_rejected(self):
+        assert not db_mod._is_supported_url("sqlite:///local.db")
+
+    def test_postgresql_urls_are_accepted(self):
+        assert db_mod._is_supported_url("postgresql://u:p@localhost:5432/db")
+        # config normalizes legacy/driver-suffixed schemes before this check
+        assert db_mod._is_supported_url("postgresql://u:p@host/db?sslmode=require")
+
+
 class TestHealthEndpoint:
     def test_health_healthy_with_live_db(self, client):
         r = client.get("/api/health")
@@ -47,4 +57,4 @@ class TestHealthEndpoint:
         for key in ("python", "sqlalchemy", "db_driver", "environment", "timestamp"):
             assert key in body, f"missing {key} in /api/health"
         assert body["environment"] == "development"
-        assert body["db_driver"] == "pysqlite"  # in tests the DB is a temp sqlite
+        assert body["db_driver"] == "psycopg"  # in tests the DB is PostgreSQL too

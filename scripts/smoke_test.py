@@ -1,9 +1,10 @@
 """
 Giaconi-Capra® PAS — Dependency-free E2E smoke test.
 
-Runs the critical API flows against a throwaway SQLite database:
-login/JWT, FAQ creation, coverage creation, upload and byte-identical
-download of a PDF manual, and the public listings.
+Runs the critical API flows against a throwaway PostgreSQL database
+(gc_seg_smoke by default, recreated on every run; override with
+SMOKE_DATABASE_URL, e.g. in CI): login/JWT, FAQ creation, coverage creation,
+upload and byte-identical download of a PDF manual, and the public listings.
 
 Usage:
     python scripts/smoke_test.py            (with the project venv active)
@@ -16,15 +17,26 @@ finishes deploying.
 import os
 import platform
 import sys
-import tempfile
-
-# Throwaway DB: must be set BEFORE importing the app (engine is created at import).
-_tmpdir = tempfile.mkdtemp(prefix="gc-smoke-")
-os.environ["DATABASE_URL"] = f"sqlite:///{_tmpdir}/smoke.db"
-os.environ.setdefault("ENVIRONMENT", "development")
 
 # Ensure the path includes the project root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from scripts.pg_testutils import recreate_database
+
+# Throwaway DB: must be set BEFORE importing the app (engine is created at
+# import). POSTGRES_URL takes precedence over DATABASE_URL in api/config.py,
+# so both are pinned to the same database.
+_SMOKE_DB_URL = os.environ.get(
+    "SMOKE_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/gc_seg_smoke"
+)
+os.environ["POSTGRES_URL"] = _SMOKE_DB_URL
+os.environ["DATABASE_URL"] = _SMOKE_DB_URL
+os.environ.setdefault("ENVIRONMENT", "development")
+
+# Hermetic run every time (same as production would see on a fresh database):
+# drop + recreate, so repeated runs never collide with earlier rows.
+recreate_database(_SMOKE_DB_URL)
+print(f"smoke database: {_SMOKE_DB_URL.split('@')[-1]} (recreated)")
 
 
 def main() -> int:

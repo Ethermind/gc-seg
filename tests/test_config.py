@@ -4,8 +4,6 @@ The pydantic-settings constructor keyword arguments take precedence over env
 vars, so each case instantiates Settings directly without mutating the process
 environment.
 """
-from pathlib import Path
-
 from api.config import Settings
 
 
@@ -36,17 +34,11 @@ class TestDatabaseUrlNormalization:
         s = _settings("  postgres://user:pass@host:5432/db  ")
         assert s.sqlalchemy_database_url == "postgresql://user:pass@host:5432/db"
 
-    def test_relative_sqlite_is_anchored_to_repo_root(self):
+    def test_sqlite_url_passes_through_untouched(self):
+        # SQLite is unsupported: config no longer massaging sqlite paths is
+        # intentional; api.database rejects non-PostgreSQL URLs at engine init.
         s = _settings("sqlite:///local.db")
-        url = s.sqlalchemy_database_url
-        assert url.startswith("sqlite:////")  # absolute
-        assert url.endswith("/local.db")
-        # Anchored at THIS repo's root (where .git lives), not at the CWD
-        assert str(Path(__file__).resolve().parent.parent) in url
-
-    def test_absolute_sqlite_is_untouched(self):
-        s = _settings("sqlite:////tmp/something.db")
-        assert s.sqlalchemy_database_url == "sqlite:////tmp/something.db"
+        assert s.sqlalchemy_database_url == "sqlite:///local.db"
 
 
 class TestCorsOrigins:

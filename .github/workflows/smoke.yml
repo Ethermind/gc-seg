@@ -14,6 +14,29 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    # PostgreSQL-only project: tests y smoke corren contra un PostgreSQL real
+    # (misma major que producción — Prisma Postgres corre PG 17). Cada job es
+    # hermético: el contenedor de servicio se crea y destruye con el run.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Las bases las crean los propios tests/smoke (scripts/pg_testutils.py).
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gc_seg_test
+      SMOKE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gc_seg_smoke
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +52,7 @@ jobs:
         run: |
           python -c "import sqlalchemy, fastapi, psycopg, platform; print(f'python={platform.python_version()} sqlalchemy={sqlalchemy.__version__} fastapi={fastapi.__version__} psycopg={psycopg.__version__}')"
 
-      - name: Unit tests (141 tests: config, schemas, auth/JWT, endpoints, resiliencia, rate limit)
+      - name: Unit tests (suite pytest: config, schemas, auth/JWT, endpoints, resiliencia, rate limit)
         run: pytest -q
 
       - name: Smoke test E2E

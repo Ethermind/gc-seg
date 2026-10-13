@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 from dotenv import load_dotenv
@@ -8,30 +7,6 @@ from dotenv import load_dotenv
 load_dotenv(".env.local")
 load_dotenv(".env")
 
-
-def _find_project_root() -> Path:
-    """
-    Resolves the real project root (the directory where this repo lives),
-    regardless of the process CWD or whether the code runs from a cached
-    copy (vercel dev copies code to .vercel/cache/index_py/, which is
-    gitignored and identifiable by its ".vercel" path component).
-    """
-    here = Path(__file__).resolve()
-    for parent in here.parents:
-        # Discard Vercel CLI internal copies (e.g. .vercel/cache/...)
-        if ".vercel" in parent.parts:
-            continue
-        # The repo root contains .git (Vercel bundles do not copy it)
-        if (parent / ".git").exists() and parent.name != "index_py":
-            return parent
-    # Fallback: the deployed project package root
-    return here.parent.parent
-
-
-def _resolve_sqlite_path(rel_path: str) -> str:
-    """Anchors relative SQLite paths to the project root (CWD-independent)."""
-    rel_path = rel_path.lstrip("/")
-    return str(_find_project_root() / rel_path)
 
 class Settings(BaseSettings):
     # Database configuration
@@ -70,11 +45,6 @@ class Settings(BaseSettings):
         # serverless function (FUNCTION_INVOCATION_FAILED).
         if url.startswith("postgresql+"):
             url = "postgresql://" + url.split("://", 1)[1]
-        # Anchor relative SQLite paths to the project root:
-        # prevents "vercel dev" (CWD = .vercel/cache/...) or any other working
-        # directory from writing to a different .db file.
-        if url.startswith("sqlite:///") and not url.startswith("sqlite:////"):
-            url = f"sqlite:///{_resolve_sqlite_path(url[len('sqlite:///'):])}"
         return url
 
     @property
