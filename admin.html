@@ -58,7 +58,7 @@
        x-transition:leave-start="opacity-100 translate-y-0"
        x-transition:leave-end="opacity-0 translate-y-4"
        x-cloak
-       class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold border"
+       class="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold border"
        :class="toast.type === 'error' ? 'bg-red-900 text-red-100 border-red-700' : 'bg-slate-900 text-white border-slate-700'">
     <span x-text="toast.type === 'error' ? '⚠️' : '✓'" class="text-base"></span>
     <span x-text="toast.message"></span>
@@ -624,7 +624,10 @@
             <form @submit.prevent="uploadManual()" class="space-y-4">
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Producto*</label>
-                <select x-model="manualForm.producto" required class="hidden"></select>
+                <!-- NOTA: no usar un <select required> oculto aqui: al no tener <option>,
+                     la validacion nativa del navegador bloquea silenciosamente el submit
+                     ("invalid form control is not focusable") y el manual nunca se sube.
+                     La validacion la hace el boton submit via :disabled. -->
                 <!-- Custom dropdown con iconos -->
                 <div x-data="{ manualProdDdOpen: false }" @click.away="manualProdDdOpen = false" @keydown.escape.window="manualProdDdOpen = false" class="relative">
                   <!-- Trigger -->

@@ -186,3 +186,18 @@ VALUES
     ('¿Cómo sé si las coberturas que tengo actualmente son suficientes?', 'Podemos revisar tus pólizas actuales, analizar sumas aseguradas, coberturas y necesidades reales, y ayudarte a detectar posibles faltantes o coberturas que convenga actualizar.', 'general', 10, TRUE),
     ('¿Después de contratar, con quién me comunico si necesito algo?', 'Con nosotros. Queremos que tengas siempre a quién recurrir. Desde una modificación en tu póliza hasta un siniestro o una consulta sobre tu cobertura, nuestro trabajo es acompañarte también después de la contratación.', 'general', 11, TRUE)
 ON CONFLICT (pregunta) DO NOTHING;
+
+
+-- =============================================================================
+-- RESINCRONIZACIÓN DE SECUENCIAS (IDEMPOTENTE)
+-- Si alguna vez se insertaron filas con ids explícitos (p. ej. migrations o
+-- seeds manuales), la secuencia queda atrás del max(id) y los INSERT de la
+-- app fallan con "duplicate key value violates unique constraint".
+-- Este bloque garantiza que nextval(seq) > max(id) para todas las tablas.
+-- =============================================================================
+SELECT setval('contact_leads_id_seq', COALESCE((SELECT MAX(id) FROM contact_leads), 1), (SELECT MAX(id) FROM contact_leads) IS NOT NULL);
+SELECT setval('reviews_id_seq', COALESCE((SELECT MAX(id) FROM reviews), 1), (SELECT MAX(id) FROM reviews) IS NOT NULL);
+SELECT setval('admin_users_id_seq', COALESCE((SELECT MAX(id) FROM admin_users), 1), (SELECT MAX(id) FROM admin_users) IS NOT NULL);
+SELECT setval('manuals_id_seq', COALESCE((SELECT MAX(id) FROM manuals), 1), (SELECT MAX(id) FROM manuals) IS NOT NULL);
+SELECT setval('coverages_id_seq', COALESCE((SELECT MAX(id) FROM coverages), 1), (SELECT MAX(id) FROM coverages) IS NOT NULL);
+SELECT setval('faqs_id_seq', COALESCE((SELECT MAX(id) FROM faqs), 1), (SELECT MAX(id) FROM faqs) IS NOT NULL);
