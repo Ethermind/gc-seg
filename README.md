@@ -9,7 +9,6 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 | Archivo | Rol | Descripción |
 | :--- | :--- | :--- |
 | `index.html` | **Producción (MVP)** | Landing page principal conectada al backend (`/api/contact`, `/api/reviews`, `/api/coverages`, `/api/faqs`, `/api/manuals`). Cuenta con Turnstile invisible y datos 100% dinámicos desde la base de datos. |
-| `index-OLD.html` | **Backup / Histórico** | Copia de respaldo de la versión previa estática / POC. |
 | `admin.html` | **Panel de Administración** | SPA administrativa completa con autenticación JWT, métricas en tiempo real y CRUD para leads, testimonios, coberturas, FAQs, manuales PDF y administradores. |
 
 ---
@@ -91,7 +90,6 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 │   └── smoke_test.py           # Smoke test E2E contra PostgreSQL dedicado
 ├── img/                        # Recursos gráficos y logotipos
 ├── index.html                  # Landing page principal (MVP productivo conectado a API)
-├── index-OLD.html              # Copia de respaldo histórica
 ├── admin.html                  # Panel de administración SPA (JWT + 6 tabs)
 ├── requirements.txt            # Dependencias de Python (freeze exacto — no editar a mano)
 ├── vercel.json                 # Configuración de routing y rewrites en Vercel
