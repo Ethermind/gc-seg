@@ -1797,12 +1797,59 @@
 
         onManualFileChange(e) {
           this.manualFile = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+          if (!this.manualFile) return;
+
+          // Client-side pre-validation so the user gets an immediate, specific
+          // error instead of discovering it server-side (or at the Vercel
+          // platform level, where the response has no parseable `detail`).
+          const MAX_BYTES = 4 * 1024 * 1024; // keep in sync with MAX_MANUAL_SIZE_BYTES in api/routes/admin.py
+          const f = this.manualFile;
+          const isPdfName = f.name.toLowerCase().endsWith('.pdf');
+
+          let problem = null;
+          if (!isPdfName && f.type !== 'application/pdf') {
+            problem = `El archivo "${f.name}" no es un PDF (tipo detectado: ${f.type || 'desconocido'}).`;
+          } else if (f.size === 0) {
+            problem = `El archivo "${f.name}" está vacío (0 bytes).`;
+          } else if (f.size > MAX_BYTES) {
+            problem = `El PDF "${f.name}" pesa ${this.formatSize(f.size)} y supera el máximo de 4 MB. Comprimilo o dividilo antes de subirlo.`;
+          }
+
+          if (problem) {
+            console.error('[manuals] File rejected client-side:', { name: f.name, type: f.type, size: f.size });
+            this.showToast(problem, 'error');
+            this.manualFile = null;
+            if (this.$refs.manualFileInput) this.$refs.manualFileInput.value = '';
+          }
+        },
+
+        // Maps a failed upload response to a useful message. Covers:
+        // - FastAPI errors: {"detail": "..."} (possibly a list for 422s)
+        // - Vercel platform errors: {"error": {"message": "...", "code": "..."}} or plain text
+        // - Anything else: generic message including the HTTP status
+        async buildManualUploadError(res) {
+          let raw = null;
+          try { raw = await res.text(); } catch (_) {}
+          console.error('[manuals] Upload failed:', { status: res.status, statusText: res.statusText, body: raw });
+          try {
+            const data = JSON.parse(raw);
+            if (data) {
+              if (typeof data.detail === 'string') return data.detail;
+              if (Array.isArray(data.detail)) return data.detail.map(d => d.msg || JSON.stringify(d)).join(' | ');
+              if (data.error && data.error.message) return `${data.error.message}${data.error.code ? ' (' + data.error.code + ')' : ''}`;
+              if (typeof data.message === 'string' && data.message) return data.message;
+            }
+          } catch (_) { /* body was not JSON */ }
+          if (res.status === 413) return 'El PDF es demasiado grande. El máximo es 4 MB por archivo.';
+          if (raw && raw.length > 0 && raw.length < 200 && !raw.trimStart().startsWith('<')) return `Error del servidor (HTTP ${res.status}): ${raw.trim()}`;
+          return `Error al subir el manual (HTTP ${res.status} ${res.statusText}). Revisá la consola del navegador y los logs de Vercel para más detalle.`;
         },
 
         async uploadManual() {
           if (!this.manualForm.producto || !this.manualForm.titulo.trim() || !this.manualFile || this.manualUploading) return;
           this.manualUploading = true;
           try {
+            console.info('[manuals] Uploading manual:', { producto: this.manualForm.producto, titulo: this.manualForm.titulo.trim(), file: this.manualFile.name, size: this.manualFile.size, type: this.manualFile.type });
             const fd = new FormData();
             fd.append('producto', this.manualForm.producto);
             fd.append('titulo', this.manualForm.titulo.trim());
@@ -1810,8 +1857,7 @@
 
             // NOTE: we do NOT set Content-Type manually; the browser builds it with the multipart boundary
             const res = await this.authFetch('/api/admin/manuals', { method: 'POST', body: fd });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || 'Error uploading the manual.');
+            if (!res.ok) throw new Error(await this.buildManualUploadError(res));
 
             this.manualForm = { producto: '', titulo: '' };
             this.manualFile = null;
@@ -1819,7 +1865,8 @@
             this.fetchManuals();
             this.showToast('Manual uploaded. It is now visible on the website.');
           } catch (err) {
-            this.showToast(err.message, 'error');
+            console.error('[manuals] Upload error:', err);
+            this.showToast(err.message || 'Error uploading the manual.', 'error');
           } finally {
             this.manualUploading = false;
           }

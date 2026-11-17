@@ -2,10 +2,23 @@ from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+import logging
 from api.config import settings
 from api.database import init_db
 from api.ratelimit import limiter
 from api.routes import contact, reviews, health, admin, auth, manuals, coverages, faqs
+
+# Ensure INFO-level logs (upload attempts, successes, etc.) are visible in
+# Vercel logs. Python's root logger defaults to WARNING, which would silence
+# every logger.info() call across the API, and Vercel's runtime may already
+# have configured the root logger (making plain basicConfig a no-op).
+# force=True re-establishes the root handler and level. Errors and tracebacks
+# are always emitted regardless of this level.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:%(name)s:%(message)s",
+    force=True,
+)
 
 app = FastAPI(
     title="Giaconi-Capra® PAS — Backend API",

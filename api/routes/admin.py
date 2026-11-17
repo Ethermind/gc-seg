@@ -305,19 +305,36 @@ async def upload_manual(
     producto = (producto or "").strip()
     titulo = (titulo or "").strip()
 
+    logger.info(
+        "Manual upload attempt: producto='%s' titulo='%s' filename='%s' content_type='%s' user='%s'",
+        producto, titulo, file.filename, file.content_type, current_user.username
+    )
+
     if not producto or len(producto) > 100:
+        logger.warning("Manual upload rejected (invalid producto): producto='%s' len=%d filename='%s'", producto, len(producto or ""), file.filename)
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid product.")
     if not titulo or len(titulo) > 150:
+        logger.warning("Manual upload rejected (invalid titulo): titulo='%s' len=%d filename='%s'", titulo, len(titulo or ""), file.filename)
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A title is required (max 150 characters).")
 
-    is_pdf = (file.content_type == "application/pdf") or (file.filename or "").lower().endswith(".pdf")
+    file_name = file.filename or ""
+    is_pdf = (file.content_type == "application/pdf") or file_name.lower().endswith(".pdf")
     if not is_pdf:
+        logger.warning(
+            "Manual upload rejected (not a PDF): filename='%s' content_type='%s'",
+            file_name, file.content_type
+        )
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Only PDF files are allowed.")
 
     data = await file.read()
     if not data:
+        logger.warning("Manual upload rejected (empty file): filename='%s' content_type='%s'", file_name, file.content_type)
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="The file is empty.")
     if len(data) > MAX_MANUAL_SIZE_BYTES:
+        logger.warning(
+            "Manual upload rejected (too large): filename='%s' size=%d bytes (limit=%d)",
+            file_name, len(data), MAX_MANUAL_SIZE_BYTES
+        )
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="The PDF exceeds the maximum allowed size of 4 MB."
@@ -327,7 +344,7 @@ async def upload_manual(
         new_manual = Manual(
             producto=producto,
             titulo=titulo,
-            file_name=file.filename or f"{titulo}.pdf",
+            file_name=file_name or f"{titulo}.pdf",
             content_type="application/pdf",
             size_bytes=len(data),
             data=data
@@ -335,11 +352,17 @@ async def upload_manual(
         db.add(new_manual)
         db.commit()
         db.refresh(new_manual)
-        logger.info(f"Manual #{new_manual.id} uploaded: {titulo} ({producto}, {len(data)} bytes) by {current_user.username}")
+        logger.info(
+            "Manual #%s uploaded OK: titulo='%s' producto='%s' size=%d bytes filename='%s' by %s",
+            new_manual.id, titulo, producto, len(data), file_name, current_user.username
+        )
         return new_manual
     except Exception as e:
         db.rollback()
-        logger.error(f"Error saving manual: {e}")
+        logger.exception(
+            "Error saving manual to DB: titulo='%s' producto='%s' filename='%s' size=%d bytes",
+            titulo, producto, file_name, len(data)
+        )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error saving the manual.")
 
 @router.delete("/manuals/{manual_id}")

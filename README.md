@@ -226,12 +226,12 @@ sudo -u postgres createdb gc_seg_test   # base exclusiva de tests
 ```
 > ⚠️ En WSL el servicio no arranca solo: ejecutá `sudo service postgresql start` al abrir cada sesión (las bases `gc_seg_test`/`gc_seg_smoke` las crean solas los tests si faltan).
 
-### 2. Entorno Virtual Python
+### 2. Entorno Python (conda `gc-seg` — Python 3.12, mismo runtime que producción)
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+conda activate gc-seg            # Python 3.12.14 (si ya está auto-activado, salteá este paso)
+pip install -r requirements.txt  # freeze exacto pineado
 ```
+> ⚠️ **No crees un venv aparte (`.venv`) con otro Python** (p. ej. 3.13): `vercel dev` resuelve `python3` desde el PATH, y el runtime de Vercel compila las dependencias para **3.12** (el mismo major que producción). Un intérprete distinto delante en el PATH hace que la función local muera con `ModuleNotFoundError` (`pydantic_core`) aunque el build haya salido bien.
 
 ### 3. Inicialización de Base de Datos
 ```bash
@@ -242,18 +242,22 @@ python scripts/setup_db.py
 
 ### 4. Ejecución
 
-**Opción A: Con Uvicorn (desarrollo directo)**
+**Opción A: Con Uvicorn (solo la API, sin archivos estáticos)**
 ```bash
 uvicorn api.index:app --reload --port 8000
 ```
-- Web principal: [http://localhost:8000](http://localhost:8000)
-- Panel de control: [http://localhost:8000/admin.html](http://localhost:8000/admin.html)
 - Documentación interactiva Swagger: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+- Endpoints públicos: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+> ⚠️ Esta opción levanta únicamente el backend (`/api/*`): `index.html` y `admin.html` los sirve Vercel como estáticos, por lo que con uvicorn pelado responden `404`. Para probar la web completa usá la Opción B.
 
-**Opción B: Con Vercel CLI (emulación idéntica a producción)**
+**Opción B: Con Vercel CLI (web completa + API, emulación idéntica a producción)**
 ```bash
 npx vercel dev
 ```
+- Web principal: [http://localhost:3000](http://localhost:3000)
+- Panel de control: [http://localhost:3000/admin.html](http://localhost:3000/admin.html)
+- Swagger: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+> ⚠️ Lanzalo con el entorno conda activo (`python3` = 3.12) y **sin ningún otro venv de 3.13 en el PATH** (ver nota del paso 2).
 
 ---
 
@@ -270,7 +274,7 @@ python scripts/smoke_test.py            # E2E: login → FAQ → cobertura → P
 
 Ambos corren también en GitHub Actions (`.github/workflows/smoke.yml`) en cada push contra un **service container `postgres:17`** (misma major que producción): si una dependencia rompe compatibilidad, el commit queda marcado en rojo **antes** de que Vercel despliegue. Además `GET /api/health` expone las versiones efectivamente desplegadas (`sqlalchemy`, `db_driver`, `python`, `environment`).
 
-> ⚠️ Cuando actualices dependencias: subí versiones en el venv, corré `pytest -q` y `python scripts/smoke_test.py`, y recién después regenerá el freeze con `pip freeze --exclude-editable > requirements.txt`.
+> ⚠️ Cuando actualices dependencias: subí versiones en el entorno conda, corré `pytest -q` y `python scripts/smoke_test.py`, y recién después regenerá el freeze con `pip freeze --exclude-editable > requirements.txt`.
 
 ---
 
