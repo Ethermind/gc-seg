@@ -254,9 +254,6 @@
       <p class="text-slate-600 text-sm leading-relaxed mb-6" x-text="selectedProd.desc"></p>
       
       <div class="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center gap-2">
-          <span>📚</span> Manuales y Documentación
-        </h4>
         <div class="space-y-2">
           <template x-for="(manual, idx) in manualsForProduct(selectedProd)" :key="idx">
             <a :href="manual.url" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-brand-cobalt font-semibold hover:border-brand-cobalt transition">
