@@ -17,6 +17,7 @@ RESTORE (POST /api/admin/backup/restore + POST /api/admin/backup/restore/manuals
     (setval) — inserting explicit ids does NOT advance SERIAL sequences and
     later inserts would collide (see BUGS.md, hotfix 12/10/2026).
 """
+import base64
 import logging
 from datetime import datetime, timezone
 from typing import Dict
@@ -28,7 +29,7 @@ from sqlalchemy.orm import Session
 
 from api.auth import get_current_admin
 from api.database import get_db
-from api.models import ContactLead, Review, AdminUser, Manual, Coverage, FAQ
+from api.models import ContactLead, Review, AdminUser, Manual, Coverage, FAQ, Company
 from api.routes.admin import MAX_MANUAL_SIZE_BYTES
 from api.schemas import BackupRestore
 
@@ -42,7 +43,7 @@ BACKUP_VERSION = 1
 # during a restore. admin_users is handled separately: it is upserted by
 # username and the restoring operator is never deleted, so the session that
 # triggered the restore always survives.
-_RESTORED_TABLES = ["coverages", "faqs", "reviews", "contact_leads", "manuals"]
+_RESTORED_TABLES = ["coverages", "faqs", "reviews", "contact_leads", "manuals", "companies"]
 
 
 def _require_superadmin(current_user: AdminUser) -> None:
@@ -71,6 +72,7 @@ def backup_summary(
             "coverages": db.query(Coverage).count(),
             "faqs": db.query(FAQ).count(),
             "manuals": db.query(Manual).count(),
+            "companies": db.query(Company).count(),
             "admin_users": db.query(AdminUser).count(),
             "manuals_total_bytes": int(total_bytes or 0),
         }
@@ -142,6 +144,18 @@ def export_backup(
             }
             for m in db.query(Manual).order_by(Manual.id.asc()).all()
         ]
+        companies = []
+        for c in db.query(Company).order_by(Company.id.asc()).all():
+            entry = {
+                "id": c.id, "nombre": c.nombre, "url": c.url,
+                "logo_content_type": c.logo_content_type,
+                "orden": c.orden, "activo": c.activo,
+                "created_at": _iso(c.created_at),
+            }
+            if c.logo_content_type:
+                # Logo blob is deferred: access it only when a logo exists.
+                entry["logo_base64"] = base64.b64encode(bytes(c.logo or b"")).decode("ascii")
+            companies.append(entry)
 
         payload = {
             "meta": {
@@ -152,6 +166,7 @@ def export_backup(
                     "coverages": len(coverages), "faqs": len(faqs),
                     "reviews": len(reviews), "leads": len(leads),
                     "admin_users": len(admin_users), "manuals": len(manuals),
+                    "companies": len(companies),
                 },
             },
             "coverages": coverages,
@@ -160,6 +175,7 @@ def export_backup(
             "leads": leads,
             "admin_users": admin_users,
             "manuals": manuals,
+            "companies": companies,
         }
         logger.info(
             "Backup exported by %s: %s", current_user.username, payload["meta"]["counts"]
@@ -227,6 +243,7 @@ def restore_backup(
         db.query(Review).delete(synchronize_session=False)
         db.query(ContactLead).delete(synchronize_session=False)
         db.query(Manual).delete(synchronize_session=False)
+        db.query(Company).delete(synchronize_session=False)
 
         # 2. Re-insert with original ids (manuals: empty blob placeholder,
         #    binary arrives in phase 2).
@@ -261,6 +278,15 @@ def restore_backup(
                 id=m.id, producto=m.producto, titulo=m.titulo,
                 file_name=m.file_name, content_type=m.content_type,
                 size_bytes=0, data=b"", created_at=m.created_at,
+            ))
+        for c in payload.companies:
+            # Logo binary is restored in phase 2 via the logo upload endpoint;
+            # here we keep the metadata. If the backup has no logo, NULL.
+            db.add(Company(
+                id=c.id, nombre=c.nombre, url=c.url,
+                logo=None,
+                logo_content_type=None,
+                orden=c.orden, activo=c.activo, created_at=c.created_at,
             ))
 
         # 3. admin_users: upsert by username. The operator's own row is always
@@ -324,17 +350,20 @@ def restore_backup(
         "reviews": len(payload.reviews),
         "leads": len(payload.leads),
         "manuals": len(payload.manuals),
+        "companies": len(payload.companies),
         "admin_users": len(backup_usernames),
     }
     pending_bins = [m.id for m in payload.manuals if m.size_bytes > 0]
+    pending_logos = [c.id for c in payload.companies if c.logo_content_type]
     logger.info(
-        "Backup metadata restored by %s: %s (binaries pending: %s)",
-        current_user.username, restored_counts, pending_bins,
+        "Backup metadata restored by %s: %s (manual binaries pending: %s, logos pending: %s)",
+        current_user.username, restored_counts, pending_bins, pending_logos,
     )
     return {
         "success": True,
         "restored": restored_counts,
         "manuals_pending_binaries": pending_bins,
+        "companies_pending_logos": pending_logos,
     }
 
 

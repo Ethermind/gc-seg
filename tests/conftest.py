@@ -38,7 +38,7 @@ from api.database import SessionLocal
 from api.ratelimit import limiter
 
 # Tablas administradas por la suite, en cualquier orden (CASCADE resuelve FKs).
-_TABLES = "faqs, coverages, manuals, reviews, contact_leads, admin_users"
+_TABLES = "faqs, coverages, manuals, reviews, contact_leads, admin_users, companies"
 
 
 @pytest.fixture(scope="session")

@@ -157,6 +157,27 @@ VALUES
 RETURNING *;
 
 -- =============================================================================
+-- Compañías en las que confiamos (pie de página de la landing)
+-- Sin ids explícitos (los asigna la secuencia). Logo y URL se cargan después
+-- desde el panel de administración (tab Compañías).
+-- Idempotente: solo inserta las compañías que aún no existen.
+-- =============================================================================
+INSERT INTO companies (nombre, url, orden, activo)
+SELECT v.nombre, NULL, v.orden, TRUE
+FROM (VALUES
+    ('Federación Patronal', 1),
+    ('Mercantil Andina', 2),
+    ('Prudencia', 3),
+    ('ATM', 4),
+    ('Life', 5),
+    ('Parana', 6),
+    ('BBVA', 7),
+    ('Credito y Caucion', 8),
+    ('Nación', 9)
+) AS v(nombre, orden)
+WHERE NOT EXISTS (SELECT 1 FROM companies c WHERE c.nombre = v.nombre);
+
+-- =============================================================================
 -- Defensive sequence resync (idempotent).
 -- Guarantees the next generated id is greater than the existing max(id),
 -- even if rows were inserted again with explicit ids.
@@ -164,3 +185,4 @@ RETURNING *;
 SELECT setval('reviews_id_seq', COALESCE((SELECT MAX(id) FROM reviews), 1), (SELECT MAX(id) FROM reviews) IS NOT NULL);
 SELECT setval('coverages_id_seq', COALESCE((SELECT MAX(id) FROM coverages), 1), (SELECT MAX(id) FROM coverages) IS NOT NULL);
 SELECT setval('faqs_id_seq', COALESCE((SELECT MAX(id) FROM faqs), 1), (SELECT MAX(id) FROM faqs) IS NOT NULL);
+SELECT setval('companies_id_seq', COALESCE((SELECT MAX(id) FROM companies), 1), (SELECT MAX(id) FROM companies) IS NOT NULL);

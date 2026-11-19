@@ -6,7 +6,7 @@ import logging
 from api.config import settings
 from api.database import init_db
 from api.ratelimit import limiter
-from api.routes import contact, reviews, health, admin, auth, manuals, coverages, faqs, backup
+from api.routes import contact, reviews, health, admin, auth, manuals, coverages, faqs, backup, companies
 
 # Ensure INFO-level logs (upload attempts, successes, etc.) are visible in
 # Vercel logs. Python's root logger defaults to WARNING, which would silence
@@ -57,6 +57,7 @@ api_router.include_router(backup.router)
 api_router.include_router(manuals.router)
 api_router.include_router(coverages.router)
 api_router.include_router(faqs.router)
+api_router.include_router(companies.router)
 
 app.include_router(api_router)
 
@@ -70,6 +71,7 @@ app.include_router(backup.router)
 app.include_router(manuals.router)
 app.include_router(coverages.router)
 app.include_router(faqs.router)
+app.include_router(companies.router)
 
 @app.get("/")
 def root_status():

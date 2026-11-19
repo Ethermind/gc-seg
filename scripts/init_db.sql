@@ -110,6 +110,25 @@ CREATE TABLE IF NOT EXISTS faqs (
 
 CREATE INDEX IF NOT EXISTS idx_faqs_activo_orden ON faqs (activo, orden ASC);
 
+-- -----------------------------------------------------------------------------
+-- 7. Tabla de Compañías ("Compañías en las que confiamos" — pie de página)
+--    Logo opcional como blob (BYTEA); nombre y URL opcionales. El orden
+--    controla la disposición en la landing.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS companies (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    url VARCHAR(500),
+    logo BYTEA,
+    logo_content_type VARCHAR(50),
+    orden INTEGER DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_companies_orden ON companies (orden ASC);
+CREATE INDEX IF NOT EXISTS idx_companies_activo ON companies (activo, orden ASC);
+
 
 -- =============================================================================
 -- INITIAL SEED DATA (IDEMPOTENT WITH ON CONFLICT DO NOTHING)
@@ -201,3 +220,4 @@ SELECT setval('admin_users_id_seq', COALESCE((SELECT MAX(id) FROM admin_users), 
 SELECT setval('manuals_id_seq', COALESCE((SELECT MAX(id) FROM manuals), 1), (SELECT MAX(id) FROM manuals) IS NOT NULL);
 SELECT setval('coverages_id_seq', COALESCE((SELECT MAX(id) FROM coverages), 1), (SELECT MAX(id) FROM coverages) IS NOT NULL);
 SELECT setval('faqs_id_seq', COALESCE((SELECT MAX(id) FROM faqs), 1), (SELECT MAX(id) FROM faqs) IS NOT NULL);
+SELECT setval('companies_id_seq', COALESCE((SELECT MAX(id) FROM companies), 1), (SELECT MAX(id) FROM companies) IS NOT NULL);

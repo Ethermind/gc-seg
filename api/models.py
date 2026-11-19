@@ -123,3 +123,24 @@ class FAQ(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
+
+
+class Company(Base):
+    """Insurance companies shown in the landing footer ("Compañías en las que
+    confiamos"). Logo (optional) is stored as a blob, like manual PDFs.
+    Display rule on the landing: when logo + url exist, only the logo is shown
+    hyperlinked to the url with the company name as tooltip."""
+    __tablename__ = "companies"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False, index=True)
+    url = Column(String(500), nullable=True)
+    logo = deferred(Column(LargeBinary, nullable=True))
+    logo_content_type = Column(String(50), nullable=True)
+    orden = Column(Integer, default=0, index=True)
+    activo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )

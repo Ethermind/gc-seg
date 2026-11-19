@@ -684,7 +684,52 @@
         <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Compañías en las que confiamos</p>
         <p class="text-xs text-slate-500 mb-8">El respaldo de grandes compañías, acompañado por nuestro asesoramiento personalizado.</p>
         
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
+        <!-- Companies are managed from the admin panel (Compañías tab).
+             Display rule: logo + url -> only the logo, hyperlinked, tooltip = name.
+             Without logo -> the name is shown (linked if url exists). -->
+        <div x-show="companies.length > 0" x-cloak
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
+          <template x-for="c in companies" :key="c.id">
+            <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 flex items-center justify-center min-h-[72px]">
+
+              <!-- logo + url: only the image, hyperlinked, tooltip = name -->
+              <template x-if="c.has_logo && c.url">
+                <a :href="c.url" target="_blank" rel="noopener noreferrer"
+                   :title="c.nombre" :aria-label="c.nombre" class="block">
+                  <img :src="`/api/companies/${c.id}/logo`" :alt="c.nombre"
+                       class="max-h-14 max-w-full object-contain" loading="lazy">
+                </a>
+              </template>
+
+              <!-- logo without url: only the image, tooltip = name -->
+              <template x-if="c.has_logo && !c.url">
+                <span :title="c.nombre" class="block">
+                  <img :src="`/api/companies/${c.id}/logo`" :alt="c.nombre"
+                       class="max-h-14 max-w-full object-contain" loading="lazy">
+                </span>
+              </template>
+
+              <!-- no logo: the name (linked if url exists) -->
+              <template x-if="!c.has_logo && c.url">
+                <a :href="c.url" target="_blank" rel="noopener noreferrer"
+                   :title="c.nombre"
+                   class="text-slate-300 hover:text-white font-black text-sm text-center transition">
+                  <span x-text="c.nombre"></span>
+                </a>
+              </template>
+              <template x-if="!c.has_logo && !c.url">
+                <span :title="c.nombre" class="text-slate-300 font-black text-sm text-center">
+                  <span x-text="c.nombre"></span>
+                </span>
+              </template>
+
+            </div>
+          </template>
+        </div>
+
+        <!-- Fallback when the API is unreachable or there are no companies yet -->
+        <div x-show="companies.length === 0"
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
           <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">SANCOR</div>
           <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">FEDERACIÓN</div>
           <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">ALLIANZ</div>
@@ -810,6 +855,11 @@
         manualsCatalog: [],
         manualsApiOk: false,
 
+        // Insurance companies for the footer ("Compañías en las que confiamos").
+        // Loaded from /api/companies (ordered); if the API fails or returns
+        // nothing, the static fallback grid stays visible.
+        companies: [],
+
         currentReview: 0,
         reviews: [
           {
@@ -846,6 +896,7 @@
           this.fetchManuals();
           this.fetchCoverages();
           this.fetchFaqs();
+          this.fetchCompanies();
           this.$nextTick(() => {
             // Invisible anti-bot verification: validated once on page load
             this.initTurnstileWidget();
@@ -1034,6 +1085,20 @@
             }
           } catch (e) {
             console.warn('API /api/faqs no disponible; usando FAQs por defecto.');
+          }
+        },
+
+        async fetchCompanies() {
+          try {
+            const res = await fetch('/api/companies');
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data) && data.length > 0) {
+                this.companies = data;
+              }
+            }
+          } catch (e) {
+            console.warn('API /api/companies no disponible; usando grilla estática de compañías.');
           }
         },
 

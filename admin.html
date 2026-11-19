@@ -314,13 +314,19 @@
             <span>📚</span> Manuales
             <span class="bg-slate-700 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="manuals.length"></span>
           </button>
-          <button @click="currentTab = 'faqs'" 
+          <button @click="currentTab = 'faqs'"
                   :class="currentTab === 'faqs' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
                   class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
             <span>❓</span> FAQs
             <span class="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full" x-text="faqs.length"></span>
           </button>
-          <button @click="currentTab = 'admins'" 
+          <button @click="currentTab = 'companies'"
+                  :class="currentTab === 'companies' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
+            <span>🏢</span> Compañías
+            <span class="bg-brand-cobalt text-white text-[10px] px-2 py-0.5 rounded-full" x-text="companies.length"></span>
+          </button>
+          <button @click="currentTab = 'admins'"
                   :class="currentTab === 'admins' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-slate-900'"
                   class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center gap-2">
             <span>👥</span> Administradores
@@ -987,6 +993,72 @@
         </div>
       </div>
 
+      <!-- TAB: COMPANIES (footer "Compañías en las que confiamos") -->
+      <div x-show="currentTab === 'companies'" x-cloak>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Compañías en las que confiamos</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Se muestran al pie de la página principal en el orden indicado. Logo y URL son opcionales: si hay logo + URL se muestra solo el logo con link y tooltip con el nombre.</p>
+            </div>
+            <button @click="openCompanyModal(null)" class="bg-brand-cobalt hover:bg-brand-cobaltHover text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+              <span>+</span> Nueva Compañía
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Orden</th>
+                  <th class="py-3.5 px-4">Logo</th>
+                  <th class="py-3.5 px-4">Nombre</th>
+                  <th class="py-3.5 px-4">URL</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template x-for="c in companies" :key="c.id">
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3.5 px-4 font-mono font-bold text-slate-400" x-text="c.orden"></td>
+                    <td class="py-3.5 px-4">
+                      <div class="w-14 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                        <img x-show="c.has_logo" :src="`/api/companies/${c.id}/logo`" :alt="c.nombre" class="max-h-8 max-w-12 object-contain">
+                        <span x-show="!c.has_logo" class="text-[9px] text-slate-300 font-bold uppercase">Sin logo</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-bold text-slate-900" x-text="c.nombre"></td>
+                    <td class="py-3.5 px-4 text-slate-600 max-w-xs truncate">
+                      <a x-show="c.url" :href="c.url" target="_blank" rel="noopener noreferrer" class="text-brand-cobalt hover:underline" x-text="c.url"></a>
+                      <span x-show="!c.url" class="text-slate-300">—</span>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <button @click="toggleCompanyActive(c)"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
+                              :class="c.activo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'">
+                        <span x-text="c.activo ? '✓ Visible' : 'Oculta'"></span>
+                      </button>
+                    </td>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <button @click="openCompanyModal(c)" class="p-2 bg-blue-50 hover:bg-blue-100 text-brand-cobalt rounded-lg transition" title="Editar compañía">✏️</button>
+                        <button @click="confirmDeleteCompany(c)" class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Eliminar compañía">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="companies.length === 0 && !loading">
+                  <td colspan="6" class="py-10 text-center text-slate-400 text-sm">
+                    No hay compañías cargadas. 🏢
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1292,6 +1364,79 @@
     </div>
   </div>
 
+  <!-- MODAL: COMPANY (create / edit + optional logo) -->
+  <div x-show="companyModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/80 backdrop-blur-sm" x-cloak x-transition.opacity>
+    <div @click.outside="companyModalOpen = false" class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
+      <button @click="companyModalOpen = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg">✕</button>
+
+      <h3 class="text-2xl font-black text-slate-900 mb-1" x-text="companyForm.id ? 'Editar Compañía' : 'Nueva Compañía'"></h3>
+      <p class="text-slate-500 mb-6">Se muestra en el pie de la página principal ("Compañías en las que confiamos").</p>
+
+      <form @submit.prevent="saveCompany()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nombre*</label>
+          <input type="text" x-model="companyForm.nombre" required maxlength="100" placeholder="Ej: Federación Patronal" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">URL (opcional)</label>
+          <input type="url" x-model="companyForm.url" placeholder="https://www.compania.com.ar" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          <p class="text-[10px] text-slate-400 mt-1">Si el logo y la URL están cargados, la web muestra solo el logo con link a esta URL y tooltip con el nombre.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Orden*</label>
+            <input type="number" x-model.number="companyForm.orden" min="0" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-cobalt outline-none">
+          </div>
+          <div class="flex items-end pb-1">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" x-model="companyForm.activo" class="w-4 h-4 rounded border-slate-300 accent-blue-600">
+              <span class="text-xs font-semibold text-slate-700">Visible en la web</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Logo (opcional — PNG, JPG, WEBP o GIF · máx. 1 MB)</label>
+
+          <!-- current logo preview (edit mode) -->
+          <div x-show="companyForm.id && !companyLogoFile && !companyLogoRemoved && companyForm.has_logo" x-cloak
+               class="flex items-center gap-3 mb-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <img :src="`/api/companies/${companyForm.id}/logo`" alt="Logo actual" class="max-h-10 max-w-24 object-contain bg-white rounded-lg border border-slate-200 p-1">
+            <span class="text-[11px] text-slate-500 font-semibold">Logo actual</span>
+            <button type="button" @click="removeCompanyLogo()" class="ml-auto text-[11px] font-bold text-red-500 hover:text-red-700 transition">✕ Quitar logo</button>
+          </div>
+
+          <!-- new logo preview -->
+          <div x-show="companyLogoFile" x-cloak class="flex items-center gap-3 mb-2 p-2.5 rounded-xl bg-blue-50 border border-blue-200">
+            <img :src="companyLogoPreviewUrl" alt="Logo nuevo" class="max-h-10 max-w-24 object-contain bg-white rounded-lg border border-blue-200 p-1">
+            <span class="text-[11px] text-blue-700 font-semibold truncate" x-text="companyLogoFile ? companyLogoFile.name : ''"></span>
+            <button type="button" @click="clearCompanyLogoFile()" class="ml-auto text-[11px] font-bold text-blue-500 hover:text-blue-700 transition">✕ Descartar</button>
+          </div>
+
+          <div x-show="companyLogoRemoved" x-cloak class="mb-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+            El logo se quitará al guardar los cambios.
+          </div>
+
+          <input type="file" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+                 @change="onCompanyLogoChange($event)"
+                 class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer file:transition">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" @click="companyModalOpen = false" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancelar</button>
+          <button type="submit" :disabled="companySaving"
+                  :class="companySaving ? 'bg-slate-300 opacity-70 cursor-not-allowed' : 'bg-brand-cobalt hover:bg-brand-cobaltHover'"
+                  class="px-6 py-2.5 rounded-xl text-white font-bold text-xs shadow transition flex items-center gap-2">
+            <svg x-show="companySaving" x-cloak class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <span x-text="companySaving ? 'Guardando...' : (companyForm.id ? 'Guardar Cambios' : 'Crear Compañía')"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.data('adminApp', () => ({
@@ -1350,6 +1495,15 @@
         faqs: [],
         faqModalOpen: false,
         faqForm: { id: null, pregunta: '', respuesta: '', categoria: '', orden: 1, activo: true },
+
+        // Companies state (footer "Compañías en las que confiamos")
+        companies: [],
+        companyModalOpen: false,
+        companySaving: false,
+        companyForm: { id: null, nombre: '', url: '', orden: 1, activo: true, has_logo: false },
+        companyLogoFile: null,        // newly picked file (not yet uploaded)
+        companyLogoPreviewUrl: null,  // object URL for the preview above
+        companyLogoRemoved: false,    // user asked to remove the existing logo
 
         // Fallback icon map for products (when there are no coverages in the DB)
         _fallbackIconMap: {
@@ -1523,7 +1677,8 @@
             this.fetchAdminUsers(),
             this.fetchManuals(),
             this.fetchCoverages(),
-            this.fetchFaqs()
+            this.fetchFaqs(),
+            this.fetchCompanies()
           ]);
           this.loading = false;
         },
@@ -2113,6 +2268,191 @@
               }
             } catch (e) {
               this.showToast('Error deleting the FAQ.', 'error');
+            }
+          };
+          this.deleteModalOpen = true;
+        },
+
+        // ================= COMPANIES (footer) =================
+        async fetchCompanies() {
+          try {
+            const res = await this.authFetch('/api/companies/admin');
+            if (res.ok) this.companies = await res.json();
+          } catch (e) {
+            this.showToast('Error loading companies.', 'error');
+          }
+        },
+
+        openCompanyModal(c = null) {
+          this.companyLogoFile = null;
+          this.companyLogoPreviewUrl = null;
+          this.companyLogoRemoved = false;
+          if (c) {
+            this.companyForm = {
+              id: c.id,
+              nombre: c.nombre,
+              url: c.url || '',
+              orden: c.orden || 0,
+              activo: c.activo !== undefined ? c.activo : true,
+              has_logo: !!c.has_logo
+            };
+          } else {
+            const nextOrder = (this.companies.length + 1);
+            this.companyForm = { id: null, nombre: '', url: '', orden: nextOrder, activo: true, has_logo: false };
+          }
+          this.companyModalOpen = true;
+        },
+
+        // Client-side logo validation: immediate feedback, no wasted upload.
+        onCompanyLogoChange(e) {
+          const f = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+          if (!f) return;
+          const okTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+          const okExt = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+          const ext = f.name.toLowerCase().split('.').pop();
+          let problem = null;
+          if (f.name.toLowerCase().endsWith('.svg') || f.type === 'image/svg+xml') {
+            problem = 'Los SVG no están permitidos por seguridad. Usá PNG, JPG, WEBP o GIF.';
+          } else if (!okTypes.includes(f.type) && !okExt.includes(ext)) {
+            problem = `El archivo "${f.name}" no es una imagen válida (PNG, JPG, WEBP o GIF).`;
+          } else if (f.size === 0) {
+            problem = 'El archivo de logo está vacío.';
+          } else if (f.size > 1024 * 1024) {
+            problem = `El logo pesa ${this.formatSize(f.size)} y supera el máximo de 1 MB.`;
+          }
+          if (problem) {
+            console.error('[companies] Logo rejected client-side:', { name: f.name, type: f.type, size: f.size });
+            this.showToast(problem, 'error');
+            e.target.value = '';
+            return;
+          }
+          this.companyLogoFile = f;
+          this.companyLogoRemoved = false;
+          if (this.companyLogoPreviewUrl) URL.revokeObjectURL(this.companyLogoPreviewUrl);
+          this.companyLogoPreviewUrl = URL.createObjectURL(f);
+        },
+
+        clearCompanyLogoFile() {
+          this.companyLogoFile = null;
+          if (this.companyLogoPreviewUrl) { URL.revokeObjectURL(this.companyLogoPreviewUrl); this.companyLogoPreviewUrl = null; }
+          const input = document.querySelector('input[accept*="image/png"]');
+          if (input) input.value = '';
+        },
+
+        removeCompanyLogo() {
+          this.companyLogoRemoved = true;
+          this.clearCompanyLogoFile();
+        },
+
+        async saveCompany() {
+          if (this.companySaving) return;
+          this.companySaving = true;
+          try {
+            const isEdit = !!this.companyForm.id;
+            const nombre = this.companyForm.nombre.trim();
+            const url = (this.companyForm.url || '').trim();
+            if (!nombre) { this.showToast('El nombre es obligatorio.', 'error'); return; }
+            if (url && !/^https?:\/\//i.test(url)) {
+              this.showToast('La URL debe comenzar con http:// o https://.', 'error');
+              return;
+            }
+
+            let saved = null;
+            if (isEdit) {
+              // Fields first (JSON), then the logo if it changed.
+              const res = await this.authFetch(`/api/companies/admin/${this.companyForm.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  nombre,
+                  url: url || null,
+                  orden: Number(this.companyForm.orden) || 0,
+                  activo: Boolean(this.companyForm.activo)
+                })
+              });
+              if (!res.ok) throw new Error(await this.errorDetailOr(res, 'Error updating the company.'));
+              saved = await res.json();
+
+              if (this.companyLogoFile) {
+                const fd = new FormData();
+                fd.append('logo', this.companyLogoFile);
+                const logoRes = await this.authFetch(`/api/companies/admin/${saved.id}/logo`, { method: 'PUT', body: fd });
+                if (!logoRes.ok) throw new Error(await this.errorDetailOr(logoRes, 'Error uploading the logo.'));
+                saved = await logoRes.json();
+              } else if (this.companyLogoRemoved) {
+                const delRes = await this.authFetch(`/api/companies/admin/${saved.id}/logo`, { method: 'DELETE' });
+                if (delRes.ok) saved = await delRes.json();
+              }
+            } else {
+              // Single multipart call: fields + optional logo, like the manuals.
+              const fd = new FormData();
+              fd.append('nombre', nombre);
+              if (url) fd.append('url', url);
+              fd.append('orden', String(Number(this.companyForm.orden) || 0));
+              fd.append('activo', String(Boolean(this.companyForm.activo)));
+              if (this.companyLogoFile) fd.append('logo', this.companyLogoFile);
+              const res = await this.authFetch('/api/companies/admin', { method: 'POST', body: fd });
+              if (!res.ok) throw new Error(await this.errorDetailOr(res, 'Error creating the company.'));
+              saved = await res.json();
+            }
+
+            this.companyModalOpen = false;
+            this.fetchCompanies();
+            this.showToast(isEdit ? 'Compañía actualizada.' : 'Compañía creada. Ya aparece en la web si está visible.');
+            console.info('[companies] Saved:', saved);
+          } catch (err) {
+            console.error('[companies] saveCompany error:', err);
+            this.showToast(err.message || 'Error saving the company.', 'error');
+          } finally {
+            this.companySaving = false;
+          }
+        },
+
+        // Small wrapper so every failure prints the raw response to console.
+        async errorDetailOr(res, fallback) {
+          let msg = fallback;
+          try {
+            const data = await res.json();
+            if (typeof data.detail === 'string') msg = data.detail;
+            else if (Array.isArray(data.detail)) msg = data.detail.map(d => d.msg || JSON.stringify(d)).join(' | ');
+          } catch (_) {
+            console.error('[companies] Non-JSON error response:', { status: res.status, url: res.url });
+          }
+          return `${msg} (HTTP ${res.status})`;
+        },
+
+        async toggleCompanyActive(c) {
+          try {
+            const newStatus = !c.activo;
+            const res = await this.authFetch(`/api/companies/admin/${c.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ activo: newStatus })
+            });
+            if (res.ok) {
+              c.activo = newStatus;
+              this.showToast(newStatus ? 'Compañía visible en la web.' : 'Compañía oculta de la web.');
+            } else {
+              throw new Error();
+            }
+          } catch (e) {
+            this.showToast('Error cambiando el estado de la compañía.', 'error');
+          }
+        },
+
+        confirmDeleteCompany(c) {
+          this.deleteModalMessage = `Se eliminará la compañía "${c.nombre}"${c.has_logo ? ' junto con su logo' : ''}. Esta acción no se puede deshacer.`;
+          this.pendingDeleteAction = async () => {
+            try {
+              const res = await this.authFetch(`/api/companies/admin/${c.id}`, { method: 'DELETE' });
+              if (res.ok) {
+                this.companies = this.companies.filter(x => x.id !== c.id);
+                this.showToast('Compañía eliminada.');
+              } else {
+                throw new Error();
+              }
+            } catch (e) {
+              this.showToast('Error eliminando la compañía.', 'error');
             }
           };
           this.deleteModalOpen = true;

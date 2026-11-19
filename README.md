@@ -24,6 +24,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 * **Rate Limiting por IP (`slowapi`):** Límite configurado a 10 peticiones/minuto por IP en los endpoints públicos de cotización y opiniones (`/api/contact` y `/api/reviews`).
 * **Carrusel Dinámico de Testimonios:** Lee reseñas aprobadas desde el backend y permite a clientes publicar opiniones con calificación por estrellas (1 a 5).
 * **Gestor de Manuales PDF por Producto:** Carga de manuales en PDF desde el panel (almacenados como blobs en base de datos). Los manuales se vinculan automáticamente con la cobertura seleccionada y se listan en el modal de detalle.
+* **Compañías en las que confiamos (pie de página dinámico):** CRUD completo desde el panel (tab Compañías): nombre, orden, visibilidad y — opcionales — logo (PNG/JPG/WEBP/GIF hasta 1 MB, servido como blob con cache) y URL. Regla de visualización en la landing: con logo + URL se muestra solo el logo hipervinculado con tooltip del nombre; sin logo se muestra el nombre (con link si tiene URL). Los SVG se rechazan por seguridad (XSS).
 * **Panel de Control Administrativo (`admin.html`):**
   - Métricas en vivo (solicitudes totales, nuevas, opiniones, administradores).
   - Gestión de Cotizaciones (cambio de estado, filtros, detalle con IP/dispositivo, botón directo a WhatsApp).
@@ -33,8 +34,8 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
   - Gestor de Manuales PDF (asociación dinámica a coberturas).
   - Gestión de Usuarios Administradores (roles `admin` y `superadmin`, reseteo de contraseñas, protecciones contra eliminación propia o del último superadmin).
 * **Copias de Seguridad y Restauración (`backup.html` + `/api/admin/backup/*`):**
-  - Export en un solo archivo `.json` (los PDFs de manuales se ensamblan en el cliente en base64, evitando respuestas multi-MB del servidor).
-  - Restore en dos fases respetando el límite de ~4.5 MB del body en Vercel: primero metadatos JSON (reemplazo completo con ids preservados) y luego un upload multipart por cada PDF.
+  - Export en un solo archivo `.json` (los PDFs de manuales y los logos de compañías se ensamblan en el cliente en base64, evitando respuestas multi-MB del servidor).
+  - Restore en dos fases respetando el límite de ~4.5 MB del body en Vercel: primero metadatos JSON (reemplazo completo con ids preservados) y luego un upload multipart por cada PDF/logo.
   - Resincronización automática de secuencias SERIAL tras el restore (los inserts con id explícito no avanzan secuencias).
   - Upsert de administradores por username: la sesión del operador que restaura nunca se rompe.
   - Restore exclusivo para `superadmin`; export y resumen para cualquier administrador.

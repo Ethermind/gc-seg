@@ -331,6 +331,74 @@ class FAQResponse(FAQBase):
 
 
 # ==============================================================================
+# COMPANIES SCHEMAS ("Compañías en las que confiamos")
+# ==============================================================================
+def _validate_url_or_none(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    v = v.strip()
+    if v == "":
+        return None
+    if not re.match(r"^https?://[^\s]+$", v, re.IGNORECASE):
+        raise ValueError("URL inválida: debe comenzar con http:// o https:// (sin espacios).")
+    return v
+
+
+class CompanyBase(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=100, description="Company name")
+    url: Optional[str] = Field(None, max_length=500, description="Optional website link (http/https)")
+    orden: int = Field(0, ge=0, description="Display order in the footer")
+    activo: bool = Field(True, description="Whether the company is shown on the landing")
+
+    @field_validator("nombre", mode="before")
+    def strip_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @field_validator("url", mode="before")
+    def validate_url(cls, v):
+        return _validate_url_or_none(v)
+
+
+class CompanyCreate(CompanyBase):
+    pass
+
+
+class CompanyUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, min_length=1, max_length=100)
+    url: Optional[str] = Field(None, max_length=500)
+    orden: Optional[int] = Field(None, ge=0)
+    activo: Optional[bool] = None
+
+    @field_validator("nombre", mode="before")
+    def strip_strings(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @field_validator("url", mode="before")
+    def validate_url(cls, v):
+        return _validate_url_or_none(v)
+
+
+class CompanyResponse(BaseModel):
+    """Company data. `has_logo` indicates whether GET /companies/{id}/logo
+    will return an image (the binary itself is never inlined here)."""
+    id: int
+    nombre: str
+    url: Optional[str] = None
+    has_logo: bool = False
+    logo_content_type: Optional[str] = None
+    orden: int = 0
+    activo: bool = True
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==============================================================================
 # BACKUP / RESTORE SCHEMAS
 # ==============================================================================
 class BackupMeta(BaseModel):
@@ -427,11 +495,26 @@ class ManualMetaBackup(BaseModel):
     data_base64: Optional[str] = None
 
 
+class CompanyBackup(BaseModel):
+    """Company metadata. `logo_base64` is only present in downloaded backups
+    (when the company has a logo) and is stripped by the frontend before the
+    metadata restore call; the binary is restored separately via
+    POST /api/admin/companies/admin/{id}/logo (multipart)."""
+    id: int
+    nombre: str
+    url: Optional[str] = None
+    logo_content_type: Optional[str] = None
+    orden: int = 0
+    activo: bool = True
+    created_at: Optional[datetime] = None
+    logo_base64: Optional[str] = None
+
+
 class BackupRestore(BaseModel):
     """Full backup payload accepted by POST /api/admin/backup/restore.
     Manual PDF binaries are NOT part of this call: they are restored one by
     one via POST /api/admin/backup/restore/manuals/{id} (multipart) to stay
-    under the request body size limits."""
+    under the request body size limits. The same applies to company logos."""
     meta: BackupMeta
     coverages: List[CoverageBackup] = []
     faqs: List[FAQBackup] = []
@@ -439,3 +522,4 @@ class BackupRestore(BaseModel):
     leads: List[LeadBackup] = []
     admin_users: List[AdminUserBackup] = []
     manuals: List[ManualMetaBackup] = []
+    companies: List[CompanyBackup] = []
