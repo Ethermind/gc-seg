@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giaconi-Capra® PAS | Copias de Seguridad</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#080e1a">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js Core -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Lucide Icons -->
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            brand: {
+              dark: '#080e1a',       // Azul Noche Tinta
+              surface: '#0f172a',    // Azul Noche Intermedio
+              cobalt: '#2563eb',     // Azul exacto del Logo
+              cobaltHover: '#1d4ed8',
+              accent: '#d97706',     // Dorado Ámbar del Logo
+              accentHover: '#b45309',
+              lightBg: '#f8fafc',
+              cardBg: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-cobalt selection:text-white min-h-screen flex flex-col"
+      x-data="backupApp"
+      x-init="initApp()">
+
+  <!-- Toast Notification -->
+  <div x-show="toast.show"
+       x-transition:enter="transition ease-out duration-300 transform"
+       x-transition:enter-start="opacity-0 translate-y-4"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-200 transform"
+       x-transition:leave-start="opacity-100 translate-y-0"
+       x-transition:leave-end="opacity-0 translate-y-4"
+       x-cloak
+       class="fixed bottom-6 right-6 z-[100] max-w-md flex items-start gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold border"
+       :class="toast.type === 'error' ? 'bg-red-900 text-red-100 border-red-700' : 'bg-slate-900 text-white border-slate-700'">
+    <span x-text="toast.type === 'error' ? '⚠️' : '✓'" class="text-base"></span>
+    <span x-text="toast.message"></span>
+  </div>
+
+  <!-- SCREEN 1: INITIAL LOADING -->
+  <div x-show="authState === 'loading'" class="flex-grow flex items-center justify-center p-6" x-cloak>
+    <div class="text-center space-y-3">
+      <div class="w-12 h-12 border-4 border-brand-cobalt border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Verificando sesión segura...</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: NO ADMINS YET -> REDIRECT TO MAIN PANEL -->
+  <div x-show="authState === 'setup'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
+    <div class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative z-10 text-white text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-cobalt/20 text-brand-cobalt text-2xl mb-4 border border-brand-cobalt/30">🛡️</div>
+      <h2 class="text-xl font-black">Sistema sin configurar</h2>
+      <p class="text-xs text-slate-400 mt-2 mb-6">Todavía no existe ninguna cuenta de administrador. Configurá la primera desde el panel principal y después volvé acá para gestionar las copias de seguridad.</p>
+      <a href="/admin.html" class="inline-block bg-brand-cobalt hover:bg-brand-cobaltHover text-white font-extrabold py-3 px-6 rounded-xl transition shadow-lg text-xs uppercase tracking-wider">Ir al Panel de Administración</a>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: LOGIN -->
+  <div x-show="authState === 'login'" class="flex-grow flex items-center justify-center p-4 sm:p-6 bg-brand-dark relative overflow-hidden" x-cloak>
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-cobalt/20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl"></div>
+
+    <div class="bg-brand-surface border border-slate-800 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative z-10 text-white">
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center justify-center gap-2 mb-4 group">
+          <svg class="h-9 w-auto" viewBox="0 0 130 65" fill="none">
+            <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <h2 class="text-2xl font-black">Copias de Seguridad</h2>
+        <p class="text-xs text-slate-400 mt-1">Giaconi-Capra® PAS — Acceso Seguro</p>
+      </div>
+
+      <form @submit.prevent="submitLogin()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Usuario o Correo*</label>
+          <input type="text" x-model="loginForm.username" required placeholder="admin o correo@ejemplo.com" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Contraseña*</label>
+          <input type="password" x-model="loginForm.password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:ring-2 focus:ring-brand-cobalt outline-none">
+        </div>
+        <button type="submit"
+                :disabled="isSubmittingAuth"
+                class="w-full mt-4 bg-brand-cobalt hover:bg-brand-cobaltHover disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl transition shadow-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+          <span x-show="!isSubmittingAuth">Iniciar Sesión</span>
+          <span x-show="isSubmittingAuth" x-cloak class="flex items-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            Verificando...
+          </span>
+        </button>
+      </form>
+      <p class="text-center text-[11px] text-slate-500 mt-6">
+        <a href="/admin.html" class="text-slate-400 hover:text-white underline underline-offset-2">← Volver al Panel de Administración</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: AUTHENTICATED -->
+  <div x-show="authState === 'authenticated'" class="flex-grow flex flex-col" x-cloak>
+
+    <!-- Top Bar -->
+    <header class="bg-brand-dark border-b border-slate-800">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <svg class="h-8 w-auto flex-shrink-0" viewBox="0 0 130 65" fill="none">
+            <path d="M 52 45 C 38 58 14 56 6 38 C -2 20 10 6 28 6 C 44 6 54 20 63 31" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 67 19 C 81 5 105 7 113 25 C 121 43 109 57 91 57 C 75 57 65 43 56 32" stroke="#2563EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="min-w-0">
+            <h1 class="text-white font-extrabold text-sm sm:text-base truncate">Copias de Seguridad</h1>
+            <p class="text-slate-500 text-[10px] sm:text-xs">Giaconi-Capra® PAS — Backup & Restore</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div class="hidden sm:block text-right">
+            <p class="text-white text-xs font-bold" x-text="currentUser.full_name || currentUser.username"></p>
+            <p class="text-[10px] uppercase tracking-wider" :class="currentUser.role === 'superadmin' ? 'text-amber-400' : 'text-slate-500'" x-text="currentUser.role === 'superadmin' ? 'Superadministrador' : 'Administrador'"></p>
+          </div>
+          <a href="/admin.html" class="text-xs font-bold text-slate-300 hover:text-white bg-slate-800/70 hover:bg-slate-700 px-3 py-2 rounded-xl transition border border-slate-700">← Panel</a>
+          <button @click="logout()" class="text-xs font-bold text-red-300 hover:text-white bg-red-900/40 hover:bg-red-800 px-3 py-2 rounded-xl transition border border-red-900/50">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+      <!-- Live summary -->
+      <section class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Estado actual del sitio</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Todo lo que incluye una copia de seguridad.</p>
+          </div>
+          <button @click="loadSummary()" :disabled="loadingSummary"
+                  class="text-xs font-bold text-brand-cobalt hover:text-brand-cobaltHover disabled:opacity-50 flex items-center gap-1.5">
+            <svg x-show="!loadingSummary" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <svg x-show="loadingSummary" x-cloak class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <span x-text="loadingSummary ? 'Actualizando...' : 'Actualizar'"></span>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <template x-for="tile in summaryTiles" :key="tile.key">
+            <div class="rounded-2xl border border-slate-200/80 bg-slate-50/60 px-4 py-3">
+              <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400" x-text="tile.label"></p>
+              <p class="text-xl font-black text-slate-900 mt-1" x-text="summary[tile.key] ?? 0"></p>
+            </div>
+          </template>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-3">
+          Peso total de manuales PDF almacenados: <span class="font-bold text-slate-600" x-text="formatSize(summary.manuals_total_bytes || 0)"></span>
+        </p>
+      </section>
+
+      <!-- CREATE BACKUP -->
+      <section class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
+        <div class="flex items-start gap-4">
+          <div class="w-11 h-11 rounded-2xl bg-blue-50 text-brand-cobalt border border-blue-100 flex items-center justify-center flex-shrink-0 text-xl">💾</div>
+          <div class="flex-grow min-w-0">
+            <h2 class="text-base font-bold text-slate-900">Crear copia de seguridad</h2>
+            <p class="text-xs text-slate-500 mt-0.5 mb-4">Descarga un único archivo <code class="text-[11px] bg-slate-100 px-1 rounded">.json</code> con cotizaciones, opiniones, coberturas, FAQs, administradores y manuales (con sus PDFs embebidos en base64).</p>
+
+            <label class="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
+              <input type="checkbox" x-model="includePdfs" class="w-4 h-4 rounded accent-blue-600">
+              <span class="text-xs font-semibold text-slate-700">Incluir PDFs de manuales</span>
+              <span class="text-[10px] text-slate-400">(desmarcalo para generar un backup liviano solo de datos)</span>
+            </label>
+
+            <!-- Progress -->
+            <div x-show="backupProgress.show" x-cloak class="mb-4">
+              <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1.5">
+                <span x-text="backupProgress.label"></span>
+                <span x-text="backupProgress.pct + '%'"></span>
+              </div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full rounded-full bg-brand-cobalt transition-all duration-200" :style="`width: ${backupProgress.pct}%`"></div>
+              </div>
+            </div>
+
+            <button @click="createBackup()"
+                    :disabled="creating || restoring"
+                    :class="!creating ? 'bg-brand-cobalt hover:bg-brand-cobaltHover cursor-pointer' : 'bg-slate-300 opacity-70 cursor-not-allowed'"
+                    class="w-full sm:w-auto text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+              <span x-show="!creating">💾 Descargar copia de seguridad</span>
+              <span x-show="creating" x-cloak class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                Generando...
+              </span>
+            </button>
+
+            <div x-show="lastBackupInfo" x-cloak class="mt-4 text-[11px] bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-3 py-2.5">
+              ✓ Backup generado: <span class="font-bold" x-text="lastBackupInfo"></span> — guardalo en un lugar seguro.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESTORE -->
+      <section class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
+        <div class="flex items-start gap-4">
+          <div class="w-11 h-11 rounded-2xl bg-amber-50 text-brand-accent border border-amber-100 flex items-center justify-center flex-shrink-0 text-xl">♻️</div>
+          <div class="flex-grow min-w-0">
+            <h2 class="text-base font-bold text-slate-900">Restaurar copia de seguridad</h2>
+            <p class="text-xs text-slate-500 mt-0.5 mb-4">Reemplaza <span class="font-bold text-slate-700">TODOS</span> los datos actuales por los del archivo elegido. Solo disponible para superadministradores.</p>
+
+            <input type="file" accept=".json,application/json" @change="onRestoreFileChange($event)"
+                   class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer file:transition">
+
+            <!-- Backup preview -->
+            <div x-show="restorePreview" x-cloak class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-slate-800 truncate" x-text="restorePreview?.fileName"></p>
+                  <p class="text-[10px] text-slate-500 mt-0.5">
+                    Exportado: <span x-text="restorePreview?.exportedAt"></span> ·
+                    Tamaño: <span x-text="restorePreview?.sizeLabel"></span> ·
+                    <span class="font-bold text-emerald-600">Archivo válido ✓</span>
+                  </p>
+                </div>
+                <button @click="clearRestoreFile()" class="text-[11px] font-bold text-slate-400 hover:text-red-600 transition">✕ Descartar</button>
+              </div>
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <template x-for="tile in restoreTiles" :key="tile.key">
+                  <div class="rounded-xl bg-white border border-slate-200 px-3 py-2 text-center">
+                    <p class="text-sm font-black text-slate-900" x-text="restorePreview?.counts[tile.key] ?? 0"></p>
+                    <p class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400" x-text="tile.label"></p>
+                  </div>
+                </template>
+              </div>
+              <p class="text-[11px] mt-3" :class="restorePreview?.withBinaries ? 'text-slate-600' : 'text-amber-600'">
+                <span x-show="restorePreview?.withBinaries">📦 Incluye los PDFs de los manuales (se restaurarán uno por uno automáticamente).</span>
+                <span x-show="!restorePreview?.withBinaries" x-cloak>⚠️ Este backup no incluye PDFs de manuales: los manuales se restaurarán sin archivo.</span>
+              </p>
+
+              <button @click="restoreModalOpen = true"
+                      :disabled="creating || restoring || currentUser.role !== 'superadmin'"
+                      :class="(currentUser.role === 'superadmin' && !restoring && !creating) ? 'bg-red-600 hover:bg-red-700 cursor-pointer' : 'bg-slate-300 opacity-70 cursor-not-allowed'"
+                      class="mt-4 w-full sm:w-auto text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+                <span x-show="!restoring">♻️ Restaurar estos datos</span>
+                <span x-show="restoring" x-cloak class="flex items-center gap-2">
+                  <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                  Restaurando...
+                </span>
+              </button>
+              <p x-show="currentUser.role !== 'superadmin'" x-cloak class="text-[11px] text-red-500 font-semibold mt-2">
+                Tu rol (<span x-text="currentUser.role"></span>) no permite restaurar backups.
+              </p>
+
+              <!-- Restore progress -->
+              <div x-show="restoreProgress.show" x-cloak class="mt-4">
+                <div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1.5">
+                  <span x-text="restoreProgress.label"></span>
+                  <span x-text="restoreProgress.pct + '%'"></span>
+                </div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div class="h-full rounded-full bg-red-500 transition-all duration-200" :style="`width: ${restoreProgress.pct}%`"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Security note -->
+      <section class="bg-amber-50/70 border border-amber-200 rounded-3xl p-5 flex gap-3">
+        <span class="text-lg">🔐</span>
+        <p class="text-[11px] text-amber-800 leading-relaxed">
+          El archivo de backup contiene <span class="font-bold">datos personales de cotizaciones</span> y <span class="font-bold">hashes de contraseñas</span> de administradores. Tratalo con la misma confidencialidad que la base de datos (Ley 25.326) y no lo compartas por canales inseguros.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <!-- RESTORE CONFIRM MODAL -->
+  <div x-show="restoreModalOpen" x-cloak class="fixed inset-0 z-[90] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="restoreModalOpen = false"></div>
+    <div class="relative bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-red-100">
+      <div class="text-center mb-5">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-2xl mb-3 border border-red-100">⚠️</div>
+        <h3 class="text-lg font-black text-slate-900">¿Restaurar el backup?</h3>
+        <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+          Se van a <span class="font-bold text-red-600">reemplazar todos los datos actuales</span> (cotizaciones, opiniones, coberturas, FAQs, manuales y administradores) por el contenido del archivo
+          <span class="font-bold" x-text="restorePreview?.fileName"></span>.
+          Esta operación no se puede deshacer salvo que tengas otro backup con los datos actuales.
+        </p>
+        <p class="text-[11px] text-slate-400 mt-2">Tu propia sesión no se verá afectada.</p>
+      </div>
+      <div class="flex gap-3">
+        <button @click="restoreModalOpen = false" class="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Cancelar</button>
+        <button @click="runRestore()" class="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-600 hover:bg-red-700 text-white transition">Sí, restaurar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('backupApp', () => ({
+        // Session states: 'loading' | 'setup' | 'login' | 'authenticated'
+        authState: 'loading',
+        isSubmittingAuth: false,
+        currentUser: {},
+        token: localStorage.getItem('gc_admin_token') || '',
+        loginForm: { username: '', password: '' },
+        toast: { show: false, message: '', type: 'success' },
+
+        // Live summary
+        summary: {},
+        loadingSummary: false,
+
+        // Create backup
+        includePdfs: true,
+        creating: false,
+        backupProgress: { show: false, label: '', pct: 0 },
+        lastBackupInfo: null,
+
+        // Restore
+        restoreData: null,       // parsed backup JSON
+        restorePreview: null,    // info shown to the user
+        restoreModalOpen: false,
+        restoring: false,
+        restoreProgress: { show: false, label: '', pct: 0 },
+
+        summaryTiles: [
+          { key: 'leads', label: 'Cotizaciones' },
+          { key: 'reviews', label: 'Opiniones' },
+          { key: 'coverages', label: 'Coberturas' },
+          { key: 'faqs', label: 'FAQs' },
+          { key: 'manuals', label: 'Manuales' },
+          { key: 'admin_users', label: 'Admins' },
+        ],
+        restoreTiles: [
+          { key: 'leads', label: 'Cotiz.' },
+          { key: 'reviews', label: 'Opin.' },
+          { key: 'coverages', label: 'Cobert.' },
+          { key: 'faqs', label: 'FAQs' },
+          { key: 'manuals', label: 'Manuales' },
+          { key: 'admin_users', label: 'Admins' },
+        ],
+
+        // ---------- session ----------
+        async initApp() {
+          try {
+            const setupRes = await fetch('/api/auth/setup-status');
+            const setupData = await setupRes.json();
+            if (setupData.needs_setup) { this.authState = 'setup'; return; }
+            if (this.token) {
+              const meRes = await this.authFetch('/api/auth/me');
+              if (meRes.ok) {
+                this.currentUser = await meRes.json();
+                this.authState = 'authenticated';
+                this.loadSummary();
+                return;
+              }
+            }
+            this.authState = 'login';
+          } catch (e) {
+            console.error('[backup] init error:', e);
+            this.authState = 'login';
+          }
+        },
+
+        async authFetch(url, options = {}) {
+          options.headers = options.headers || {};
+          if (this.token) options.headers['Authorization'] = `Bearer ${this.token}`;
+          const res = await fetch(url, options);
+          if (res.status === 401 && this.authState === 'authenticated') {
+            this.logout('La sesión expiró. Iniciá sesión de nuevo.');
+          }
+          return res;
+        },
+
+        async submitLogin() {
+          this.isSubmittingAuth = true;
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: this.loginForm.username, password: this.loginForm.password })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || 'Credenciales incorrectas.');
+            this.token = data.access_token;
+            this.currentUser = data.user;
+            localStorage.setItem('gc_admin_token', this.token);
+            this.authState = 'authenticated';
+            this.loadSummary();
+          } catch (err) {
+            this.showToast(err.message, 'error');
+          } finally {
+            this.isSubmittingAuth = false;
+          }
+        },
+
+        logout(message) {
+          this.token = '';
+          this.currentUser = {};
+          localStorage.removeItem('gc_admin_token');
+          this.authState = 'login';
+          if (message) this.showToast(message, 'error');
+        },
+
+        showToast(message, type = 'success') {
+          this.toast = { show: true, message, type };
+          setTimeout(() => { this.toast.show = false; }, 5000);
+        },
+
+        // ---------- helpers ----------
+        formatSize(bytes) {
+          if (!bytes || bytes <= 0) return '0 KB';
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        },
+
+        setProgress(obj, label, done, total) {
+          const pct = total > 0 ? Math.round((done / total) * 100) : (label ? 100 : 0);
+          obj.show = true; obj.label = label || ''; obj.pct = pct;
+        },
+
+        // Maps any failed admin response to a useful message (FastAPI detail,
+        // Vercel error shape, or a generic fallback with the HTTP status).
+        async errorDetail(res) {
+          let raw = null;
+          try { raw = await res.text(); } catch (_) {}
+          console.error('[backup] Request failed:', { status: res.status, statusText: res.statusText, url: res.url, body: raw });
+          try {
+            const data = JSON.parse(raw);
+            if (typeof data.detail === 'string') return data.detail;
+            if (Array.isArray(data.detail)) return data.detail.map(d => d.msg || JSON.stringify(d)).join(' | ');
+            if (data.error && data.error.message) return `${data.error.message}${data.error.code ? ' (' + data.error.code + ')' : ''}`;
+            if (typeof data.message === 'string' && data.message) return data.message;
+          } catch (_) {}
+          return `Error del servidor (HTTP ${res.status} ${res.statusText}). Revisá la consola y los logs para más detalle.`;
+        },
+
+        bufferToBase64(arrayBuffer) {
+          const bytes = new Uint8Array(arrayBuffer);
+          let bin = '';
+          const chunk = 0x8000; // avoid call-stack limits with big buffers
+          for (let i = 0; i < bytes.length; i += chunk) {
+            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+          }
+          return btoa(bin);
+        },
+
+        base64ToBlob(b64, mime) {
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          return new Blob([arr], { type: mime || 'application/octet-stream' });
+        },
+
+        // ---------- summary ----------
+        async loadSummary() {
+          this.loadingSummary = true;
+          try {
+            const res = await this.authFetch('/api/admin/backup/summary');
+            if (res.ok) this.summary = await res.json();
+          } catch (e) {
+            console.error('[backup] summary error:', e);
+          } finally {
+            this.loadingSummary = false;
+          }
+        },
+
+        // ---------- create backup ----------
+        async createBackup() {
+          if (this.creating || this.restoring) return;
+          this.creating = true;
+          this.lastBackupInfo = null;
+          console.info('[backup] Export starting', { includePdfs: this.includePdfs });
+          try {
+            const res = await this.authFetch('/api/admin/backup/export');
+            if (!res.ok) throw new Error(await this.errorDetail(res));
+            const backup = await res.json();
+
+            const manuals = backup.manuals || [];
+            if (this.includePdfs && manuals.length > 0) {
+              for (let i = 0; i < manuals.length; i++) {
+                const m = manuals[i];
+                this.setProgress(this.backupProgress, `Descargando PDFs de manuales (${i + 1}/${manuals.length})`, i, manuals.length);
+                const dl = await this.authFetch(`/api/manuals/${m.id}/download`);
+                if (!dl.ok) throw new Error(`No se pudo descargar el PDF del manual "${m.titulo}" (HTTP ${dl.status}).`);
+                m.data_base64 = this.bufferToBase64(await dl.arrayBuffer());
+              }
+              this.setProgress(this.backupProgress, 'PDFs descargados', manuals.length, manuals.length);
+            } else {
+              this.setProgress(this.backupProgress, 'Generando archivo...', 1, 1);
+            }
+
+            // Assemble and download the file entirely on the client side:
+            // no multi-MB server response that Vercel could truncate.
+            const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            const fileName = `backup-gc-seg-${stamp}.json`;
+            const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+
+            this.lastBackupInfo = `${fileName} (${this.formatSize(blob.size)})`;
+            this.showToast('Backup descargado correctamente.');
+            console.info('[backup] Backup file built:', { fileName, size: blob.size, manuals: manuals.length });
+          } catch (err) {
+            console.error('[backup] createBackup error:', err);
+            this.showToast(err.message || 'Error generando el backup.', 'error');
+          } finally {
+            this.backupProgress.show = false;
+            this.creating = false;
+          }
+        },
+
+        // ---------- restore ----------
+        async onRestoreFileChange(e) {
+          const file = e.target.files && e.target.files[0];
+          this.restoreData = null;
+          this.restorePreview = null;
+          if (!file) return;
+
+          try {
+            const parsed = JSON.parse(await file.text());
+            if (!parsed || parsed.meta?.app !== 'gc-seg') {
+              throw new Error('Este archivo no es una copia de seguridad de Giaconi-Capra®.');
+            }
+            if ((parsed.meta?.version || 1) > 1) {
+              throw new Error('El backup fue creado con una versión más nueva del sistema. Actualizá el sitio antes de restaurarlo.');
+            }
+            this.restoreData = parsed;
+            this.restorePreview = {
+              fileName: file.name,
+              sizeLabel: this.formatSize(file.size),
+              exportedAt: (parsed.meta?.exported_at || '').replace('T', ' ').slice(0, 16),
+              counts: parsed.meta?.counts || {},
+              withBinaries: (parsed.manuals || []).some(m => m.data_base64),
+            };
+            console.info('[backup] Restore file validated:', this.restorePreview);
+          } catch (err) {
+            console.error('[backup] Invalid restore file:', err);
+            this.showToast(err.message || 'El archivo no es un backup válido.', 'error');
+            e.target.value = '';
+          }
+        },
+
+        clearRestoreFile() {
+          this.restoreData = null;
+          this.restorePreview = null;
+          this.restoreModalOpen = false;
+          const input = document.querySelector('input[type="file"][accept=".json,application/json"]');
+          if (input) input.value = '';
+        },
+
+        async runRestore() {
+          if (!this.restoreData || this.restoring || this.currentUser.role !== 'superadmin') return;
+          this.restoreModalOpen = false;
+          this.restoring = true;
+          console.info('[backup] Restore starting', { counts: this.restoreData.meta?.counts });
+          try {
+            // Phase 1: metadata (binaries stripped to keep the JSON body small)
+            const payload = {
+              meta: this.restoreData.meta,
+              coverages: this.restoreData.coverages || [],
+              faqs: this.restoreData.faqs || [],
+              reviews: this.restoreData.reviews || [],
+              leads: this.restoreData.leads || [],
+              admin_users: this.restoreData.admin_users || [],
+              manuals: (this.restoreData.manuals || []).map(({ data_base64, ...m }) => m),
+            };
+            this.setProgress(this.restoreProgress, 'Restaurando datos...', 10, 100);
+            const res = await this.authFetch('/api/admin/backup/restore', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(await this.errorDetail(res));
+            const result = await res.json();
+
+            // Phase 2: manual PDF binaries, one request per manual
+            const withBinary = (this.restoreData.manuals || []).filter(m => m.data_base64);
+            for (let i = 0; i < withBinary.length; i++) {
+              const m = withBinary[i];
+              this.setProgress(this.restoreProgress, `Restaurando PDFs de manuales (${i + 1}/${withBinary.length})`, 10 + Math.round(((i + 1) / withBinary.length) * 90), 100);
+              const fd = new FormData();
+              fd.append('file', this.base64ToBlob(m.data_base64, m.content_type || 'application/pdf'), m.file_name || `manual-${m.id}.pdf`);
+              const binRes = await this.authFetch(`/api/admin/backup/restore/manuals/${m.id}`, { method: 'POST', body: fd });
+              if (!binRes.ok) throw new Error(`No se pudo restaurar el PDF del manual "${m.titulo}": ${await this.errorDetail(binRes)}`);
+            }
+
+            this.setProgress(this.restoreProgress, 'Restauración completa', 100, 100);
+            this.showToast(`Backup restaurado: ${result.restored.leads} cotizaciones, ${result.restored.manuals} manuales y más. Todo listo.`);
+            this.loadSummary();
+            this.clearRestoreFile();
+          } catch (err) {
+            console.error('[backup] runRestore error:', err);
+            this.showToast(err.message || 'Error restaurando el backup.', 'error');
+          } finally {
+            this.restoreProgress.show = false;
+            this.restoring = false;
+          }
+        },
+      }));
+    });
+  </script>
+</body>
+</html>

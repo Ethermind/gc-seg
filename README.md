@@ -10,6 +10,7 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
 | :--- | :--- | :--- |
 | `index.html` | **Producción (MVP)** | Landing page principal conectada al backend (`/api/contact`, `/api/reviews`, `/api/coverages`, `/api/faqs`, `/api/manuals`). Cuenta con Turnstile invisible y datos 100% dinámicos desde la base de datos. |
 | `admin.html` | **Panel de Administración** | SPA administrativa completa con autenticación JWT, métricas en tiempo real y CRUD para leads, testimonios, coberturas, FAQs, manuales PDF y administradores. |
+| `backup.html` | **Copias de Seguridad** | Página de backup/restore completa: descarga un único archivo `.json` con todos los datos del sitio (incluidos los PDFs de manuales embebidos en base64) y permite restaurarlo luego con preservación de ids y resincronización de secuencias. Acceso restringido (restore solo para `superadmin`). |
 
 ---
 
@@ -31,6 +32,12 @@ Sitio web corporativo y plataforma integral de cotizaciones para **Giaconi-Capra
   - Gestión de Preguntas Frecuentes (FAQs).
   - Gestor de Manuales PDF (asociación dinámica a coberturas).
   - Gestión de Usuarios Administradores (roles `admin` y `superadmin`, reseteo de contraseñas, protecciones contra eliminación propia o del último superadmin).
+* **Copias de Seguridad y Restauración (`backup.html` + `/api/admin/backup/*`):**
+  - Export en un solo archivo `.json` (los PDFs de manuales se ensamblan en el cliente en base64, evitando respuestas multi-MB del servidor).
+  - Restore en dos fases respetando el límite de ~4.5 MB del body en Vercel: primero metadatos JSON (reemplazo completo con ids preservados) y luego un upload multipart por cada PDF.
+  - Resincronización automática de secuencias SERIAL tras el restore (los inserts con id explícito no avanzan secuencias).
+  - Upsert de administradores por username: la sesión del operador que restaura nunca se rompe.
+  - Restore exclusivo para `superadmin`; export y resumen para cualquier administrador.
 * **Persistencia unificada en PostgreSQL:** Un solo motor para local, tests, CI y producción (Vercel/Neon/Supabase/Prisma), mediante SQLAlchemy 2.1 con driver `psycopg` v3. URLs no-PostgreSQL son rechazadas con error claro (modo degradado 503, nunca un crash de import).
 * **Arquitectura Serverless optimizada para Vercel:** Handlers ASGI desacoplados, pool de conexiones reciclable y migración DDL automática en cold start (`init_db()`).
 * **Builds reproducibles:** `requirements.txt` está pineado al 100% (freeze exacto) y un smoke test E2E (`scripts/smoke_test.py`) corre en CI en cada push; `/api/health` expone las versiones efectivamente desplegadas.

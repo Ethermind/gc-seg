@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, EmailStr, field_validator
 import re
 
@@ -328,3 +328,114 @@ class FAQResponse(FAQBase):
 
     class Config:
         from_attributes = True
+
+
+# ==============================================================================
+# BACKUP / RESTORE SCHEMAS
+# ==============================================================================
+class BackupMeta(BaseModel):
+    """Identity of a backup file. Used to reject files from other systems."""
+    app: str = "gc-seg"
+    version: int = 1
+    exported_at: str
+    counts: Dict[str, int] = {}
+
+
+class CoverageBackup(BaseModel):
+    id: int
+    categoria: str
+    titulo: str
+    icono: str
+    descripcion: str
+    badge: Optional[str] = None
+    orden: int = 0
+    activo: bool = True
+    created_at: Optional[datetime] = None
+
+
+class FAQBackup(BaseModel):
+    id: int
+    pregunta: str
+    respuesta: str
+    categoria: Optional[str] = None
+    orden: int = 0
+    activo: bool = True
+    created_at: Optional[datetime] = None
+
+
+class ReviewBackup(BaseModel):
+    id: int
+    name: str
+    role: Optional[str] = None
+    avatar: str = ""
+    rating: int = Field(..., ge=1, le=5)
+    text: str
+    is_approved: bool = True
+    created_at: Optional[datetime] = None
+
+
+class LeadBackup(BaseModel):
+    id: int
+    nombre: str
+    telefono: str
+    email: Optional[str] = None
+    producto: Optional[str] = None
+    mensaje: Optional[str] = None
+    wsp_preferred: bool = False
+    aceptar_datos: bool = True
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    status: str = "nuevo"
+    created_at: Optional[datetime] = None
+
+    @field_validator("status")
+    def validate_status(cls, v):
+        if v not in ALLOWED_LEAD_STATUSES:
+            raise ValueError(f"Invalid lead status. Allowed values: {', '.join(sorted(ALLOWED_LEAD_STATUSES))}.")
+        return v
+
+
+class AdminUserBackup(BaseModel):
+    # `id` is accepted but NOT inserted verbatim: admin users are upserted by
+    # username so the restoring operator's session always survives.
+    username: str
+    email: str
+    hashed_password: str
+    full_name: Optional[str] = None
+    role: str = "admin"
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+
+    @field_validator("role")
+    def validate_role(cls, v):
+        if v not in ALLOWED_ADMIN_ROLES:
+            raise ValueError(f"Invalid admin role. Allowed values: {', '.join(sorted(ALLOWED_ADMIN_ROLES))}.")
+        return v
+
+
+class ManualMetaBackup(BaseModel):
+    """Manual metadata. `data_base64` is only present in downloaded backups and
+    is stripped by the frontend before the metadata restore call."""
+    id: int
+    producto: str
+    titulo: str
+    file_name: str
+    content_type: str = "application/pdf"
+    size_bytes: int = 0
+    created_at: Optional[datetime] = None
+    data_base64: Optional[str] = None
+
+
+class BackupRestore(BaseModel):
+    """Full backup payload accepted by POST /api/admin/backup/restore.
+    Manual PDF binaries are NOT part of this call: they are restored one by
+    one via POST /api/admin/backup/restore/manuals/{id} (multipart) to stay
+    under the request body size limits."""
+    meta: BackupMeta
+    coverages: List[CoverageBackup] = []
+    faqs: List[FAQBackup] = []
+    reviews: List[ReviewBackup] = []
+    leads: List[LeadBackup] = []
+    admin_users: List[AdminUserBackup] = []
+    manuals: List[ManualMetaBackup] = []
