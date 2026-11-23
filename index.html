@@ -686,18 +686,22 @@
         
         <!-- Companies are managed from the admin panel (Compañías tab).
              Display rule: logo + url -> only the logo, hyperlinked, tooltip = name.
-             Without logo -> the name is shown (linked if url exists). -->
+             Without logo -> the name is shown (linked if url exists).
+             NOTE: each logo sits on a white card for max contrast on this dark
+             section, and the grayscale->color hover is per-card via `group`
+             (a container-level hover lit every logo up at once). -->
         <div x-show="companies.length > 0" x-cloak
-             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 items-stretch">
           <template x-for="c in companies" :key="c.id">
-            <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 flex items-center justify-center min-h-[72px]">
+            <div class="group bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm transition duration-200 hover:border-brand-cobalt/60 hover:shadow-lg hover:shadow-brand-cobalt/10 hover:-translate-y-1">
 
               <!-- logo + url: only the image, hyperlinked, tooltip = name -->
               <template x-if="c.has_logo && c.url">
                 <a :href="c.url" target="_blank" rel="noopener noreferrer"
                    :title="c.nombre" :aria-label="c.nombre" class="block">
                   <img :src="`/api/companies/${c.id}/logo`" :alt="c.nombre"
-                       class="max-h-14 max-w-full object-contain" loading="lazy">
+                       class="max-h-16 max-w-full object-contain grayscale opacity-75 transition duration-200 group-hover:grayscale-0 group-hover:opacity-100"
+                       loading="lazy">
                 </a>
               </template>
 
@@ -705,7 +709,8 @@
               <template x-if="c.has_logo && !c.url">
                 <span :title="c.nombre" class="block">
                   <img :src="`/api/companies/${c.id}/logo`" :alt="c.nombre"
-                       class="max-h-14 max-w-full object-contain" loading="lazy">
+                       class="max-h-16 max-w-full object-contain grayscale opacity-75 transition duration-200 group-hover:grayscale-0 group-hover:opacity-100"
+                       loading="lazy">
                 </span>
               </template>
 
@@ -713,12 +718,12 @@
               <template x-if="!c.has_logo && c.url">
                 <a :href="c.url" target="_blank" rel="noopener noreferrer"
                    :title="c.nombre"
-                   class="text-slate-300 hover:text-white font-black text-sm text-center transition">
+                   class="text-slate-500 group-hover:text-brand-cobalt font-black text-sm text-center transition">
                   <span x-text="c.nombre"></span>
                 </a>
               </template>
               <template x-if="!c.has_logo && !c.url">
-                <span :title="c.nombre" class="text-slate-300 font-black text-sm text-center">
+                <span :title="c.nombre" class="text-slate-500 group-hover:text-brand-cobalt font-black text-sm text-center transition">
                   <span x-text="c.nombre"></span>
                 </span>
               </template>
@@ -729,13 +734,25 @@
 
         <!-- Fallback when the API is unreachable or there are no companies yet -->
         <div x-show="companies.length === 0"
-             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 items-center opacity-70 grayscale hover:grayscale-0 transition">
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">SANCOR</div>
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">FEDERACIÓN</div>
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">ALLIANZ</div>
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">MERCANTIL</div>
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">ZURICH</div>
-          <div class="bg-brand-surface p-4 rounded-xl border border-slate-800 text-slate-300 font-black text-sm">MAPFRE</div>
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 items-stretch">
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">SANCOR</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">FEDERACIÓN</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">ALLIANZ</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">MERCANTIL</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">ZURICH</span>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex items-center justify-center min-h-[84px] shadow-sm">
+            <span class="text-slate-500 font-black text-sm text-center">MAPFRE</span>
+          </div>
         </div>
       </div>
     </div>
